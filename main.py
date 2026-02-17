@@ -2,7 +2,7 @@ from fastapi import FastAPI, Request, HTTPException, BackgroundTasks
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel, Field, EmailStr
+from pydantic import BaseModel, Field
 from datetime import datetime
 import requests
 import json
@@ -62,7 +62,7 @@ class Chat(BaseModel):
 class Lead(BaseModel):
     name: str = Field(..., min_length=2, max_length=100)
     phone: str = Field(default="", max_length=20)
-    email: Optional[EmailStr] = None
+    email: Optional[str] = None
     address_or_zip: str = Field(default="", max_length=100)
     preferred_contact: Literal["call", "text", "email"] = "text"
     project_details: str = Field(..., min_length=10, max_length=2000)
@@ -545,5 +545,6 @@ def get_contact_info():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))
+
 
 
