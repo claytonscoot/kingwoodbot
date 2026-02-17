@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Astro Outdoor Designs – Fence Assistant</title>
+
+<style>
+  :root{
+    --astro-orange:#f36b21;
+    --dark:#1f2937;
+    --muted:#6b7280;
+    --bg:#f3f4f6;
+    --card:#ffffff;
+    --line:#e5e7eb;
+  }
+
+  body{
+    margin:0;
+    font-family: Arial, sans-serif;
+    background:
+      linear-gradient(180deg, rgba(0,0,0,0.35), rgba(0,0,0,0.35)),
+      radial-gradient(circle at 20% 10%, rgba(243,107,33,0.25), transparent 40%),
+      radial-gradient(circle at 80% 20%, rgba(243,107,33,0.18), transparent 45%),
+      linear-gradient(180deg, #0b1220, #111827);
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:24px;
+  }
+
+  .wrap{
+    width:min(980px, 100%);
+    display:grid;
+    grid-template-columns: 1.2fr 0.8fr;
+    gap:16px;
+  }
+
+  @media (max-width: 900px){
+    .wrap{ grid-template-columns: 1fr; }
+  }
+
+  .card{
+    background:var(--card);
+    border-radius:14px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.22);
+    overflow:hidden;
+    border:1px solid rgba(255,255,255,0.08);
+  }
+
+  .header{
+    background:var(--astro-orange);
+    color:white;
+    padding:16px 18px;
+  }
+
+  .header h1{
+    font-size:20px;
+    margin:0 0 4px;
+    letter-spacing:0.2px;
+  }
+
+  .header p{
+    margin:0;
+    opacity:0.95;
+    font-size:13px;
+  }
+
+  .chat{
+    padding:14px 14px 10px;
+  }
+
+  .messages{
+    height:440px;
+    overflow-y:auto;
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:12px;
+    background: linear-gradient(180deg, #ffffff, #fbfbfb);
+  }
+
+  .msg{
+    max-width: 86%;
+    margin:10px 0;
+    padding:10px 12px;
+    border-radius:12px;
+    line-height:1.35;
+    font-size:14px;
+    white-space:pre-wrap;
+  }
+
+  .bot{
+    background:#f3f4f6;
+    border:1px solid #e5e7eb;
+    color:var(--dark);
+  }
+
+  .you{
+    background:rgba(243,107,33,0.10);
+    border:1px solid rgba(243,107,33,0.25);
+    color:var(--dark);
+    margin-left:auto;
+  }
+
+  .chips{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin:10px 0 0;
+  }
+
+  .chip{
+    border:1px solid var(--line);
+    background:#fff;
+    border-radius:999px;
+    padding:7px 10px;
+    font-size:12px;
+    cursor:pointer;
+    user-select:none;
+  }
+  .chip:hover{ border-color: rgba(243,107,33,0.55); }
+
+  .composer{
+    display:grid;
+    grid-template-columns: 1fr 120px;
+    gap:10px;
+    margin-top:10px;
+  }
+
+  textarea{
+    width:100%;
+    resize:none;
+    height:74px;
+    padding:10px 12px;
+    border-radius:12px;
+    border:1px solid var(--line);
+    font-size:14px;
+    outline:none;
+  }
+  textarea:focus{
+    border-color: rgba(243,107,33,0.55);
+    box-shadow: 0 0 0 3px rgba(243,107,33,0.15);
+  }
+
+  button{
+    border:0;
+    border-radius:12px;
+    cursor:pointer;
+    font-weight:700;
+  }
+
+  #sendBtn{
+    background:var(--astro-orange);
+    color:white;
+    font-size:14px;
+  }
+  #sendBtn:disabled{
+    opacity:0.55;
+    cursor:not-allowed;
+  }
+
+  .status{
+    margin-top:8px;
+    font-size:12px;
+    color:var(--muted);
+    min-height:16px;
+  }
+
+  /* Right panel */
+  .side{
+    padding:14px;
+  }
+
+  .side h2{
+    margin:0 0 10px;
+    font-size:16px;
+    color:var(--dark);
+  }
+
+  .contactButtons{
+    display:grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap:8px;
+    margin-bottom:12px;
+  }
+
+  .contactButtons a{
+    text-decoration:none;
+    display:block;
+    text-align:center;
+    padding:10px 8px;
+    border-radius:12px;
+    border:1px solid var(--line);
+    color:var(--dark);
+    font-weight:700;
+    font-size:13px;
+    background:#fff;
+  }
+  .contactButtons a:hover{
+    border-color: rgba(243,107,33,0.55);
+  }
+
+  .note{
+    font-size:12px;
+    color:var(--muted);
+    margin-bottom:12px;
+    line-height:1.4;
+  }
+
+  .form{
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:12px;
+    background:#fff;
+  }
+
+  .row{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap:10px;
+    margin-bottom:10px;
+  }
+  @media (max-width: 900px){
+    .row{ grid-template-columns: 1fr; }
+  }
+
+  input, select{
+    width:100%;
+    padding:10px 12px;
+    border-radius:10px;
+    border:1px solid var(--line);
+    outline:none;
+    font-size:14px;
+  }
+
+  input:focus, select:focus{
+    border-color: rgba(243,107,33,0.55);
+    box-shadow: 0 0 0 3px rgba(243,107,33,0.12);
+  }
+
+  #leadDetails{
+    height:120px;
+  }
+
+  #leadBtn{
+    width:100%;
+    margin-top:8px;
+    padding:12px;
+    background: #111827;
+    color:white;
+    font-size:14px;
+  }
+  #leadBtn:disabled{ opacity:0.55; cursor:not-allowed; }
+
+  .smallok{
+    font-size:12px;
+    color:var(--muted);
+    margin-top:8px;
+    min-height:16px;
+  }
+
+  .brandline{
+    font-size:11px;
+    color:#9ca3af;
+    margin-top:10px;
+    text-align:center;
+  }
+</style>
+</head>
+
+<body>
+  <div class="wrap">
+
+    <!-- CHAT CARD -->
+    <div class="card">
+      <div class="header">
+        <h1>Astro Outdoor Designs – Fence Assistant</h1>
+        <p>Ask about cedar fences, steel posts, gates, repairs, staining & more.</p>
+      </div>
+
+      <div class="chat">
+        <div id="messages" class="messages"></div>
+
+        <div class="chips">
+          <div class="chip" onclick="quick('I need a cedar privacy fence quote.')" >Cedar fence quote</div>
+          <div class="chip" onclick="quick('I want steel posts (Schedule 40).')" >Steel posts</div>
+          <div class="chip" onclick="quick('I need a gate (walk / double / sliding).')" >Gate help</div>
+          <div class="chip" onclick="quick('My gate is sagging / dragging. How do we fix it?')" >Gate repair</div>
+          <div class="chip" onclick="quick('I want staining. What do you recommend?')" >Staining</div>
+        </div>
+
+        <div class="composer">
+          <textarea id="prompt" placeholder="Example: I need ~140ft of 7ft cedar board-on-board with steel posts in Kingwood."></textarea>
+          <button id="sendBtn" onclick="sendMsg()">Send</button>
+        </div>
+        <div id="status" class="status"></div>
+      </div>
+    </div>
+
+    <!-- CONTACT / LEAD CARD -->
+    <div class="card">
+      <div class="header">
+        <h1>Talk to us</h1>
+        <p>Fastest way to get scheduled or quoted.</p>
+      </div>
+
+      <div class="side">
+        <!-- EDIT THESE LINKS after you set your phone/email -->
+        <div class="contactButtons">
+          <a id="callLink" href="#" onclick="missingContact('phone'); return false;">Call</a>
+          <a id="textLink" href="#" onclick="missingContact('phone'); return false;">Text</a>
+          <a id="emailLink" href="#" onclick="missingContact('email'); return false;">Email</a>
+        </div>
+
+        <div class="note">
+          Want a real quote? Drop your details below. It saves to our inbox list and we’ll reach out.
+        </div>
+
+        <div class="form">
+          <div class="row">
+            <input id="leadName" type="text" placeholder="Name *" />
+            <input id="leadPhone" type="text" placeholder="Phone (recommended)" />
+          </div>
+
+          <div class="row">
+            <input id="leadEmail" type="email" placeholder="Email" />
+            <input id="leadZip" type="text" placeholder="Zip / City (Kingwood, Humble, Atascocita...)" />
+          </div>
+
+          <div class="row">
+            <select id="leadPref">
+              <option value="text">Preferred contact: Text</option>
+              <option value="call">Preferred contact: Call</option>
+              <option value="email">Preferred contact: Email</option>
+            </select>
+            <select id="leadType">
+              <option value="">Project type (optional)</option>
+              <option value="cedar">Cedar privacy fence</option>
+              <option value="board-on-board">Board-on-board cedar</option>
+              <option value="steel-posts">Steel posts upgrade</option>
+              <option value="gate">Gate (walk/double/sliding)</option>
+              <option value="repair">Repair</option>
+              <option value="stain">Staining</option>
+            </select>
+          </div>
+
+          <textarea id="leadDetails" placeholder="Project details * (approx feet, height 6/7/8ft, style, gates, timing)"></textarea>
+
+          <button id="leadBtn" onclick="sendLead()">Request a Quote</button>
+          <div id="leadStatus" class="smallok"></div>
+        </div>
+
+        <div class="brandline">
+          Astro Outdoor Designs • Built for real quotes, not fluff.
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+<script>
+  // ----------------------------
+  // EDIT THESE (IMPORTANT)
+  // Put your real phone/email here.
+  // If you leave them blank, the buttons will warn you.
+  // ----------------------------
+  const BUSINESS_PHONE = ""; // example: "9365551234"
+  const BUSINESS_EMAIL = ""; // example: "quotes@astrooutdoordesigns.com"
+
+  // Update buttons if you set values
+  const callLink = document.getElementById("callLink");
+  const textLink = document.getElementById("textLink");
+  const emailLink = document.getElementById("emailLink");
+
+  if (BUSINESS_PHONE) {
+    callLink.href = `tel:${BUSINESS_PHONE}`;
+    callLink.onclick = null;
+    textLink.href = `sms:${BUSINESS_PHONE}`;
+    textLink.onclick = null;
+  }
+  if (BUSINESS_EMAIL) {
+    emailLink.href = `mailto:${BUSINESS_EMAIL}`;
+    emailLink.onclick = null;
+  }
+
+  function missingContact(type){
+    alert(`Set your ${type} at the top of chat.html (BUSINESS_PHONE / BUSINESS_EMAIL) so these buttons work.`);
+  }
+
+  // ----------------------------
+  // CHAT
+  // ----------------------------
+  const messagesEl = document.getElementById("messages");
+  const promptEl = document.getElementById("prompt");
+  const statusEl = document.getElementById("status");
+  const sendBtn = document.getElementById("sendBtn");
+
+  function addMsg(text, who){
+    const div = document.createElement("div");
+    div.className = `msg ${who}`;
+    div.textContent = text;
+    messagesEl.appendChild(div);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
+
+  function quick(text){
+    promptEl.value = text;
+    promptEl.focus();
+  }
+
+  // First message
+  addMsg(
+    "Hi — we can help with a quote.\n" +
+    "To dial this in quick, tell us:\n" +
+    "• Approx length (feet)\n" +
+    "• Height (6/7/8ft)\n" +
+    "• Style (standard / board-on-board / top cap)\n" +
+    "• Steel posts or wood posts\n" +
+    "• Any gates (walk / double / sliding)",
+    "bot"
+  );
+
+  // Enter to send (Ctrl+Enter for newline)
+  promptEl.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.ctrlKey) {
+      e.preventDefault();
+      sendMsg();
+    }
+  });
+
+  async function sendMsg(){
+    const prompt = (promptEl.value || "").trim();
+    if (!prompt) return;
+
+    addMsg(prompt, "you");
+    promptEl.value = "";
+
+    // UI feedback (fixes “no acknowledgement” problem)
+    statusEl.textContent = "Working…";
+    sendBtn.disabled = true;
+
+    // Abort if it takes too long
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 60000); // 60 seconds
+
+    try{
+      const res = await fetch("/chat", {
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify({ prompt }),
+        signal: controller.signal
+      });
+
+      clearTimeout(timeout);
+
+      if(!res.ok){
+        const t = await res.text();
+        addMsg("We hit an error. Try again. " + t, "bot");
+        statusEl.textContent = "";
+        sendBtn.disabled = false;
+        return;
+      }
+
+      const data = await res.json();
+      addMsg(data.response || "Got it. What’s the approx feet and height?", "bot");
+      statusEl.textContent = "";
+      sendBtn.disabled = false;
+
+    } catch(err){
+      clearTimeout(timeout);
+      addMsg("That took too long or got blocked. Try again with: feet + height + fence style.", "bot");
+      statusEl.textContent = "";
+      sendBtn.disabled = false;
+    }
+  }
+
+  // ----------------------------
+  // LEAD FORM
+  // ----------------------------
+  const leadBtn = document.getElementById("leadBtn");
+  const leadStatus = document.getElementById("leadStatus");
+
+  async function sendLead(){
+    const name = (document.getElementById("leadName").value || "").trim();
+    const phone = (document.getElementById("leadPhone").value || "").trim();
+    const email = (document.getElementById("leadEmail").value || "").trim();
+    const address_or_zip = (document.getElementById("leadZip").value || "").trim();
+    const preferred_contact = (document.getElementById("leadPref").value || "text").trim();
+    const type = (document.getElementById("leadType").value || "").trim();
+    const detailsRaw = (document.getElementById("leadDetails").value || "").trim();
+
+    if(!name){
+      leadStatus.textContent = "Name is required.";
+      return;
+    }
+    if(!detailsRaw){
+      leadStatus.textContent = "Project details are required (feet, height, style, gates).";
+      return;
+    }
+
+    const project_details = type ? `[${type}] ${detailsRaw}` : detailsRaw;
+
+    leadBtn.disabled = true;
+    leadStatus.textContent = "Sending…";
+
+    try{
+      const res = await fetch("/lead", {
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify({
+          name,
+          phone,
+          email: email || null,
+          address_or_zip,
+          preferred_contact,
+          project_details
+        })
+      });
+
+      const data = await res.json();
+      if(data.ok){
+        leadStatus.textContent = data.message || "Sent. We’ll reach out shortly.";
+        document.getElementById("leadDetails").value = "";
+      } else {
+        leadStatus.textContent = "Couldn’t send. Try again.";
+      }
+
+    } catch(err){
+      leadStatus.textContent = "Couldn’t send. Check the server and try again.";
+    } finally {
+      leadBtn.disabled = false;
+    }
+  }
+</script>
+</body>
+</html>
