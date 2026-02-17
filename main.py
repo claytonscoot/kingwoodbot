@@ -34,18 +34,10 @@ WEBSITE = "astrooutdoordesigns.com"
 LEADS_FILE = "leads.csv"
 CHAT_SESSIONS_FILE = "chat_sessions.json"
 
-# Ollama settings
-OLLAMA_URL = os.getenv("OLLAMA_URL", "http://localhost:11434/api/generate")
-OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "phi")
-
-# Optimized for speed + quality
-OLLAMA_OPTIONS = {
-    "temperature": 0.35,
-    "num_predict": 120,  # Slightly longer for better responses
-    "top_p": 0.9,
-    "top_k": 40,
-    "repeat_penalty": 1.1
-}
+# Claude API settings
+ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
+CLAUDE_MODEL = "claude-haiku-4-5-20251001"  # Fast, cheap, high quality
+ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages"
 
 # In-memory storage for active sessions
 active_sessions: Dict[str, dict] = {}
@@ -80,7 +72,10 @@ class LiveQuoteRequest(BaseModel):
 async def lifespan(app: FastAPI):
     logger.info(f"🚀 Starting {BUSINESS_NAME} Chat System...")
     ensure_leads_file()
-    await test_ollama_connection()
+    if not ANTHROPIC_API_KEY:
+        logger.warning("⚠️ ANTHROPIC_API_KEY not set! Chat will not work.")
+    else:
+        logger.info("✅ Claude AI ready")
     yield
     logger.info("👋 Shutting down...")
 
@@ -123,26 +118,8 @@ def ensure_leads_file():
             ])
         logger.info(f"📝 Created {LEADS_FILE}")
 
-async def test_ollama_connection():
-    """Test Ollama connection and model availability"""
-    try:
-        response = requests.get("http://localhost:11434/api/tags", timeout=5)
-        if response.status_code == 200:
-            models = response.json().get("models", [])
-            model_names = [model["name"] for model in models]
-            if any(OLLAMA_MODEL.split(":")[0] in name for name in model_names):
-                logger.info(f"✅ AI Assistant ready - {OLLAMA_MODEL}")
-                return True
-            else:
-                logger.warning(f"⚠️ Model {OLLAMA_MODEL} not found. Available: {[m['name'] for m in models]}")
-        return False
-    except Exception as e:
-        logger.error(f"❌ Ollama connection failed: {e}")
-        return False
-
-def company_system_prompt(user_message: str) -> str:
-    """Create the company-specific AI prompt"""
-
+def get_system_prompt() -> str:
+    """Company-specific system prompt — edit this to match how YOU talk to customers"""
     return f"""
 You are the website chat assistant for {BUSINESS_NAME}, a professional fence & gate contractor serving {SERVICE_AREA}.
 
@@ -249,10 +226,27 @@ GOAL
 - Show clear math.
 - Encourage photos to tighten numbers.
 - Move toward scheduling confirmation visit.
-
-Customer message:
-{user_message}
 """.strip()
+
+def call_claude(user_message: str) -> str:
+    """Call Claude API and return response text"""
+    headers = {
+        "x-api-key": ANTHROPIC_API_KEY,
+        "anthropic-version": "2023-06-01",
+        "content-type": "application/json"
+    }
+    payload = {
+        "model": CLAUDE_MODEL,
+        "max_tokens": 500,
+        "system": get_system_prompt(),
+        "messages": [
+            {"role": "user", "content": user_message}
+        ]
+    }
+    response = requests.post(ANTHROPIC_API_URL, headers=headers, json=payload, timeout=30)
+    response.raise_for_status()
+    data = response.json()
+    return data["content"][0]["text"].strip()
 
 def generate_session_id() -> str:
     """Generate unique session ID"""
@@ -284,7 +278,7 @@ def health_check():
     return {
         "status": "ok", 
         "business": BUSINESS_NAME,
-        "model": OLLAMA_MODEL,
+        "model": CLAUDE_MODEL,
         "active_sessions": len(active_sessions),
         "total_leads": len(recent_leads),
         "phone": BUSINESS_PHONE,
@@ -331,20 +325,8 @@ def chat(req: Chat, request: Request):
             "business": BUSINESS_NAME
         }
 
-    # Prepare AI request
-    payload = {
-        "model": OLLAMA_MODEL,
-        "prompt": company_system_prompt(prompt),
-        "stream": False,
-        "keep_alive": "10m",
-        "options": OLLAMA_OPTIONS
-    }
-
     try:
-        response = requests.post(OLLAMA_URL, json=payload, timeout=120)
-        response.raise_for_status()
-        data = response.json()
-        ai_response = (data.get("response") or "").strip()
+        ai_response = call_claude(prompt)
 
         # Fallback for empty responses
         if not ai_response:
@@ -461,7 +443,6 @@ def submit_lead(req: Lead, request: Request):
 def request_live_quote(req: LiveQuoteRequest, request: Request):
     """Handle live quote consultation requests"""
     try:
-        # Update session for priority callback
         active_sessions[req.session_id] = {
             "created": datetime.now().isoformat(),
             "user_name": req.user_name,
@@ -474,7 +455,6 @@ def request_live_quote(req: LiveQuoteRequest, request: Request):
             "priority": "high"
         }
         
-        # Console notification
         print(f"\n🔥 *** LIVE QUOTE REQUEST *** 🔥")
         print(f"👤 {req.user_name} | 📱 {req.phone}")
         print(f"🔧 Service: {req.service_needed}")
@@ -504,7 +484,7 @@ def get_admin_data():
     return JSONResponse({
         "business_name": BUSINESS_NAME,
         "active_sessions": len(active_sessions),
-        "recent_leads": recent_leads[-10:],  # Last 10 leads
+        "recent_leads": recent_leads[-10:],
         "live_quote_requests": [
             session for session in active_sessions.values() 
             if session.get("type") == "live_quote_request"
@@ -545,6 +525,3 @@ def get_contact_info():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))
-
-
-
