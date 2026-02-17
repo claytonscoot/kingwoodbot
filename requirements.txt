@@ -3,3 +3,4 @@ uvicorn
 aiofiles
 requests
 pydantic
+email-validator
