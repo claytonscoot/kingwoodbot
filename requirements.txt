@@ -2,5 +2,6 @@ fastapi
 uvicorn
 aiofiles
 requests
-pydantic
+pydantic[email]
 email-validator
+
