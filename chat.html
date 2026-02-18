@@ -1,435 +1,222 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Astro Outdoor Designs – Fence Assistant</title>
+<!-- wp:html -->
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Segoe UI', sans-serif; background: #1a1a1a; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; padding: 20px; gap: 20px; flex-wrap: wrap; }
-
-  /* ---- CHAT PANEL ---- */
-  .chat-panel { background: #1e1e1e; border-radius: 16px; width: 100%; max-width: 520px; display: flex; flex-direction: column; height: 720px; overflow: hidden; box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
-  .chat-header { background: #e87722; color: white; padding: 18px 20px; }
-  .chat-header h2 { font-size: 18px; font-weight: 700; }
-  .chat-header p { font-size: 13px; opacity: 0.9; margin-top: 3px; }
-
-  /* Gallery bar */
-  .gallery-bar { background: #2a2a2a; padding: 10px 12px; border-bottom: 1px solid #333; }
-  .gallery-bar p { color: #aaa; font-size: 11px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
-  .style-buttons { display: flex; gap: 6px; flex-wrap: wrap; }
-  .style-btn { background: #333; color: #ddd; border: 1px solid #444; border-radius: 20px; padding: 5px 12px; font-size: 12px; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
-  .style-btn:hover, .style-btn.active { background: #e87722; color: white; border-color: #e87722; }
-
-  /* Photo modal */
-  .photo-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; justify-content: center; align-items: center; padding: 20px; }
-  .photo-modal.open { display: flex; }
-  .modal-content { background: #1e1e1e; border-radius: 16px; max-width: 680px; width: 100%; padding: 20px; position: relative; }
-  .modal-close { position: absolute; top: 12px; right: 16px; color: #aaa; font-size: 24px; cursor: pointer; line-height: 1; }
-  .modal-close:hover { color: white; }
-  .modal-title { color: white; font-size: 16px; font-weight: 700; margin-bottom: 4px; }
-  .modal-subtitle { color: #aaa; font-size: 13px; margin-bottom: 14px; }
-  .photo-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
-  .photo-grid img { width: 100%; height: 160px; object-fit: cover; border-radius: 10px; cursor: pointer; transition: transform 0.2s; }
-  .photo-grid img:hover { transform: scale(1.02); }
-  .modal-link { display: inline-block; margin-top: 14px; color: #e87722; font-size: 13px; text-decoration: none; }
-  .modal-link:hover { text-decoration: underline; }
-  .modal-ask-btn { display: block; width: 100%; margin-top: 12px; background: #e87722; color: white; border: none; border-radius: 10px; padding: 12px; font-size: 14px; font-weight: 600; cursor: pointer; }
-  .modal-ask-btn:hover { background: #cf6a1a; }
-
-  /* Chat messages */
-  .chat-messages { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
-  .msg { max-width: 85%; padding: 12px 15px; border-radius: 14px; font-size: 14px; line-height: 1.5; }
-  .msg.bot { background: #2a2a2a; color: #e8e8e8; align-self: flex-start; border-bottom-left-radius: 4px; }
-  .msg.user { background: #e87722; color: white; align-self: flex-end; border-bottom-right-radius: 4px; }
-  .msg.loading { color: #888; font-style: italic; }
-  .msg strong { font-weight: 700; }
-
-  /* Quick replies */
-  .quick-replies { padding: 8px 12px; display: flex; gap: 6px; flex-wrap: wrap; border-top: 1px solid #2a2a2a; }
-  .qr-btn { background: #2a2a2a; color: #ccc; border: 1px solid #3a3a3a; border-radius: 16px; padding: 6px 14px; font-size: 12px; cursor: pointer; transition: all 0.2s; }
-  .qr-btn:hover { background: #e87722; color: white; border-color: #e87722; }
-
-  /* Input area */
-  .chat-input-area { padding: 12px 16px; border-top: 1px solid #2a2a2a; display: flex; gap: 10px; align-items: flex-end; }
-  .chat-input-area textarea { flex: 1; background: #2a2a2a; color: white; border: 1px solid #3a3a3a; border-radius: 12px; padding: 10px 14px; font-size: 14px; resize: none; outline: none; font-family: inherit; max-height: 100px; min-height: 42px; line-height: 1.4; }
-  .chat-input-area textarea::placeholder { color: #666; }
-  .send-btn { background: #e87722; color: white; border: none; border-radius: 12px; padding: 10px 20px; font-size: 14px; font-weight: 600; cursor: pointer; white-space: nowrap; height: 42px; }
-  .send-btn:hover { background: #cf6a1a; }
-
-  /* ---- LEAD PANEL ---- */
-  .lead-panel { background: #1e1e1e; border-radius: 16px; width: 100%; max-width: 340px; display: flex; flex-direction: column; height: 720px; overflow: hidden; box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
-  .lead-header { background: #e87722; color: white; padding: 18px 20px; }
-  .lead-header h2 { font-size: 18px; font-weight: 700; }
-  .lead-header p { font-size: 13px; opacity: 0.9; margin-top: 3px; }
-  .contact-tabs { display: flex; gap: 0; padding: 16px 16px 0; }
-  .tab-btn { flex: 1; padding: 8px; background: #2a2a2a; color: #aaa; border: 1px solid #333; font-size: 13px; cursor: pointer; transition: all 0.2s; }
-  .tab-btn:first-child { border-radius: 8px 0 0 8px; }
-  .tab-btn:last-child { border-radius: 0 8px 8px 0; }
-  .tab-btn.active { background: #e87722; color: white; border-color: #e87722; }
-  .lead-form { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
-  .lead-form p.hint { color: #888; font-size: 12px; line-height: 1.5; }
-  .lead-form input, .lead-form select, .lead-form textarea { width: 100%; background: #2a2a2a; color: white; border: 1px solid #3a3a3a; border-radius: 10px; padding: 10px 14px; font-size: 13px; outline: none; font-family: inherit; }
-  .lead-form input::placeholder, .lead-form textarea::placeholder { color: #666; }
-  .lead-form select option { background: #2a2a2a; }
-  .lead-form textarea { resize: vertical; min-height: 90px; }
-  .row2 { display: flex; gap: 8px; }
-  .row2 > * { flex: 1; }
-  .submit-btn { width: 100%; background: #111; color: white; border: none; border-radius: 10px; padding: 13px; font-size: 14px; font-weight: 700; cursor: pointer; margin-top: 4px; }
-  .submit-btn:hover { background: #222; }
-  .lead-footer { padding: 12px 16px; text-align: center; color: #555; font-size: 11px; border-top: 1px solid #2a2a2a; }
-  .success-msg { display: none; background: #1a3a1a; border: 1px solid #2d6a2d; border-radius: 10px; padding: 16px; color: #7fca7f; font-size: 13px; text-align: center; line-height: 1.6; }
-
-  @media (max-width: 600px) {
-    body { padding: 10px; gap: 12px; }
-    .chat-panel, .lead-panel { max-width: 100%; height: auto; min-height: 500px; }
-    .photo-grid { grid-template-columns: 1fr; }
-  }
+.astro-gallery {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 20px;
+  font-family: 'Segoe UI', sans-serif;
+}
+.astro-gallery h1 {
+  text-align: center;
+  font-size: 32px;
+  margin-bottom: 10px;
+  color: #222;
+}
+.astro-gallery .subtitle {
+  text-align: center;
+  color: #666;
+  margin-bottom: 30px;
+  font-size: 16px;
+}
+.gallery-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 30px;
+}
+.gallery-tab {
+  background: #f0f0f0;
+  border: none;
+  border-radius: 20px;
+  padding: 8px 18px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.gallery-tab:hover, .gallery-tab.active {
+  background: #e87722;
+  color: white;
+}
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+.gallery-item {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+}
+.gallery-item img {
+  width: 100%;
+  height: 220px;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.3s;
+}
+.gallery-item:hover img {
+  transform: scale(1.04);
+}
+.gallery-item .label {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(transparent, rgba(0,0,0,0.7));
+  color: white;
+  padding: 20px 12px 10px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.lightbox {
+  display: none;
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.92);
+  z-index: 9999;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+}
+.lightbox.open { display: flex; }
+.lightbox img {
+  max-width: 90%;
+  max-height: 85vh;
+  border-radius: 10px;
+  object-fit: contain;
+}
+.lightbox-close {
+  position: fixed;
+  top: 20px; right: 28px;
+  color: white;
+  font-size: 36px;
+  cursor: pointer;
+  line-height: 1;
+  z-index: 10000;
+}
+.lightbox-caption {
+  position: fixed;
+  bottom: 20px;
+  left: 0; right: 0;
+  text-align: center;
+  color: white;
+  font-size: 15px;
+}
+.cta-bar {
+  text-align: center;
+  margin-top: 40px;
+  padding: 30px;
+  background: #f9f9f9;
+  border-radius: 14px;
+}
+.cta-bar h3 { font-size: 22px; margin-bottom: 8px; }
+.cta-bar p { color: #666; margin-bottom: 16px; }
+.cta-btn {
+  display: inline-block;
+  background: #e87722;
+  color: white;
+  padding: 12px 28px;
+  border-radius: 10px;
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 15px;
+  margin: 4px;
+}
+.cta-btn:hover { background: #cf6a1a; color: white; }
+@media (max-width: 600px) {
+  .gallery-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
+  .gallery-item img { height: 150px; }
+}
 </style>
-</head>
-<body>
 
-<!-- PHOTO MODAL -->
-<div class="photo-modal" id="photoModal">
-  <div class="modal-content">
-    <span class="modal-close" onclick="closeModal()">×</span>
-    <div class="modal-title" id="modalTitle"></div>
-    <div class="modal-subtitle" id="modalSubtitle"></div>
-    <div class="photo-grid" id="modalPhotos"></div>
-    <a class="modal-link" id="modalLink" href="#" target="_blank">View full gallery on our website →</a>
-    <button class="modal-ask-btn" onclick="askAboutStyle()">Get a quote for this style</button>
+<div class="astro-gallery">
+  <h1>Our Work</h1>
+  <p class="subtitle">Browse recent projects by Astro Outdoor Designs — Kingwood & Greater Houston</p>
+
+  <div class="gallery-tabs">
+    <button class="gallery-tab active" onclick="filterGallery('all', this)">All Projects</button>
+    <button class="gallery-tab" onclick="filterGallery('wood', this)">🌲 Wood Fence</button>
+    <button class="gallery-tab" onclick="filterGallery('metal', this)">⚙️ Metal Fence</button>
+    <button class="gallery-tab" onclick="filterGallery('chainlink', this)">🔗 Chain Link</button>
+    <button class="gallery-tab" onclick="filterGallery('vinyl', this)">🤍 Vinyl</button>
+    <button class="gallery-tab" onclick="filterGallery('gate', this)">🚪 Gates</button>
+    <button class="gallery-tab" onclick="filterGallery('staining', this)">🖌️ Staining</button>
+    <button class="gallery-tab" onclick="filterGallery('deck', this)">🏗️ Decks</button>
+    <button class="gallery-tab" onclick="filterGallery('powerwashing', this)">💧 Power Washing</button>
+    <button class="gallery-tab" onclick="filterGallery('lighting', this)">🎄 Lighting</button>
+    <button class="gallery-tab" onclick="filterGallery('firewood', this)">🪵 Firewood</button>
+  </div>
+
+  <div class="gallery-grid" id="galleryGrid"></div>
+
+  <div class="cta-bar">
+    <h3>Ready to get started?</h3>
+    <p>Call, text, or use our chat assistant to get a free estimate.</p>
+    <a class="cta-btn" href="tel:+18322805783">📞 Call 832-280-5783</a>
+    <a class="cta-btn" href="/contact">💬 Get a Free Quote</a>
   </div>
 </div>
 
-<!-- CHAT PANEL -->
-<div class="chat-panel">
-  <div class="chat-header">
-    <h2>Astro Outdoor Designs – Fence Assistant</h2>
-    <p>Ask about cedar fences, steel posts, gates, repairs, staining & more.</p>
-  </div>
-
-  <div class="gallery-bar">
-    <p>Browse our work</p>
-    <div class="style-buttons">
-      <button class="style-btn" onclick="showGallery('wood')">🌲 Cedar/Wood</button>
-      <button class="style-btn" onclick="showGallery('metal')">⚙️ Metal/Steel</button>
-      <button class="style-btn" onclick="showGallery('chainlink')">🔗 Chain Link</button>
-      <button class="style-btn" onclick="showGallery('vinyl')">🤍 Vinyl</button>
-      <button class="style-btn" onclick="showGallery('gate')">🚪 Gates</button>
-      <button class="style-btn" onclick="showGallery('staining')">🖌️ Staining</button>
-      <button class="style-btn" onclick="showGallery('powerwashing')">💧 Power Washing</button>
-      <button class="style-btn" onclick="showGallery('lighting')">🎄 Christmas Lights</button>
-      <button class="style-btn" onclick="showGallery('firewood')">🪵 Firewood</button>
-      <button class="style-btn" onclick="showGallery('deck')">🪵 Deck</button>
-    </div>
-    <a href="https://astrooutdoordesigns.com/services/" target="_blank" style="display:inline-block; margin-top:8px; color:#e87722; font-size:12px; text-decoration:none;">📷 View full photo gallery on our website →</a>
-  </div>
-
-  <div class="chat-messages" id="chatMessages">
-    <div class="msg bot">
-      Hi — we can help with a quote.<br>
-      To dial this in quick, tell us:
-      <br>• Approx length (feet)
-      <br>• Height (6/7/8ft)
-      <br>• Style (standard / board-on-board / top cap)
-      <br>• Steel posts or wood posts
-      <br>• Any gates (walk / double / sliding)
-    </div>
-  </div>
-
-  <div class="quick-replies">
-    <button class="qr-btn" onclick="quickSend('Cedar fence quote')">Cedar fence quote</button>
-    <button class="qr-btn" onclick="quickSend('Steel posts')">Steel posts</button>
-    <button class="qr-btn" onclick="quickSend('Gate help')">Gate help</button>
-    <button class="qr-btn" onclick="quickSend('Gate repair')">Gate repair</button>
-    <button class="qr-btn" onclick="quickSend('Staining')">Staining</button>
-  </div>
-
-  <div class="chat-input-area">
-    <textarea id="userInput" placeholder="Example: I need ~140ft of 7ft cedar board-on-board with steel posts in Kingwood." rows="1" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
-    <button class="send-btn" onclick="sendMessage()">Send</button>
-  </div>
-</div>
-
-<!-- LEAD PANEL -->
-<div class="lead-panel">
-  <div class="lead-header">
-    <h2>Talk to us</h2>
-    <p>Fastest way to get scheduled or quoted.</p>
-  </div>
-
-  <div class="contact-tabs">
-    <button class="tab-btn active" onclick="setTab('call')">Call</button>
-    <button class="tab-btn" onclick="setTab('text')">Text</button>
-    <button class="tab-btn" onclick="setTab('email')">Email</button>
-  </div>
-
-  <div class="lead-form" id="leadForm">
-    <p class="hint">Want a real quote? Drop your details below. It saves to our inbox list and we'll reach out.</p>
-
-    <input type="text" id="leadName" placeholder="Name *" />
-    <div class="row2">
-      <input type="tel" id="leadPhone" placeholder="Phone (recommended)" />
-      <input type="email" id="leadEmail" placeholder="Email" />
-    </div>
-    <input type="text" id="leadZip" placeholder="Zip / City (Kingwood, Humble...)" />
-    <div class="row2">
-      <select id="leadContact">
-        <option value="text">Preferred contact: Text</option>
-        <option value="call">Preferred contact: Call</option>
-        <option value="email">Preferred contact: Email</option>
-      </select>
-      <select id="leadProject">
-        <option value="">Project type (optional)</option>
-        <option value="New wood fence">New wood fence</option>
-        <option value="New metal fence">New metal fence</option>
-        <option value="New chain link">New chain link</option>
-        <option value="New vinyl fence">New vinyl fence</option>
-        <option value="Gate installation">Gate installation</option>
-        <option value="Gate repair">Gate repair</option>
-        <option value="Fence repair">Fence repair</option>
-        <option value="Fence staining">Fence staining</option>
-        <option value="Deck installation">Deck installation</option>
-        <option value="Power washing">Power washing</option>
-        <option value="Other">Other</option>
-      </select>
-    </div>
-    <textarea id="leadDetails" placeholder="Project details * (approx feet, height 6/7/8ft, style, gates, timing)"></textarea>
-    <button class="submit-btn" onclick="submitLead()">Request a Quote</button>
-    <div class="success-msg" id="successMsg"></div>
-  </div>
-
-  <div class="lead-footer">Astro Outdoor Designs • Built for real quotes, not fluff.</div>
+<!-- Lightbox -->
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+  <span class="lightbox-close" onclick="closeLightbox()">×</span>
+  <img id="lightboxImg" src="" alt="">
+  <div class="lightbox-caption" id="lightboxCaption"></div>
 </div>
 
 <script>
-  let sessionId = null;
-  let currentStyle = null;
+const PHOTOS = [
+  { src: "https://astrooutdoordesigns.com/wp-content/uploads/2021/05/6.8-Cedar-Pickets.-2x6-baseboard.-Cedar-top-cap-and-trim-png.webp", label: "Cedar Privacy Fence", cat: "wood" },
+  { src: "https://astrooutdoordesigns.com/wp-content/uploads/2021/05/fincing-1024x784.png", label: "Wood Fence Installation", cat: "wood" },
+  { src: "https://astrooutdoordesigns.com/wp-content/uploads/2021/10/astrooutdoor-Residential-Fencing-1-300x179.jpg", label: "Residential Wood Fence", cat: "wood" },
+  { src: "https://astrooutdoordesigns.com/wp-content/uploads/2021/06/Attachment_1622724541-7.jpeg", label: "Cedar Board Fence", cat: "wood" },
+  { src: "https://astrooutdoordesigns.com/wp-content/uploads/2021/05/METAL-FENCE-ON-A-SLOPE-png.webp", label: "Metal Fence on Slope", cat: "metal" },
+  { src: "https://astrooutdoordesigns.com/wp-content/uploads/2021/05/Metal-Frame-Gate2.webp", label: "Metal Frame Gate", cat: "metal" },
+  { src: "https://astrooutdoordesigns.com/wp-content/uploads/2019/01/Chain-Link-Fencing.jpg", label: "Chain Link Fence", cat: "chainlink" },
+  { src: "https://astrooutdoordesigns.com/wp-content/uploads/2021/05/Attachment_1622001073-2-scaled.jpeg", label: "Vinyl Fence Installation", cat: "vinyl" },
+  { src: "https://astrooutdoordesigns.com/wp-content/uploads/2019/01/astro-outdoors-design-gates.jpg", label: "Gate Installation", cat: "gate" },
+  { src: "https://astrooutdoordesigns.com/wp-content/uploads/2021/12/astrooutdoordesigns-2-scaled.jpg", label: "Fence Staining", cat: "staining" },
+  { src: "https://astrooutdoordesigns.com/wp-content/uploads/2024/03/quanah-martin-stain-picture-with-trailer.jpg", label: "Professional Staining", cat: "staining" },
+  { src: "https://astrooutdoordesigns.com/wp-content/uploads/2021/06/Attachment_1622724541-13.jpeg", label: "Deck Installation", cat: "deck" },
+  { src: "https://astrooutdoordesigns.com/wp-content/uploads/2024/09/power-washing-image.jpg", label: "Power Washing", cat: "powerwashing" },
+  { src: "https://astrooutdoordesigns.com/wp-content/uploads/2025/04/01961410-ab25-7ccb-90e9-00383fa2ab8c.webp", label: "Christmas Light Install", cat: "lighting" },
+  { src: "https://astrooutdoordesigns.com/wp-content/uploads/2024/12/fireood-picture.webp", label: "Firewood Delivery", cat: "firewood" },
+];
 
-  const FENCE_STYLES = {
-    wood: {
-      title: "Cedar & Wood Fence",
-      subtitle: "Our most popular style — natural, private, and customizable.",
-      link: "https://astrooutdoordesigns.com/wood-fence-installation/",
-      photos: [
-        "https://astrooutdoordesigns.com/wp-content/uploads/2021/05/6.8-Cedar-Pickets.-2x6-baseboard.-Cedar-top-cap-and-trim-png.webp",
-        "https://astrooutdoordesigns.com/wp-content/uploads/2021/05/fincing-1024x784.png",
-        "https://astrooutdoordesigns.com/wp-content/uploads/2021/10/astrooutdoor-Residential-Fencing-1-300x179.jpg",
-        "https://astrooutdoordesigns.com/wp-content/uploads/2021/06/Attachment_1622724541-7.jpeg"
-      ]
-    },
-    metal: {
-      title: "Metal & Steel Fence",
-      subtitle: "Strong, elegant, and low-maintenance. Great for pools and front yards.",
-      link: "https://astrooutdoordesigns.com/metal-fence-installation-houston/",
-      photos: [
-        "https://astrooutdoordesigns.com/wp-content/uploads/2021/05/METAL-FENCE-ON-A-SLOPE-png.webp",
-        "https://astrooutdoordesigns.com/wp-content/uploads/2021/05/Metal-Frame-Gate2.webp"
-      ]
-    },
-    chainlink: {
-      title: "Chain Link Fence",
-      subtitle: "Affordable, durable, and great for larger properties.",
-      link: "https://astrooutdoordesigns.com/chain-link-fence-installation/",
-      photos: [
-        "https://astrooutdoordesigns.com/wp-content/uploads/2019/01/Chain-Link-Fencing.jpg"
-      ]
-    },
-    vinyl: {
-      title: "Vinyl Fence",
-      subtitle: "Low maintenance, clean look, never needs staining or painting.",
-      link: "https://astrooutdoordesigns.com/vinyl-fence-installation/",
-      photos: [
-        "https://astrooutdoordesigns.com/wp-content/uploads/2021/05/Attachment_1622001073-2-scaled.jpeg"
-      ]
-    },
-    gate: {
-      title: "Gate Installation",
-      subtitle: "Walk gates, double drive gates, and custom designs.",
-      link: "https://astrooutdoordesigns.com/gate-installation/",
-      photos: [
-        "https://astrooutdoordesigns.com/wp-content/uploads/2019/01/astro-outdoors-design-gates.jpg",
-        "https://astrooutdoordesigns.com/wp-content/uploads/2021/05/Metal-Frame-Gate2.webp"
-      ]
-    },
-    staining: {
-      title: "Fence Staining",
-      subtitle: "We use Wood Defender semi-transparent stain. Protects your fence from Houston humidity.",
-      link: "https://astrooutdoordesigns.com/houston-fence-staining/",
-      photos: [
-        "https://astrooutdoordesigns.com/wp-content/uploads/2021/12/astrooutdoordesigns-2-scaled.jpg",
-        "https://astrooutdoordesigns.com/wp-content/uploads/2024/03/quanah-martin-stain-picture-with-trailer.jpg"
-      ]
-    },
-    powerwashing: {
-      title: "Power Washing",
-      subtitle: "Professional power washing for fences, decks, driveways, and more.",
-      link: "https://astrooutdoordesigns.com/power-washing/",
-      photos: [
-        "https://astrooutdoordesigns.com/wp-content/uploads/2024/09/power-washing-image.jpg"
-      ]
-    },
-    lighting: {
-      title: "Christmas & Outdoor Lighting",
-      subtitle: "Award-winning holiday light installs. Professional installation and takedown.",
-      link: "https://astrooutdoordesigns.com/holiday-lighting/",
-      photos: [
-        "https://astrooutdoordesigns.com/wp-content/uploads/2025/04/01961410-ab25-7ccb-90e9-00383fa2ab8c.webp"
-      ]
-    },
-    firewood: {
-      title: "Firewood Delivery",
-      subtitle: "Seasoned firewood delivered to your door in the Kingwood / Houston area.",
-      link: "https://astrooutdoordesigns.com/astro-firewood/",
-      photos: [
-        "https://astrooutdoordesigns.com/wp-content/uploads/2024/12/fireood-picture.webp"
-      ]
-    },
-    deck: {
-      title: "Deck Installation",
-      subtitle: "Custom wood and Trex composite decks built to last in the Houston climate.",
-      link: "https://astrooutdoordesigns.com/deck-installation/",
-      photos: [
-        "https://astrooutdoordesigns.com/wp-content/uploads/2021/06/Attachment_1622724541-13.jpeg"
-      ]
-    }
-  };
+let currentFilter = 'all';
 
-  function showGallery(style) {
-    currentStyle = style;
-    const data = FENCE_STYLES[style];
-    document.getElementById('modalTitle').textContent = data.title;
-    document.getElementById('modalSubtitle').textContent = data.subtitle;
-    document.getElementById('modalLink').href = data.link;
-    const grid = document.getElementById('modalPhotos');
-    grid.innerHTML = data.photos.map(url =>
-      `<img src="${url}" alt="${data.title}" onerror="this.style.display='none'">`
-    ).join('');
-    document.getElementById('photoModal').classList.add('open');
-    document.querySelectorAll('.style-btn').forEach(b => b.classList.remove('active'));
-    event.target.classList.add('active');
-  }
+function renderGallery(filter) {
+  const grid = document.getElementById('galleryGrid');
+  const filtered = filter === 'all' ? PHOTOS : PHOTOS.filter(p => p.cat === filter);
+  grid.innerHTML = filtered.map((p, i) => `
+    <div class="gallery-item" onclick="openLightbox('${p.src}', '${p.label}')">
+      <img src="${p.src}" alt="${p.label}" onerror="this.closest('.gallery-item').style.display='none'">
+      <div class="label">${p.label}</div>
+    </div>
+  `).join('');
+}
 
-  function closeModal() {
-    document.getElementById('photoModal').classList.remove('open');
-  }
+function filterGallery(cat, btn) {
+  currentFilter = cat;
+  document.querySelectorAll('.gallery-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderGallery(cat);
+}
 
-  function askAboutStyle() {
-    closeModal();
-    const data = FENCE_STYLES[currentStyle];
-    quickSend(`I'm interested in ${data.title}. Can you give me a quote?`);
-  }
+function openLightbox(src, caption) {
+  document.getElementById('lightboxImg').src = src;
+  document.getElementById('lightboxCaption').textContent = caption;
+  document.getElementById('lightbox').classList.add('open');
+}
 
-  document.getElementById('photoModal').addEventListener('click', function(e) {
-    if (e.target === this) closeModal();
-  });
+function closeLightbox() {
+  document.getElementById('lightbox').classList.remove('open');
+}
 
-  function formatMessage(text) {
-    return text
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      .replace(/\n/g, '<br>');
-  }
-
-  function addMessage(text, type) {
-    const msgs = document.getElementById('chatMessages');
-    const div = document.createElement('div');
-    div.className = `msg ${type}`;
-    div.innerHTML = formatMessage(text);
-    msgs.appendChild(div);
-    msgs.scrollTop = msgs.scrollHeight;
-    return div;
-  }
-
-  async function sendMessage() {
-    const input = document.getElementById('userInput');
-    const text = input.value.trim();
-    if (!text) return;
-    input.value = '';
-    input.style.height = 'auto';
-    addMessage(text, 'user');
-    const loading = addMessage('...', 'bot loading');
-
-    try {
-      const res = await fetch('/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: text, session_id: sessionId })
-      });
-      const data = await res.json();
-      sessionId = data.session_id;
-      loading.remove();
-      addMessage(data.response, 'bot');
-    } catch (e) {
-      loading.remove();
-      addMessage('Something went wrong. Please try again or call us at 832-280-5783.', 'bot');
-    }
-  }
-
-  function quickSend(text) {
-    document.getElementById('userInput').value = text;
-    sendMessage();
-  }
-
-  function handleKey(e) {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
-    }
-  }
-
-  function autoResize(el) {
-    el.style.height = 'auto';
-    el.style.height = Math.min(el.scrollHeight, 100) + 'px';
-  }
-
-  function setTab(tab) {
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    event.target.classList.add('active');
-    document.getElementById('leadContact').value = tab;
-  }
-
-  async function submitLead() {
-    const name = document.getElementById('leadName').value.trim();
-    const details = document.getElementById('leadDetails').value.trim();
-    const project = document.getElementById('leadProject').value;
-
-    if (!name) { alert('Please enter your name.'); return; }
-    if (!details && !project) { alert('Please describe your project.'); return; }
-
-    const fullDetails = project ? `[${project}] ${details}` : details;
-    if (fullDetails.length < 10) { alert('Please add a bit more detail about your project.'); return; }
-
-    const payload = {
-      name,
-      phone: document.getElementById('leadPhone').value.trim(),
-      email: document.getElementById('leadEmail').value.trim(),
-      address_or_zip: document.getElementById('leadZip').value.trim(),
-      preferred_contact: document.getElementById('leadContact').value,
-      project_details: fullDetails
-    };
-
-    try {
-      const res = await fetch('/lead', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      const data = await res.json();
-      if (data.ok) {
-        const msg = document.getElementById('successMsg');
-        msg.style.display = 'block';
-        msg.innerHTML = `✅ Got it, ${name}!<br>${data.message}`;
-        document.getElementById('leadName').value = '';
-        document.getElementById('leadPhone').value = '';
-        document.getElementById('leadEmail').value = '';
-        document.getElementById('leadZip').value = '';
-        document.getElementById('leadDetails').value = '';
-        document.getElementById('leadProject').value = '';
-      }
-    } catch (e) {
-      alert('Submission failed. Please call us at 832-280-5783.');
-    }
-  }
+renderGallery('all');
 </script>
-</body>
-</html>
+<!-- /wp:html -->
