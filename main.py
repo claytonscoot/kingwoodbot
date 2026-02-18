@@ -84,11 +84,16 @@ app = FastAPI(title=f"{BUSINESS_NAME} - Fence Assistant", lifespan=lifespan)
 # CORS - Allow embedding/cross-domain calls (ngrok, wordpress, etc.)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Tighten later if needed
+    allow_origins=[
+        "https://astrooutdoordesigns.com",
+        "https://www.astrooutdoordesigns.com",
+        "https://astro-fence-assistant.onrender.com"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 # Mount static files (optional)
 try:
@@ -630,3 +635,4 @@ def get_contact_info():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))
+
