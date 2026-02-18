@@ -536,48 +536,45 @@ def submit_lead(req: Lead, request: Request):
         print(f"✉️  Quick help email: {BUSINESS_EMAIL}")
         print("=" * 60)
 
-# Send email notification via Brevo
-try:
-    brevo_api_key = os.getenv("BREVO_API_KEY")
-    notify_email = os.getenv("LEAD_NOTIFY_EMAIL", "admin@astrooutdoordesigns.com")
-    from_email = os.getenv("BREVO_FROM_EMAIL", "forms@astrooutdoordesigns.com")
-
-    if brevo_api_key:
-        url = "https://api.brevo.com/v3/smtp/email"
-        headers = {
-            "accept": "application/json",
-            "api-key": brevo_api_key,
-            "content-type": "application/json"
-        }
-
-        payload = {
-            "sender": {
-                "name": BUSINESS_NAME,
-                "email": from_email
-            },
-            "to": [{"email": notify_email}],
-            "subject": f"🔥 New Fence Lead - {req.name}",
-            "textContent": (
-                f"New Lead Received:\n\n"
-                f"Name: {req.name}\n"
-                f"Phone: {req.phone}\n"
-                f"Email: {req.email or 'N/A'}\n"
-                f"Area: {req.address_or_zip}\n"
-                f"Preferred Contact: {req.preferred_contact}\n\n"
-                f"Project Details:\n{req.project_details}\n\n"
-                f"Timestamp: {timestamp}\n"
-                f"Lead ID: {lead_id}\n"
-            )
-        }
-
-        r = requests.post(url, headers=headers, json=payload, timeout=10)
-        r.raise_for_status()
-        print("📧 Brevo email sent successfully")
-    else:
-        logger.warning("BREVO_API_KEY not set — skipping email notification.")
-
-except Exception as email_error:
-    logger.error(f"Brevo email send failed: {email_error}")
+        # Send email notification via Brevo
+        try:
+            brevo_api_key = os.getenv("BREVO_API_KEY")
+            notify_email = os.getenv("LEAD_NOTIFY_EMAIL", "admin@astrooutdoordesigns.com")
+            from_email = os.getenv("BREVO_FROM_EMAIL", "forms@astrooutdoordesigns.com")
+        
+            if brevo_api_key:
+                url = "https://api.brevo.com/v3/smtp/email"
+                headers = {
+                    "accept": "application/json",
+                    "api-key": brevo_api_key,
+                    "content-type": "application/json"
+                }
+        
+                payload = {
+                    "sender": {"name": BUSINESS_NAME,"email": from_email},
+                    "to": [{"email": notify_email}],
+                    "subject": f"🔥 New Fence Lead - {req.name}",
+                    "textContent": (
+                        f"New Lead Received:\n\n"
+                        f"Name: {req.name}\n"
+                        f"Phone: {req.phone}\n"
+                        f"Email: {req.email or 'N/A'}\n"
+                        f"Area: {req.address_or_zip}\n"
+                        f"Preferred Contact: {req.preferred_contact}\n\n"
+                        f"Project Details:\n{req.project_details}\n\n"
+                        f"Timestamp: {timestamp}\n"
+                        f"Lead ID: {lead_id}\n"
+                    )
+                }
+        
+                r = requests.post(url, headers=headers, json=payload, timeout=10)
+                r.raise_for_status()
+                print("📧 Brevo email sent successfully")
+            else:
+                logger.warning("BREVO_API_KEY not set — skipping email notification.")
+        
+        except Exception as email_error:
+            logger.error(f"Brevo email send failed: {email_error}")
 
 
 
@@ -680,6 +677,7 @@ def get_contact_info():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))
+
 
 
 
