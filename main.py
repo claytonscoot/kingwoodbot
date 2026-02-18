@@ -88,6 +88,7 @@ app.add_middleware(
         "https://astrooutdoordesigns.com",
         "https://www.astrooutdoordesigns.com",
         "https://astro-fence-assistant.onrender.com"
+        "https://api.brevo.com/v3/smtp/email"
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -677,6 +678,7 @@ def get_contact_info():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))
+
 
 
 
