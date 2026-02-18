@@ -9,7 +9,7 @@
   body { font-family: 'Segoe UI', sans-serif; background: #1a1a1a; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; padding: 20px; gap: 20px; flex-wrap: wrap; }
 
   /* ---- CHAT PANEL ---- */
-  .chat-panel { background: #1e1e1e; border-radius: 16px; width: 100%; max-width: 520px; display: flex; flex-direction: column; height: 720px; overflow: hidden; box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
+  .chat-panel { background: #1e1e1e; border-radius: 16px; width: 100%; max-width: 520px; display: flex; flex-direction: column; height: 850px; overflow: hidden; box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
   .chat-header { background: #e87722; color: white; padding: 18px 20px; }
   .chat-header h2 { font-size: 18px; font-weight: 700; }
   .chat-header p { font-size: 13px; opacity: 0.9; margin-top: 3px; }
@@ -52,13 +52,13 @@
 
   /* Input area */
   .chat-input-area { padding: 12px 16px; border-top: 1px solid #2a2a2a; display: flex; gap: 10px; align-items: flex-end; }
-  .chat-input-area textarea { flex: 1; background: #2a2a2a; color: white; border: 1px solid #3a3a3a; border-radius: 12px; padding: 10px 14px; font-size: 14px; resize: none; outline: none; font-family: inherit; max-height: 100px; min-height: 42px; line-height: 1.4; }
-  .chat-input-area textarea::placeholder { color: #666; }
-  .send-btn { background: #e87722; color: white; border: none; border-radius: 12px; padding: 10px 20px; font-size: 14px; font-weight: 600; cursor: pointer; white-space: nowrap; height: 42px; }
+  .chat-input-area textarea { flex: 1; background: #2a2a2a; color: white; border: 2px solid #e87722; border-radius: 12px; padding: 12px 14px; font-size: 15px; resize: none; outline: none; font-family: inherit; max-height: 120px; min-height: 60px; line-height: 1.5; }
+  .chat-input-area textarea::placeholder { color: #888; font-size: 13px; }
+  .send-btn { background: #e87722; color: white; border: none; border-radius: 12px; padding: 10px 22px; font-size: 15px; font-weight: 700; cursor: pointer; white-space: nowrap; height: 60px; }
   .send-btn:hover { background: #cf6a1a; }
 
   /* ---- LEAD PANEL ---- */
-  .lead-panel { background: #1e1e1e; border-radius: 16px; width: 100%; max-width: 340px; display: flex; flex-direction: column; height: 720px; overflow: hidden; box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
+  .lead-panel { background: #1e1e1e; border-radius: 16px; width: 100%; max-width: 340px; display: flex; flex-direction: column; height: 850px; overflow: hidden; box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
   .lead-header { background: #e87722; color: white; padding: 18px 20px; }
   .lead-header h2 { font-size: 18px; font-weight: 700; }
   .lead-header p { font-size: 13px; opacity: 0.9; margin-top: 3px; }
@@ -80,10 +80,15 @@
   .lead-footer { padding: 12px 16px; text-align: center; color: #555; font-size: 11px; border-top: 1px solid #2a2a2a; }
   .success-msg { display: none; background: #1a3a1a; border: 1px solid #2d6a2d; border-radius: 10px; padding: 16px; color: #7fca7f; font-size: 13px; text-align: center; line-height: 1.6; }
 
-  @media (max-width: 600px) {
-    body { padding: 10px; gap: 12px; }
-    .chat-panel, .lead-panel { max-width: 100%; height: auto; min-height: 500px; }
+  @media (max-width: 768px) {
+    body { padding: 10px; gap: 0; flex-direction: column; align-items: center; }
+    .chat-panel { max-width: 100%; height: 680px; border-radius: 16px 16px 0 0; }
+    .lead-panel { max-width: 100%; height: auto; border-radius: 0 0 16px 16px; border-top: 3px solid #e87722; }
     .photo-grid { grid-template-columns: 1fr; }
+    .chat-header h2 { font-size: 15px; }
+    .style-btn { font-size: 11px; padding: 4px 10px; }
+    .lead-header { display: flex; align-items: center; gap: 12px; }
+    .lead-header::before { content: '👇'; font-size: 20px; }
   }
 </style>
 </head>
@@ -104,8 +109,8 @@
 <!-- CHAT PANEL -->
 <div class="chat-panel">
   <div class="chat-header">
-    <h2>Astro Outdoor Designs – Fence Assistant</h2>
-    <p>Ask about cedar fences, steel posts, gates, repairs, staining & more.</p>
+    <h2>💬 Astro Outdoor Designs – Fence Assistant</h2>
+    <p>🤖 AI-powered chat — get instant quotes, pricing & answers 24/7</p>
   </div>
 
   <div class="gallery-bar">
@@ -146,8 +151,11 @@
   </div>
 
   <div class="chat-input-area">
-    <textarea id="userInput" placeholder="Example: I need ~140ft of 7ft cedar board-on-board with steel posts in Kingwood." rows="1" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+    <textarea id="userInput" placeholder="Type your question here... (e.g. I need a 150ft cedar fence with steel posts)" rows="2" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
     <button class="send-btn" onclick="sendMessage()">Send</button>
+  </div>
+  <div style="padding: 6px 16px 10px; text-align: center; color: #555; font-size: 11px; line-height: 1.4;">
+    ⚠️ This assistant is AI-powered and provides estimates only. All pricing is approximate — contact us directly for an official quote.
   </div>
 </div>
 
