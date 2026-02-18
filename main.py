@@ -47,59 +47,26 @@ GOOGLE_SHEET_RANGE = "Sheet1"  # Change if your sheet tab has a different name
 active_sessions: Dict[str, dict] = {}
 recent_leads: List[dict] = []
 
+
 # ----------------------------
 # GOOGLE SHEETS HELPER
 # ----------------------------
 def get_google_token() -> str:
-    """Get OAuth2 access token for Google Sheets API using service account credentials"""
-    import time
-    import base64
-    import hashlib
-    import hmac
-    
-    # Load credentials from environment variable
+    """Get OAuth2 access token for Google Sheets API using google-auth library"""
+    import google.auth.transport.requests
+    from google.oauth2 import service_account
+
     creds_json = os.getenv("GOOGLE_SERVICE_ACCOUNT_JSON", "")
     if not creds_json:
         raise Exception("GOOGLE_SERVICE_ACCOUNT_JSON environment variable not set")
-    
-    creds = json.loads(creds_json)
-    
-    # Build JWT
-    now = int(time.time())
-    header = base64.urlsafe_b64encode(json.dumps({"alg": "RS256", "typ": "JWT"}).encode()).rstrip(b"=").decode()
-    payload = base64.urlsafe_b64encode(json.dumps({
-        "iss": creds["client_email"],
-        "scope": "https://www.googleapis.com/auth/spreadsheets",
-        "aud": "https://oauth2.googleapis.com/token",
-        "exp": now + 3600,
-        "iat": now
-    }).encode()).rstrip(b"=").decode()
-    
-    message = f"{header}.{payload}"
-    
-    # Sign with private key using cryptography library
-    from cryptography.hazmat.primitives import hashes, serialization
-    from cryptography.hazmat.primitives.asymmetric import padding
-    from cryptography.hazmat.backends import default_backend
-    
-    private_key = serialization.load_pem_private_key(
-        creds["private_key"].encode(),
-        password=None,
-        backend=default_backend()
+
+    creds_dict = json.loads(creds_json)
+    creds = service_account.Credentials.from_service_account_info(
+        creds_dict,
+        scopes=["https://www.googleapis.com/auth/spreadsheets"]
     )
-    
-    signature = private_key.sign(message.encode(), padding.PKCS1v15(), hashes.SHA256())
-    sig_encoded = base64.urlsafe_b64encode(signature).rstrip(b"=").decode()
-    
-    jwt_token = f"{message}.{sig_encoded}"
-    
-    # Exchange JWT for access token
-    resp = requests.post("https://oauth2.googleapis.com/token", data={
-        "grant_type": "urn:ietf:params:oauth:grant-type:jwt-bearer",
-        "assertion": jwt_token
-    }, timeout=10)
-    resp.raise_for_status()
-    return resp.json()["access_token"]
+    creds.refresh(google.auth.transport.requests.Request())
+    return creds.token
 
 
 def append_lead_to_sheets(lead_row: list):
@@ -786,3 +753,4 @@ def get_contact_info():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))
+
