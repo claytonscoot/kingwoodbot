@@ -2,50 +2,81 @@
 Folder: kingwoodbot/
 
 ⚙️ PROJECT OVERVIEW
-This project is a self‑contained fence quote chatbot and lead capture web app built with:
+This project is a self-contained fence quote chatbot and lead capture web app built with:
 
 Frontend: HTML/CSS/JS (chat.html, admin.html)
 Backend: FastAPI (main.py)
-Data storage: CSV files for leads
-Optional AI: Ollama local LLM (used for smart chat responses)
-Local startup script: start.bat
+Hosting: Render.com (always-on, no local server needed)
+AI: Claude (claude-haiku-4-5) via Anthropic API
+Lead Storage: Google Sheets (permanent) + local CSV (temporary fallback)
+Email Alerts: Brevo SMTP on every lead submission
+Local legacy script: start.bat (no longer needed — kept for reference only)
+
 Users can chat to describe their project, get a working estimate, and submit a quote request.
-Submitted data is saved locally and viewable in the admin dashboard.
+Submitted leads are saved to Google Sheets and emailed to admin@astrooutdoordesigns.com.
 
 📂 FILE STRUCTURE & PURPOSE
-File / Folder	Description
-main.py	FastAPI backend server. Handles routes /, /chat, /lead, /admin, /admin/data, /live-quote, etc. Creates and updates leads.csv, manages sessions, and talks to Ollama if installed.
-chat.html	Public chat interface. The customer uses this to describe their fencing project. It calls /chat for responses and /lead to request a quote.
-admin.html	Internal dashboard. Displays stats and recent leads by calling GET /admin/data.
-leads.csv	Local storage of submitted quote requests (appended by /lead). Each row: timestamp, IP, name, phone, email, address, contact method, project details, session ID, status.
-start.bat	Windows batch file. Runs the FastAPI backend automatically (python main.py).
-templates/	Currently unused directory. Reserved for Jinja2 templates later (if site expands).
-pycache/	Auto-generated Python cache folder (can ignore).
+File / Folder       Description
+main.py             FastAPI backend. Handles /chat, /lead, /admin, /live-quote, etc.
+                    Saves leads to Google Sheets (permanent) and leads.csv (temp/Render disk).
+                    Sends Brevo email notification on every lead. Uses Claude AI for chat.
+chat.html           Public chat interface. Customer describes project, gets estimates,
+                    submits quote request. Calls /chat and /lead endpoints.
+admin.html          Internal dashboard. Displays stats and recent leads via GET /admin/data.
+leads.csv           Local CSV fallback (ephemeral on Render — resets on redeploy).
+                    Real permanent storage is Google Sheets.
+start.bat           Legacy Windows batch file. No longer needed — app runs on Render 24/7.
+_NOTES_project_map.txt  This file.
+
 🔌 API ENDPOINTS SUMMARY
-Endpoint	Method	Description
-/	GET	Serves chat.html
-/chat	POST	AI-powered conversation endpoint for fence inquiries
-/lead	POST	Accepts quote form details and saves them to leads.csv
-/admin	GET	Serves admin.html (dashboard)
-/admin/data	GET	Provides recent lead data & stats in JSON
-/live-quote	POST	Assigns “priority” callback for hot leads
-/contact-info	GET	Returns public business info (for embedding)
+Endpoint        Method  Description
+/               GET     Serves chat.html
+/chat           POST    Claude AI conversation endpoint for fence inquiries
+/lead           POST    Saves lead to Google Sheets + CSV, sends Brevo email alert
+/admin          GET     Serves admin.html dashboard
+/admin/data     GET     Returns recent lead data & stats as JSON
+/admin/leads    GET     Returns full lead list as JSON
+/live-quote     POST    Flags priority callback requests
+/contact-info   GET     Returns public business info
+/health         GET     Server health check
+
 🧠 BACKEND FEATURES
-Session tracking: Each chat session gets its own ID (stores message history in memory)
-CSV lead saving: All quote form submissions saved locally
-Console logging: Prints new leads and live quote alerts to command window
-Health check: /health confirms server and model status
-AI backend: Uses Ollama (model: phi by default) to generate realistic contractor-style responses
-🖥️ HOW TO RUN LOCALLY
-Open a terminal or double‑click start.bat
-Wait for: Uvicorn running on http://0.0.0.0:8000
-Visit:
-http://localhost:8000 → Chat interface
-http://localhost:8000/admin → Dashboard
-Leads auto‑append to leads.csv
-🚀 FUTURE IMPROVEMENTS
- Email new leads automatically via SMTP
- Filter/search leads in the admin view
- Save chat sessions to disk (JSON logs)
- Simple authentication for /admin route
- Optional public API endpoint for quote calculator
+- Session tracking: Each chat session gets its own ID (message history stored in memory)
+- Google Sheets: All leads permanently saved to Sheet ID 1RodpbvL75F8AZxutqKcTY_vrbxZvylSBv1SggglPGlM
+- Brevo email: Instant notification to admin@astrooutdoordesigns.com on every submission
+- CSV fallback: Local leads.csv (note: wiped on Render redeploy — not reliable long-term)
+- Console logging: Lead details printed to Render logs on submission
+- Health check: /health confirms server status
+
+🔐 ENVIRONMENT VARIABLES (set in Render dashboard)
+ANTHROPIC_API_KEY           Claude AI API key
+BREVO_API_KEY               Brevo email service API key
+BREVO_FROM_EMAIL            forms@astrooutdoordesigns.com
+LEAD_NOTIFY_EMAIL           admin@astrooutdoordesigns.com
+GOOGLE_SERVICE_ACCOUNT_JSON Full JSON contents of Google service account key file
+PORT                        10000
+
+📊 GOOGLE SHEETS
+Sheet URL: https://docs.google.com/spreadsheets/d/1RodpbvL75F8AZxutqKcTY_vrbxZvylSBv1SggglPGlM
+Service Account: kingwoodbot-sheets@wp-mail-smtp-gmail-455419.iam.gserviceaccount.com
+Columns: timestamp, ip, name, phone, email, address_or_zip, preferred_contact,
+         project_details, session_id, status
+
+🚀 DEPLOYMENT
+- Hosted on Render.com (service: astro-fence-assistant)
+- Auto-deploys from GitHub (repo: claytonscoot/kingwoodbot, branch: main)
+- Any commit to main triggers a redeploy automatically
+- No need to run start.bat or anything locally
+
+🖥️ LOCAL DEVELOPMENT (if needed)
+- pip install fastapi uvicorn requests aiofiles pydantic[email] cryptography
+- Set environment variables manually or via .env file
+- uvicorn main:app --reload --port 8000
+- Visit http://localhost:8000
+
+✅ FUTURE IMPROVEMENTS
+[ ] Admin authentication for /admin route
+[ ] Filter/search leads in admin dashboard
+[ ] Save chat sessions to Google Sheets for review
+[ ] Mark leads as contacted/closed in Sheets
+[ ] Optional SMS alerts via Twilio
