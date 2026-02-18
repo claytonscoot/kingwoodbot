@@ -540,7 +540,7 @@ def submit_lead(req: Lead, request: Request):
 try:
     brevo_api_key = os.getenv("BREVO_API_KEY")
     notify_email = os.getenv("LEAD_NOTIFY_EMAIL", "admin@astrooutdoordesigns.com")
-    from_email = os.getenv("BREVO_FROM_EMAIL", "admin@astrooutdoordesigns.com")
+    from_email = os.getenv("BREVO_FROM_EMAIL", "forms@astrooutdoordesigns.com")
 
     if brevo_api_key:
         url = "https://api.brevo.com/v3/smtp/email"
@@ -680,5 +680,6 @@ def get_contact_info():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))
+
 
 
