@@ -268,20 +268,31 @@ GOAL
 - Move toward scheduling confirmation visit.
 """.strip()
 
-def call_claude(user_message: str) -> str:
-    """Call Claude API and return response text"""
+def call_claude(user_message: str, history: list = None) -> str:
+    """Call Claude API with full conversation history so it never re-asks questions"""
     headers = {
         "x-api-key": ANTHROPIC_API_KEY,
         "anthropic-version": "2023-06-01",
         "content-type": "application/json"
     }
+
+    # Build full message history for Claude
+    messages = []
+    if history:
+        for msg in history[:-1]:  # All previous messages except current
+            if msg["type"] == "user":
+                messages.append({"role": "user", "content": msg["message"]})
+            elif msg["type"] == "assistant":
+                messages.append({"role": "assistant", "content": msg["message"]})
+
+    # Add current user message
+    messages.append({"role": "user", "content": user_message})
+
     payload = {
         "model": CLAUDE_MODEL,
-        "max_tokens": 500,
+        "max_tokens": 600,
         "system": get_system_prompt(),
-        "messages": [
-            {"role": "user", "content": user_message}
-        ]
+        "messages": messages
     }
     response = requests.post(ANTHROPIC_API_URL, headers=headers, json=payload, timeout=30)
     response.raise_for_status()
@@ -366,7 +377,7 @@ def chat(req: Chat, request: Request):
         }
 
     try:
-        ai_response = call_claude(prompt)
+        ai_response = call_claude(prompt, active_sessions[session_id]["messages"])
 
         # Fallback for empty responses
         if not ai_response:
