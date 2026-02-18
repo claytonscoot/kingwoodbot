@@ -39,9 +39,110 @@ ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
 CLAUDE_MODEL = "claude-haiku-4-5-20251001"  # Fast, cheap, high quality
 ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages"
 
+# Google Sheets settings
+GOOGLE_SHEET_ID = "1RodpbvL75F8AZxutqKcTY_vrbxZvylSBv1SggglPGlM"
+GOOGLE_SHEET_RANGE = "Sheet1"  # Change if your sheet tab has a different name
+
 # In-memory storage for active sessions
 active_sessions: Dict[str, dict] = {}
 recent_leads: List[dict] = []
+
+# ----------------------------
+# GOOGLE SHEETS HELPER
+# ----------------------------
+def get_google_token() -> str:
+    """Get OAuth2 access token for Google Sheets API using service account credentials"""
+    import time
+    import base64
+    import hashlib
+    import hmac
+    
+    # Load credentials from environment variable
+    creds_json = os.getenv("GOOGLE_SERVICE_ACCOUNT_JSON", "")
+    if not creds_json:
+        raise Exception("GOOGLE_SERVICE_ACCOUNT_JSON environment variable not set")
+    
+    creds = json.loads(creds_json)
+    
+    # Build JWT
+    now = int(time.time())
+    header = base64.urlsafe_b64encode(json.dumps({"alg": "RS256", "typ": "JWT"}).encode()).rstrip(b"=").decode()
+    payload = base64.urlsafe_b64encode(json.dumps({
+        "iss": creds["client_email"],
+        "scope": "https://www.googleapis.com/auth/spreadsheets",
+        "aud": "https://oauth2.googleapis.com/token",
+        "exp": now + 3600,
+        "iat": now
+    }).encode()).rstrip(b"=").decode()
+    
+    message = f"{header}.{payload}"
+    
+    # Sign with private key using cryptography library
+    from cryptography.hazmat.primitives import hashes, serialization
+    from cryptography.hazmat.primitives.asymmetric import padding
+    from cryptography.hazmat.backends import default_backend
+    
+    private_key = serialization.load_pem_private_key(
+        creds["private_key"].encode(),
+        password=None,
+        backend=default_backend()
+    )
+    
+    signature = private_key.sign(message.encode(), padding.PKCS1v15(), hashes.SHA256())
+    sig_encoded = base64.urlsafe_b64encode(signature).rstrip(b"=").decode()
+    
+    jwt_token = f"{message}.{sig_encoded}"
+    
+    # Exchange JWT for access token
+    resp = requests.post("https://oauth2.googleapis.com/token", data={
+        "grant_type": "urn:ietf:params:oauth:grant-type:jwt-bearer",
+        "assertion": jwt_token
+    }, timeout=10)
+    resp.raise_for_status()
+    return resp.json()["access_token"]
+
+
+def append_lead_to_sheets(lead_row: list):
+    """Append a lead row to Google Sheets"""
+    try:
+        token = get_google_token()
+        url = f"https://sheets.googleapis.com/v4/spreadsheets/{GOOGLE_SHEET_ID}/values/{GOOGLE_SHEET_RANGE}:append"
+        resp = requests.post(url, headers={
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json"
+        }, json={
+            "values": [lead_row],
+            "majorDimension": "ROWS"
+        }, params={
+            "valueInputOption": "USER_ENTERED",
+            "insertDataOption": "INSERT_ROWS"
+        }, timeout=10)
+        resp.raise_for_status()
+        logger.info("✅ Lead saved to Google Sheets")
+    except Exception as e:
+        logger.error(f"❌ Google Sheets append failed: {e}")
+
+
+def ensure_sheets_headers():
+    """Add header row to Google Sheet if it's empty"""
+    try:
+        token = get_google_token()
+        # Check if sheet is empty
+        url = f"https://sheets.googleapis.com/v4/spreadsheets/{GOOGLE_SHEET_ID}/values/{GOOGLE_SHEET_RANGE}!A1"
+        resp = requests.get(url, headers={"Authorization": f"Bearer {token}"}, timeout=10)
+        data = resp.json()
+        
+        if "values" not in data:
+            # Sheet is empty — add headers
+            append_lead_to_sheets([
+                "timestamp", "ip", "name", "phone", "email",
+                "address_or_zip", "preferred_contact", "project_details",
+                "session_id", "status"
+            ])
+            logger.info("📋 Added headers to Google Sheet")
+    except Exception as e:
+        logger.error(f"Could not check/set sheet headers: {e}")
+
 
 # ----------------------------
 # MODELS
@@ -72,6 +173,7 @@ class LiveQuoteRequest(BaseModel):
 async def lifespan(app: FastAPI):
     logger.info(f"🚀 Starting {BUSINESS_NAME} Chat System...")
     ensure_leads_file()
+    ensure_sheets_headers()
     if not ANTHROPIC_API_KEY:
         logger.warning("⚠️ ANTHROPIC_API_KEY not set! Chat will not work.")
     else:
@@ -494,21 +596,29 @@ def submit_lead(req: Lead, request: Request):
         # Generate unique lead ID
         lead_id = str(uuid.uuid4())[:8]
         
-        # Append to CSV file
-        with open(LEADS_FILE, "a", newline="", encoding="utf-8") as f:
-            writer = csv.writer(f)
-            writer.writerow([
-                timestamp,
-                ip,
-                req.name.strip(),
-                req.phone.strip(),
+        # Append to local CSV file (best effort — Render disk is ephemeral)
+        try:
+            with open(LEADS_FILE, "a", newline="", encoding="utf-8") as f:
+                writer = csv.writer(f)
+                writer.writerow([
+                    timestamp, ip, req.name.strip(), req.phone.strip(),
+                    (req.email.strip() if req.email else ""),
+                    req.address_or_zip.strip(), req.preferred_contact.strip(),
+                    req.project_details.strip(), lead_id, "new"
+                ])
+        except Exception as csv_err:
+            logger.warning(f"CSV write failed (expected on Render): {csv_err}")
+
+        # ✅ Save to Google Sheets (permanent storage)
+        try:
+            append_lead_to_sheets([
+                timestamp, ip, req.name.strip(), req.phone.strip(),
                 (req.email.strip() if req.email else ""),
-                req.address_or_zip.strip(),
-                req.preferred_contact.strip(),
-                req.project_details.strip(),
-                lead_id,
-                "new"
+                req.address_or_zip.strip(), req.preferred_contact.strip(),
+                req.project_details.strip(), lead_id, "new"
             ])
+        except Exception as sheets_err:
+            logger.error(f"Google Sheets write failed: {sheets_err}")
 
         # Store in memory for admin dashboard
         lead_data = {
@@ -552,7 +662,7 @@ def submit_lead(req: Lead, request: Request):
                 }
         
                 payload = {
-                    "sender": {"name": BUSINESS_NAME,"email": from_email},
+                    "sender": {"name": BUSINESS_NAME, "email": from_email},
                     "to": [{"email": notify_email}],
                     "subject": f"🔥 New Fence Lead - {req.name}",
                     "textContent": (
@@ -576,8 +686,6 @@ def submit_lead(req: Lead, request: Request):
         
         except Exception as email_error:
             logger.error(f"Brevo email send failed: {email_error}")
-
-
 
         return JSONResponse({
             "ok": True,
@@ -678,9 +786,3 @@ def get_contact_info():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))
-
-
-
-
-
-
