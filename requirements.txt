@@ -3,7 +3,8 @@ uvicorn
 aiofiles
 requests
 pydantic[email]
-cryptography==41.0.7
+google-auth
+
 
 
 
