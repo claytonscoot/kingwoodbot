@@ -3,5 +3,6 @@ uvicorn
 aiofiles
 requests
 pydantic[email]
+cryptography
 
 
