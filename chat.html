@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
@@ -8,183 +9,351 @@
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Segoe UI', sans-serif; background: #1a1a1a; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; padding: 20px; gap: 20px; flex-wrap: wrap; }
 
-  /* ---- CHAT PANEL ---- */
-  .chat-panel { background: #1e1e1e; border-radius: 16px; width: 100%; max-width: 520px; display: flex; flex-direction: column; height: 850px; overflow: hidden; box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
-  .chat-header { background: #e87722; color: white; padding: 18px 20px; }
-  .chat-header h2 { font-size: 18px; font-weight: 700; }
-  .chat-header p { font-size: 13px; opacity: 0.9; margin-top: 3px; }
+/* –– CHAT PANEL –– */
+.chat-panel { background: #1e1e1e; border-radius: 16px; width: 100%; max-width: 520px; display: flex; flex-direction: column; height: 850px; overflow: hidden; box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
+.chat-header { background: #e87722; color: white; padding: 18px 20px; }
+.chat-header h2 { font-size: 18px; font-weight: 700; }
+.chat-header p { font-size: 13px; opacity: 0.9; margin-top: 3px; }
 
-  /* Gallery bar */
-  .gallery-bar { background: #2a2a2a; padding: 10px 12px; border-bottom: 1px solid #333; }
-  .gallery-bar p { color: #aaa; font-size: 11px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
-  .style-buttons { display: flex; gap: 6px; flex-wrap: wrap; }
-  .style-btn { background: #333; color: #ddd; border: 1px solid #444; border-radius: 20px; padding: 5px 12px; font-size: 12px; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
-  .style-btn:hover, .style-btn.active { background: #e87722; color: white; border-color: #e87722; }
+/* Gallery bar */
+.gallery-bar { background: #2a2a2a; padding: 10px 12px; border-bottom: 1px solid #333; }
+.gallery-bar p { color: #aaa; font-size: 11px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+.style-buttons { display: flex; gap: 6px; flex-wrap: wrap; }
+.style-btn { background: #333; color: #ddd; border: 1px solid #444; border-radius: 20px; padding: 5px 12px; font-size: 12px; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+.style-btn:hover, .style-btn.active { background: #e87722; color: white; border-color: #e87722; }
 
-  /* Photo modal */
-  .photo-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; justify-content: center; align-items: center; padding: 20px; }
-  .photo-modal.open { display: flex; }
-  .modal-content { background: #1e1e1e; border-radius: 16px; max-width: 680px; width: 100%; padding: 20px; position: relative; }
-  .modal-close { position: absolute; top: 12px; right: 16px; color: #aaa; font-size: 24px; cursor: pointer; line-height: 1; }
-  .modal-close:hover { color: white; }
-  .modal-title { color: white; font-size: 16px; font-weight: 700; margin-bottom: 4px; }
-  .modal-subtitle { color: #aaa; font-size: 13px; margin-bottom: 14px; }
-  .photo-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
-  .photo-grid img { width: 100%; height: 160px; object-fit: cover; border-radius: 10px; cursor: pointer; transition: transform 0.2s; }
-  .photo-grid img:hover { transform: scale(1.02); }
-  .modal-link { display: inline-block; margin-top: 14px; color: #e87722; font-size: 13px; text-decoration: none; }
-  .modal-link:hover { text-decoration: underline; }
-  .modal-ask-btn { display: block; width: 100%; margin-top: 12px; background: #e87722; color: white; border: none; border-radius: 10px; padding: 12px; font-size: 14px; font-weight: 600; cursor: pointer; }
-  .modal-ask-btn:hover { background: #cf6a1a; }
+/* Photo modal */
+.photo-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; justify-content: center; align-items: center; padding: 20px; }
+.photo-modal.open { display: flex; }
+.modal-content { background: #1e1e1e; border-radius: 16px; max-width: 680px; width: 100%; padding: 20px; position: relative; }
+.modal-close { position: absolute; top: 12px; right: 16px; color: #aaa; font-size: 24px; cursor: pointer; line-height: 1; }
+.modal-close:hover { color: white; }
+.modal-title { color: white; font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+.modal-subtitle { color: #aaa; font-size: 13px; margin-bottom: 14px; }
+.photo-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+.photo-grid img { width: 100%; height: 160px; object-fit: cover; border-radius: 10px; cursor: pointer; transition: transform 0.2s; }
+.photo-grid img:hover { transform: scale(1.02); }
+.modal-link { display: inline-block; margin-top: 14px; color: #e87722; font-size: 13px; text-decoration: none; }
+.modal-link:hover { text-decoration: underline; }
+.modal-ask-btn { display: block; width: 100%; margin-top: 12px; background: #e87722; color: white; border: none; border-radius: 10px; padding: 12px; font-size: 14px; font-weight: 600; cursor: pointer; }
+.modal-ask-btn:hover { background: #cf6a1a; }
 
-  /* Chat messages */
-  .chat-messages { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
-  .msg { max-width: 85%; padding: 12px 15px; border-radius: 14px; font-size: 14px; line-height: 1.5; }
-  .msg.bot { background: #2a2a2a; color: #e8e8e8; align-self: flex-start; border-bottom-left-radius: 4px; }
-  .msg.user { background: #e87722; color: white; align-self: flex-end; border-bottom-right-radius: 4px; }
-  .msg.loading { color: #888; font-style: italic; }
-  .msg strong { font-weight: 700; }
+/* Chat messages */
+.chat-messages { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.msg { max-width: 85%; padding: 12px 15px; border-radius: 14px; font-size: 14px; line-height: 1.5; }
+.msg.bot { background: #2a2a2a; color: #e8e8e8; align-self: flex-start; border-bottom-left-radius: 4px; }
+.msg.user { background: #e87722; color: white; align-self: flex-end; border-bottom-right-radius: 4px; }
+.msg.loading { color: #888; font-style: italic; }
+.msg strong { font-weight: 700; }
 
-  /* Quick replies */
-  .quick-replies { padding: 8px 12px; display: flex; gap: 6px; flex-wrap: wrap; border-top: 1px solid #2a2a2a; }
-  .qr-btn { background: #2a2a2a; color: #ccc; border: 1px solid #3a3a3a; border-radius: 16px; padding: 6px 14px; font-size: 12px; cursor: pointer; transition: all 0.2s; }
-  .qr-btn:hover { background: #e87722; color: white; border-color: #e87722; }
+/* Quick replies */
+.quick-replies { padding: 8px 12px; display: flex; gap: 6px; flex-wrap: wrap; border-top: 1px solid #2a2a2a; }
+.qr-btn { background: #2a2a2a; color: #ccc; border: 1px solid #3a3a3a; border-radius: 16px; padding: 6px 14px; font-size: 12px; cursor: pointer; transition: all 0.2s; }
+.qr-btn:hover { background: #e87722; color: white; border-color: #e87722; }
 
-  /* Input area */
-  .chat-input-area { padding: 12px 16px; border-top: 1px solid #2a2a2a; display: flex; gap: 10px; align-items: flex-end; }
-  .chat-input-area textarea { flex: 1; background: #2a2a2a; color: white; border: 2px solid #e87722; border-radius: 12px; padding: 12px 14px; font-size: 15px; resize: none; outline: none; font-family: inherit; max-height: 120px; min-height: 60px; line-height: 1.5; }
-  .chat-input-area textarea::placeholder { color: #888; font-size: 13px; }
-  .send-btn { background: #e87722; color: white; border: none; border-radius: 12px; padding: 10px 22px; font-size: 15px; font-weight: 700; cursor: pointer; white-space: nowrap; height: 60px; }
-  .send-btn:hover { background: #cf6a1a; }
+/* Input area */
+.chat-input-area { padding: 12px 16px; border-top: 1px solid #2a2a2a; display: flex; gap: 10px; align-items: flex-end; }
+.chat-input-area textarea { flex: 1; background: #2a2a2a; color: white; border: 2px solid #e87722; border-radius: 12px; padding: 12px 14px; font-size: 15px; resize: none; outline: none; font-family: inherit; max-height: 120px; min-height: 60px; line-height: 1.5; }
+.chat-input-area textarea::placeholder { color: #888; font-size: 13px; }
+.send-btn { background: #e87722; color: white; border: none; border-radius: 12px; padding: 10px 22px; font-size: 15px; font-weight: 700; cursor: pointer; white-space: nowrap; height: 60px; }
+.send-btn:hover { background: #cf6a1a; }
 
-  /* Quote CTA button inside chat bubble */
-  .quote-cta {
-    display: block;
-    margin-top: 12px;
-    background: #e87722;
-    color: white;
-    border: none;
-    border-radius: 10px;
-    padding: 10px 18px;
-    font-size: 13px;
-    font-weight: 700;
-    cursor: pointer;
-    width: 100%;
-    text-align: center;
-    animation: ctaPulse 2s ease-in-out infinite;
-  }
-  .quote-cta:hover { background: #cf6a1a; animation: none; }
-  @keyframes ctaPulse {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(232,119,34,0.5); }
-    50% { box-shadow: 0 0 0 7px rgba(232,119,34,0); }
-  }
+/* Chat input photo attach */
+.chat-input-wrap { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+.chat-input-btns { display: flex; flex-direction: column; gap: 6px; align-items: stretch; justify-content: flex-end; }
+.attach-btn {
+background: #2a2a2a;
+border: 1px solid #3a3a3a;
+color: #aaa;
+border-radius: 10px;
+font-size: 18px;
+cursor: pointer;
+height: 40px;
+width: 44px;
+display: flex;
+align-items: center;
+justify-content: center;
+transition: all 0.2s;
+flex-shrink: 0;
+}
+.attach-btn:hover { border-color: #e87722; color: #e87722; background: rgba(232,119,34,0.08); }
+.chat-upload-bar { display: flex; flex-wrap: wrap; gap: 6px; }
+.chat-thumb {
+position: relative;
+width: 52px;
+height: 52px;
+border-radius: 8px;
+overflow: hidden;
+border: 1px solid #3a3a3a;
+flex-shrink: 0;
+}
+.chat-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.chat-thumb .remove-chat-thumb {
+position: absolute;
+top: 1px; right: 1px;
+background: rgba(0,0,0,0.75);
+color: white;
+border: none;
+border-radius: 50%;
+width: 16px; height: 16px;
+font-size: 10px;
+cursor: pointer;
+display: flex; align-items: center; justify-content: center;
+}
+.chat-photo-msg {
+display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px;
+}
+.chat-photo-msg img {
+width: 80px; height: 80px;
+object-fit: cover;
+border-radius: 8px;
+border: 1px solid #444;
+}
 
-  /* Lead panel highlight when triggered from chat */
-  .lead-panel.highlighted { animation: panelPop 0.6s ease; border: 2px solid #e87722; border-radius: 16px; }
-  @keyframes panelPop {
-    0% { transform: scale(1); }
-    40% { transform: scale(1.015); }
-    100% { transform: scale(1); }
-  }
+/* Chat panel expands when input is focused */
+.chat-panel.input-focused .chat-messages {
+height: 420px;
+transition: height 0.3s ease;
+}
+.chat-messages {
+transition: height 0.3s ease;
+}
+.chat-input-area textarea.expanded {
+min-height: 80px;
+transition: min-height 0.3s ease;
+}
+/* On mobile, expanded state */
+@media (max-width: 768px) {
+.chat-panel.input-focused .chat-messages {
+height: 320px;
+}
+.chat-panel.input-focused {
+height: auto;
+}
+}
 
-  /* ---- LEAD PANEL ---- */
-  .lead-panel { background: #1e1e1e; border-radius: 16px; width: 100%; max-width: 340px; display: flex; flex-direction: column; height: 850px; overflow: hidden; box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
-  .lead-header { background: #e87722; color: white; padding: 18px 20px; }
-  .lead-header h2 { font-size: 18px; font-weight: 700; }
-  .lead-header p { font-size: 13px; opacity: 0.9; margin-top: 3px; }
-  .contact-tabs { display: flex; gap: 0; padding: 16px 16px 0; }
-  .tab-btn { flex: 1; padding: 8px; background: #2a2a2a; color: #aaa; border: 1px solid #333; font-size: 13px; cursor: pointer; transition: all 0.2s; }
-  .tab-btn:first-child { border-radius: 8px 0 0 8px; }
-  .tab-btn:last-child { border-radius: 0 8px 8px 0; }
-  .tab-btn.active { background: #e87722; color: white; border-color: #e87722; }
-  .lead-form { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
-  .lead-form p.hint { color: #888; font-size: 12px; line-height: 1.5; }
-  .lead-form input, .lead-form select, .lead-form textarea { width: 100%; background: #2a2a2a; color: white; border: 1px solid #3a3a3a; border-radius: 10px; padding: 10px 14px; font-size: 13px; outline: none; font-family: inherit; }
-  .lead-form input::placeholder, .lead-form textarea::placeholder { color: #666; }
-  .lead-form select option { background: #2a2a2a; }
-  .lead-form textarea { resize: vertical; min-height: 90px; }
-  .row2 { display: flex; gap: 8px; }
-  .row2 > * { flex: 1; }
-  .submit-btn { width: 100%; background: #111; color: white; border: none; border-radius: 10px; padding: 13px; font-size: 14px; font-weight: 700; cursor: pointer; margin-top: 4px; }
-  .submit-btn:hover { background: #222; }
-  .lead-footer { padding: 12px 16px; text-align: center; color: #555; font-size: 11px; border-top: 1px solid #2a2a2a; }
-  .success-msg { display: none; background: #1a3a1a; border: 1px solid #2d6a2d; border-radius: 10px; padding: 16px; color: #7fca7f; font-size: 13px; text-align: center; line-height: 1.6; }
+/* Quote CTA button inside chat bubble */
+.quote-cta {
+display: block;
+margin-top: 12px;
+background: #e87722;
+color: white;
+border: none;
+border-radius: 10px;
+padding: 10px 18px;
+font-size: 13px;
+font-weight: 700;
+cursor: pointer;
+width: 100%;
+text-align: center;
+animation: ctaPulse 2s ease-in-out infinite;
+}
+.quote-cta:hover { background: #cf6a1a; animation: none; }
+@keyframes ctaPulse {
+0%, 100% { box-shadow: 0 0 0 0 rgba(232,119,34,0.5); }
+50% { box-shadow: 0 0 0 7px rgba(232,119,34,0); }
+}
 
-  /* ---- MOBILE STYLES ---- */
-  @media (max-width: 768px) {
-    body { padding: 10px; gap: 0; flex-direction: column; align-items: center; }
+/* Lead panel highlight when triggered from chat */
+.lead-panel.highlighted { animation: panelPop 0.6s ease; border: 2px solid #e87722; border-radius: 16px; }
+@keyframes panelPop {
+0% { transform: scale(1); }
+40% { transform: scale(1.015); }
+100% { transform: scale(1); }
+}
 
-    /* Chat panel: collapsible card */
-    .chat-panel {
-      max-width: 100%;
-      height: auto;
-      border-radius: 16px;
-      overflow: hidden;
-      transition: none;
-    }
+/* –– LEAD PANEL –– */
+.lead-panel { background: #1e1e1e; border-radius: 16px; width: 100%; max-width: 340px; display: flex; flex-direction: column; height: 850px; overflow: hidden; box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
+.lead-header { background: #e87722; color: white; padding: 18px 20px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; user-select: none; -webkit-tap-highlight-color: transparent; }
+.lead-header-text { flex: 1; }
+.lead-header h2 { font-size: 18px; font-weight: 700; }
+.lead-header p { font-size: 13px; opacity: 0.9; margin-top: 3px; }
+.lead-toggle-icon { font-size: 20px; margin-left: 12px; transition: transform 0.3s ease; flex-shrink: 0; }
+.lead-panel.collapsed .lead-toggle-icon { transform: rotate(0deg); }
+.lead-panel:not(.collapsed) .lead-toggle-icon { transform: rotate(180deg); }
+/* Collapsed lead panel hides everything but header */
+.lead-panel.collapsed .contact-tabs,
+.lead-panel.collapsed .lead-form,
+.lead-panel.collapsed .lead-footer { display: none; }
+.lead-panel.collapsed { height: auto; }
+.contact-tabs { display: flex; gap: 0; padding: 16px 16px 0; }
+.tab-btn { flex: 1; padding: 8px; background: #2a2a2a; color: #aaa; border: 1px solid #333; font-size: 13px; cursor: pointer; transition: all 0.2s; }
+.tab-btn:first-child { border-radius: 8px 0 0 8px; }
+.tab-btn:last-child { border-radius: 0 8px 8px 0; }
+.tab-btn.active { background: #e87722; color: white; border-color: #e87722; }
+.lead-form { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+.lead-form p.hint { color: #888; font-size: 12px; line-height: 1.5; }
+.lead-form input, .lead-form select, .lead-form textarea { width: 100%; background: #2a2a2a; color: white; border: 1px solid #3a3a3a; border-radius: 10px; padding: 10px 14px; font-size: 13px; outline: none; font-family: inherit; }
+.lead-form input::placeholder, .lead-form textarea::placeholder { color: #666; }
+.lead-form select option { background: #2a2a2a; }
+.lead-form textarea { resize: vertical; min-height: 90px; }
+.row2 { display: flex; gap: 8px; }
+.row2 > * { flex: 1; }
+.submit-btn { width: 100%; background: #111; color: white; border: none; border-radius: 10px; padding: 13px; font-size: 14px; font-weight: 700; cursor: pointer; margin-top: 4px; }
+.submit-btn:hover { background: #222; }
+.lead-footer { padding: 12px 16px; text-align: center; color: #555; font-size: 11px; border-top: 1px solid #2a2a2a; }
+.success-msg { display: none; background: #1a3a1a; border: 1px solid #2d6a2d; border-radius: 10px; padding: 16px; color: #7fca7f; font-size: 13px; text-align: center; line-height: 1.6; }
 
-    /* Collapsed state: hide all but the header */
-    .chat-panel.collapsed .gallery-bar,
-    .chat-panel.collapsed .chat-messages,
-    .chat-panel.collapsed .quick-replies,
-    .chat-panel.collapsed .chat-input-area,
-    .chat-panel.collapsed .chat-disclaimer {
-      display: none;
-    }
+/* Image upload */
+.upload-area {
+border: 2px dashed #3a3a3a;
+border-radius: 12px;
+padding: 16px 12px;
+text-align: center;
+cursor: pointer;
+transition: all 0.2s;
+background: #222;
+}
+.upload-area:hover, .upload-area.dragover { border-color: #e87722; background: rgba(232,119,34,0.06); }
+.upload-icon { font-size: 26px; margin-bottom: 6px; }
+.upload-label { font-size: 13px; font-weight: 600; color: #ddd; }
+.upload-sub { font-weight: 400; color: #888; }
+.upload-hint { font-size: 11px; color: #666; margin-top: 3px; }
+.upload-previews { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 2px; }
+.upload-thumb {
+position: relative;
+width: 72px;
+height: 72px;
+border-radius: 8px;
+overflow: hidden;
+border: 1px solid #3a3a3a;
+}
+.upload-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.upload-thumb .remove-thumb {
+position: absolute;
+top: 2px; right: 2px;
+background: rgba(0,0,0,0.7);
+color: white;
+border: none;
+border-radius: 50%;
+width: 18px; height: 18px;
+font-size: 11px;
+cursor: pointer;
+display: flex; align-items: center; justify-content: center;
+line-height: 1;
+}
 
-    /* Header becomes a tap target */
-    .chat-header {
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      user-select: none;
-      -webkit-tap-highlight-color: transparent;
-    }
+/* –– MOBILE STYLES –– */
+@media (max-width: 768px) {
+body { padding: 12px 0 0; gap: 0; flex-direction: column; align-items: center; background: #111; }
 
-    .chat-header-text { flex: 1; }
+```
+/* Chat panel */
+.chat-panel {
+  max-width: 100%;
+  width: 100%;
+  height: auto;
+  border-radius: 0;
+  overflow: hidden;
+  transition: none;
+  box-shadow: none;
+}
 
-    .chat-toggle-icon {
-      font-size: 20px;
-      margin-left: 12px;
-      transition: transform 0.3s ease;
-      flex-shrink: 0;
-    }
+/* Collapsed state: hide everything but the header */
+.chat-panel.collapsed .gallery-bar,
+.chat-panel.collapsed .chat-messages,
+.chat-panel.collapsed .quick-replies,
+.chat-panel.collapsed .chat-input-area,
+.chat-panel.collapsed .chat-disclaimer {
+  display: none;
+}
 
-    .chat-panel.collapsed .chat-toggle-icon {
-      transform: rotate(0deg);
-    }
+/* Header is the tap target */
+.chat-header {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  padding: 13px 16px;
+}
 
-    .chat-panel:not(.collapsed) .chat-toggle-icon {
-      transform: rotate(180deg);
-    }
+.chat-header h2 { font-size: 14px; }
+.chat-header p { font-size: 11px; }
+.chat-header-text { flex: 1; }
 
-    /* Expanded chat gets a fixed height */
-    .chat-panel:not(.collapsed) {
-      height: 680px;
-    }
+.chat-toggle-icon {
+  font-size: 18px;
+  margin-left: 10px;
+  transition: transform 0.3s ease;
+  flex-shrink: 0;
+}
 
-    /* Lead panel below */
-    .lead-panel {
-      max-width: 100%;
-      height: auto;
-      border-radius: 0 0 16px 16px;
-      border-top: 3px solid #e87722;
-    }
+.chat-panel.collapsed .chat-toggle-icon { transform: rotate(0deg); }
+.chat-panel:not(.collapsed) .chat-toggle-icon { transform: rotate(180deg); }
 
-    .photo-grid { grid-template-columns: 1fr; }
-    .chat-header h2 { font-size: 15px; }
-    .style-btn { font-size: 11px; padding: 4px 10px; }
-    .lead-header { display: flex; align-items: center; gap: 12px; }
-    .lead-header::before { content: '📋'; font-size: 20px; }
-    .lead-header .mobile-title { display: block; }
-    .lead-header .desktop-title { display: none; }
-  }
+/* Gallery: single horizontal scrollable row, no wrapping */
+.gallery-bar { padding: 6px 10px; }
+.gallery-bar p { display: none; }
+.style-buttons {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding-bottom: 2px;
+  gap: 5px;
+}
+.style-buttons::-webkit-scrollbar { display: none; }
+.style-btn { font-size: 11px; padding: 4px 10px; flex-shrink: 0; }
+.gallery-bar > a { font-size: 11px; margin-top: 4px; display: inline-block; }
+
+/* Chat panel gets margin so it floats as its own card */
+.chat-panel:not(.collapsed) {
+  margin: 0 12px;
+  width: calc(100% - 24px);
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+}
+.chat-panel.collapsed {
+  margin: 12px 12px 0;
+  width: calc(100% - 24px);
+  border-radius: 16px;
+}
+
+/* Messages: fixed height, enough room to read */
+.chat-messages {
+  height: 280px;
+  flex: none;
+  padding: 10px 12px;
+  gap: 8px;
+}
+
+/* Hide quick replies — save vertical space */
+.quick-replies { display: none; }
+
+/* Compact input area */
+.chat-input-area { padding: 8px 10px; gap: 8px; }
+.chat-input-area textarea { min-height: 44px; max-height: 80px; font-size: 14px; padding: 10px 12px; }
+.send-btn { height: 44px; padding: 8px 16px; font-size: 14px; }
+
+/* Lead panel — separate widget with its own card style */
+.lead-panel {
+  max-width: 100%;
+  width: calc(100% - 24px);
+  height: auto;
+  border-radius: 16px;
+  border-top: none;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+  margin: 24px 12px 32px;
+}
+
+.photo-grid { grid-template-columns: 1fr; }
+.lead-header { padding: 14px 16px; border-radius: 16px 16px 0 0; }
+.lead-header::before { display: none; }
+.lead-toggle-icon { font-size: 16px; }
+.lead-header h2 { font-size: 15px; }
+.lead-header p { font-size: 11px; }
+```
+
+}
 </style>
+
 </head>
 <body>
 
 <!-- PHOTO MODAL -->
+
 <div class="photo-modal" id="photoModal">
   <div class="modal-content">
     <span class="modal-close" onclick="closeModal()">×</span>
@@ -197,7 +366,8 @@
 </div>
 
 <!-- CHAT PANEL -->
-<div class="chat-panel collapsed" id="chatPanel">
+
+<div class="chat-panel" id="chatPanel">
   <div class="chat-header" id="chatHeaderToggle">
     <div class="chat-header-text">
       <h2>💬 Astro Outdoor Designs – Fence Assistant</h2>
@@ -244,8 +414,15 @@
   </div>
 
   <div class="chat-input-area">
-    <textarea id="userInput" placeholder="Type your question here... (e.g. I need a 150ft cedar fence with steel posts)" rows="2" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
-    <button class="send-btn" onclick="sendMessage()">Send</button>
+    <div class="chat-input-wrap">
+      <textarea id="userInput" placeholder="Type your question here... (e.g. I need a 150ft cedar fence with steel posts)" rows="2" onkeydown="handleKey(event)" oninput="autoResize(this)" onfocus="expandChat()" onblur="collapseChat()"></textarea>
+      <div class="chat-upload-bar" id="chatUploadBar"></div>
+    </div>
+    <div class="chat-input-btns">
+      <button class="attach-btn" onclick="document.getElementById('chatPhotoUpload').click()" title="Attach photos">📷</button>
+      <input type="file" id="chatPhotoUpload" accept="image/*" multiple style="display:none" onchange="handleChatFiles(this.files)" />
+      <button class="send-btn" onclick="sendMessage()">Send</button>
+    </div>
   </div>
   <div class="chat-disclaimer" style="padding: 6px 16px 10px; text-align: center; color: #555; font-size: 11px; line-height: 1.4;">
     ⚠️ This assistant is AI-powered and provides estimates only. All pricing is approximate — contact us directly for an official quote.
@@ -253,10 +430,14 @@
 </div>
 
 <!-- LEAD PANEL -->
-<div class="lead-panel">
-  <div class="lead-header">
-    <h2>Request a Quote</h2>
-    <p>Fill out the form — we'll call, text, or email you back fast.</p>
+
+<div class="lead-panel collapsed" id="leadPanel">
+  <div class="lead-header" id="leadHeaderToggle">
+    <div class="lead-header-text">
+      <h2>📋 Request a Quote</h2>
+      <p>Fill out the form — we'll call, text, or email you back fast.</p>
+    </div>
+    <span class="lead-toggle-icon">▼</span>
   </div>
 
   <div class="contact-tabs">
@@ -268,36 +449,49 @@
   <div class="lead-form" id="leadForm">
     <p class="hint">Want a real quote? Drop your details below. It saves to our inbox list and we'll reach out.</p>
 
-    <input type="text" id="leadName" placeholder="Name *" />
-    <div class="row2">
-      <input type="tel" id="leadPhone" placeholder="Phone (recommended)" />
-      <input type="email" id="leadEmail" placeholder="Email" />
-    </div>
-    <input type="text" id="leadZip" placeholder="Zip / City (Kingwood, Humble...)" />
-    <div class="row2">
-      <select id="leadContact">
-        <option value="text">Preferred contact: Text</option>
-        <option value="call">Preferred contact: Call</option>
-        <option value="email">Preferred contact: Email</option>
-      </select>
-      <select id="leadProject">
-        <option value="">Project type (optional)</option>
-        <option value="New wood fence">New wood fence</option>
-        <option value="New metal fence">New metal fence</option>
-        <option value="New chain link">New chain link</option>
-        <option value="New vinyl fence">New vinyl fence</option>
-        <option value="Gate installation">Gate installation</option>
-        <option value="Gate repair">Gate repair</option>
-        <option value="Fence repair">Fence repair</option>
-        <option value="Fence staining">Fence staining</option>
-        <option value="Deck installation">Deck installation</option>
-        <option value="Power washing">Power washing</option>
-        <option value="Other">Other</option>
-      </select>
-    </div>
-    <textarea id="leadDetails" placeholder="Project details * (approx feet, height 6/7/8ft, style, gates, timing)"></textarea>
-    <button class="submit-btn" onclick="submitLead()">Request a Quote</button>
-    <div class="success-msg" id="successMsg"></div>
+```
+<input type="text" id="leadName" placeholder="Name *" />
+<div class="row2">
+  <input type="tel" id="leadPhone" placeholder="Phone (recommended)" />
+  <input type="email" id="leadEmail" placeholder="Email" />
+</div>
+<input type="text" id="leadZip" placeholder="Zip / City (Kingwood, Humble...)" />
+<div class="row2">
+  <select id="leadContact">
+    <option value="text">Preferred contact: Text</option>
+    <option value="call">Preferred contact: Call</option>
+    <option value="email">Preferred contact: Email</option>
+  </select>
+  <select id="leadProject">
+    <option value="">Project type (optional)</option>
+    <option value="New wood fence">New wood fence</option>
+    <option value="New metal fence">New metal fence</option>
+    <option value="New chain link">New chain link</option>
+    <option value="New vinyl fence">New vinyl fence</option>
+    <option value="Gate installation">Gate installation</option>
+    <option value="Gate repair">Gate repair</option>
+    <option value="Fence repair">Fence repair</option>
+    <option value="Fence staining">Fence staining</option>
+    <option value="Deck installation">Deck installation</option>
+    <option value="Power washing">Power washing</option>
+    <option value="Other">Other</option>
+  </select>
+</div>
+<textarea id="leadDetails" placeholder="Project details * (approx feet, height 6/7/8ft, style, gates, timing)"></textarea>
+
+<!-- Image upload -->
+<div class="upload-area" id="uploadArea" onclick="document.getElementById('photoUpload').click()" ondragover="handleDragOver(event)" ondrop="handleDrop(event)">
+  <div class="upload-icon">📷</div>
+  <div class="upload-label">Tap to add photos <span class="upload-sub">(optional)</span></div>
+  <div class="upload-hint">Fence style you like, or your current fence</div>
+  <input type="file" id="photoUpload" accept="image/*" multiple style="display:none" onchange="handleFiles(this.files)" />
+</div>
+<div class="upload-previews" id="uploadPreviews"></div>
+
+<button class="submit-btn" onclick="submitLead()">Request a Quote</button>
+<div class="success-msg" id="successMsg"></div>
+```
+
   </div>
 
   <div class="lead-footer">Astro Outdoor Designs • Built for real quotes, not fluff.</div>
@@ -325,13 +519,22 @@
     }
   });
 
-  // On resize to desktop, always remove collapsed state
+  // On resize to desktop, always remove collapsed state from both panels
   window.addEventListener('resize', function() {
     if (!isMobile()) {
       chatPanel.classList.remove('collapsed');
-    } else {
-      // Re-apply collapsed if we shrink back down and it's not already managed
-      // (don't override user's choice if they opened it on mobile)
+      leadPanel.classList.remove('collapsed');
+    }
+  });
+
+  // ---- Lead panel toggle ----
+  const leadPanel = document.getElementById('leadPanel');
+  const leadHeaderToggle = document.getElementById('leadHeaderToggle');
+
+  leadHeaderToggle.addEventListener('click', function() {
+    leadPanel.classList.toggle('collapsed');
+    if (!leadPanel.classList.contains('collapsed')) {
+      setTimeout(() => leadPanel.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
     }
   });
 
@@ -482,16 +685,38 @@
     input.style.height = 'auto';
 
     // Track conversation for prefill
+    const photosToSend = [...chatPhotos];
+    chatPhotos = [];
+    renderChatThumbs();
     conversationLog.push({ role: 'user', text });
 
-    addMessage(text, 'user');
+    // Show user message with any attached photos
+    const userMsgDiv = addMessage(text, 'user');
+    if (photosToSend.length > 0) {
+      const photoRow = document.createElement('div');
+      photoRow.className = 'chat-photo-msg';
+      photosToSend.forEach(file => {
+        const img = document.createElement('img');
+        img.src = URL.createObjectURL(file);
+        photoRow.appendChild(img);
+      });
+      userMsgDiv.appendChild(photoRow);
+    }
+
     const loading = addMessage('...', 'bot loading');
+
+    // Build prompt — include photo note so AI knows images were shared
+    const promptWithPhotoNote = photosToSend.length > 0
+      ? `${text}
+
+[Customer attached ${photosToSend.length} photo(s) of their project]`
+      : text;
 
     try {
       const res = await fetch('https://astro-fence-assistant.onrender.com/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: text, session_id: sessionId })
+        body: JSON.stringify({ prompt: promptWithPhotoNote, session_id: sessionId })
       });
       const data = await res.json();
       sessionId = data.session_id;
@@ -570,8 +795,9 @@
     else if (lower.includes('power wash')) projectSelect.value = 'Power washing';
     else if (lower.includes('cedar') || lower.includes('wood fence')) projectSelect.value = 'New wood fence';
 
-    // Highlight and scroll to the lead panel
-    const leadPanel = document.querySelector('.lead-panel');
+    // Expand and highlight the lead panel
+    const leadPanel = document.getElementById('leadPanel');
+    leadPanel.classList.remove('collapsed');
     leadPanel.classList.remove('highlighted');
     void leadPanel.offsetWidth; // force reflow to restart animation
     leadPanel.classList.add('highlighted');
@@ -641,6 +867,24 @@
     return parts.join('\n');
   }
 
+  function expandChat() {
+    document.getElementById('chatPanel').classList.add('input-focused');
+    document.getElementById('userInput').classList.add('expanded');
+    // Scroll messages to bottom so latest is visible
+    setTimeout(() => {
+      const msgs = document.getElementById('chatMessages');
+      msgs.scrollTop = msgs.scrollHeight;
+    }, 320);
+  }
+
+  function collapseChat() {
+    // Small delay so tapping Send doesn't collapse before it fires
+    setTimeout(() => {
+      document.getElementById('chatPanel').classList.remove('input-focused');
+      document.getElementById('userInput').classList.remove('expanded');
+    }, 200);
+  }
+
   function quickSend(text) {
     document.getElementById('userInput').value = text;
     sendMessage();
@@ -664,6 +908,82 @@
     document.getElementById('leadContact').value = tab;
   }
 
+  // ---- Chat photo upload ----
+  let chatPhotos = [];
+
+  function handleChatFiles(files) {
+    Array.from(files).forEach(file => {
+      if (!file.type.startsWith('image/')) return;
+      if (chatPhotos.length >= 4) { alert('Max 4 photos per message.'); return; }
+      chatPhotos.push(file);
+    });
+    renderChatThumbs();
+  }
+
+  function removeChatThumb(index) {
+    chatPhotos.splice(index, 1);
+    renderChatThumbs();
+  }
+
+  function renderChatThumbs() {
+    const bar = document.getElementById('chatUploadBar');
+    bar.innerHTML = '';
+    chatPhotos.forEach((file, i) => {
+      const url = URL.createObjectURL(file);
+      const div = document.createElement('div');
+      div.className = 'chat-thumb';
+      div.innerHTML = `<img src="${url}"><button class="remove-chat-thumb" onclick="removeChatThumb(${i})">×</button>`;
+      bar.appendChild(div);
+    });
+  }
+
+  // ---- Image upload handling ----
+  let uploadedFiles = [];
+
+  function handleFiles(files) {
+    Array.from(files).forEach(file => {
+      if (!file.type.startsWith('image/')) return;
+      if (uploadedFiles.length >= 5) { alert('Max 5 photos allowed.'); return; }
+      uploadedFiles.push(file);
+      renderThumbs();
+    });
+  }
+
+  function handleDragOver(e) {
+    e.preventDefault();
+    document.getElementById('uploadArea').classList.add('dragover');
+  }
+
+  function handleDrop(e) {
+    e.preventDefault();
+    document.getElementById('uploadArea').classList.remove('dragover');
+    handleFiles(e.dataTransfer.files);
+  }
+
+  function removeThumb(index) {
+    uploadedFiles.splice(index, 1);
+    renderThumbs();
+  }
+
+  function renderThumbs() {
+    const container = document.getElementById('uploadPreviews');
+    container.innerHTML = '';
+    uploadedFiles.forEach((file, i) => {
+      const url = URL.createObjectURL(file);
+      const div = document.createElement('div');
+      div.className = 'upload-thumb';
+      div.innerHTML = `<img src="${url}"><button class="remove-thumb" onclick="removeThumb(${i})">×</button>`;
+      container.appendChild(div);
+    });
+    // Update upload area label
+    const label = document.querySelector('.upload-label');
+    if (uploadedFiles.length > 0) {
+      label.innerHTML = `${uploadedFiles.length} photo${uploadedFiles.length > 1 ? 's' : ''} added <span class="upload-sub">— tap to add more</span>`;
+    } else {
+      label.innerHTML = 'Tap to add photos <span class="upload-sub">(optional)</span>';
+    }
+  }
+
   async function submitLead() {
     const name = document.getElementById('leadName').value.trim();
     const details = document.getElementById('leadDetails').value.trim();
@@ -675,39 +995,66 @@
     const fullDetails = project ? `[${project}] ${details}` : details;
     if (fullDetails.length < 10) { alert('Please add a bit more detail about your project.'); return; }
 
-    const payload = {
-      name,
-      phone: document.getElementById('leadPhone').value.trim(),
-      email: document.getElementById('leadEmail').value.trim(),
-      address_or_zip: document.getElementById('leadZip').value.trim(),
-      preferred_contact: document.getElementById('leadContact').value,
-      project_details: fullDetails
-    };
+    // Use FormData so we can attach photos
+    const formData = new FormData();
+    formData.append('name', name);
+    formData.append('phone', document.getElementById('leadPhone').value.trim());
+    formData.append('email', document.getElementById('leadEmail').value.trim());
+    formData.append('address_or_zip', document.getElementById('leadZip').value.trim());
+    formData.append('preferred_contact', document.getElementById('leadContact').value);
+    formData.append('project_details', fullDetails);
+    uploadedFiles.forEach((file, i) => formData.append(`photo_${i}`, file));
+
+    const submitBtn = document.querySelector('.submit-btn');
+    submitBtn.textContent = uploadedFiles.length > 0 ? 'Uploading photos...' : 'Sending...';
+    submitBtn.disabled = true;
 
     try {
-      const res = await fetch('https://astro-fence-assistant.onrender.com/lead', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      const data = await res.json();
+      // Try multipart endpoint first, fall back to JSON if not supported
+      let res, data;
+      try {
+        res = await fetch('https://astro-fence-assistant.onrender.com/lead-with-photos', {
+          method: 'POST',
+          body: formData
+        });
+        data = await res.json();
+      } catch (e) {
+        // Fallback: send without photos via JSON
+        res = await fetch('https://astro-fence-assistant.onrender.com/lead', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name, phone: formData.get('phone'), email: formData.get('email'),
+            address_or_zip: formData.get('address_or_zip'),
+            preferred_contact: formData.get('preferred_contact'),
+            project_details: fullDetails + (uploadedFiles.length > 0 ? `
+[${uploadedFiles.length} photo(s) attached — send to 832-280-5783]` : '')
+          })
+        });
+        data = await res.json();
+      }
+
       if (data.ok) {
         const msg = document.getElementById('successMsg');
         msg.style.display = 'block';
-        msg.innerHTML = `✅ Got it, ${name}!<br>${data.message}`;
+        msg.innerHTML = `✅ Got it, ${name}!<br>${data.message}${uploadedFiles.length > 0 ? '<br>📷 Photos received!' : ''}`;
         document.getElementById('leadName').value = '';
         document.getElementById('leadPhone').value = '';
         document.getElementById('leadEmail').value = '';
         document.getElementById('leadZip').value = '';
         document.getElementById('leadDetails').value = '';
         document.getElementById('leadProject').value = '';
+        uploadedFiles = [];
+        renderThumbs();
       }
     } catch (e) {
       alert('Submission failed. Please call us at 832-280-5783.');
+    } finally {
+      submitBtn.textContent = 'Request a Quote';
+      submitBtn.disabled = false;
     }
   }
 </script>
+
 </body>
 </html>
-
-
