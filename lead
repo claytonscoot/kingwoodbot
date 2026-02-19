@@ -417,7 +417,7 @@
     };
 
     try {
-      const res = await fetch('/lead', {
+      const res = await fetch('https://astro-fence-assistant.onrender.com/lead', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -441,4 +441,5 @@
 </script>
 </body>
 </html>
+
 
