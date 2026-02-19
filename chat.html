@@ -358,7 +358,7 @@
     const loading = addMessage('...', 'bot loading');
 
     try {
-      const res = await fetch('https://astro-fence-assistant.onrender.com/chat',, {
+      const res = await fetch('https://astro-fence-assistant.onrender.com/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prompt: text, session_id: sessionId })
@@ -441,5 +441,6 @@
 </script>
 </body>
 </html>
+
 
 
