@@ -100,6 +100,7 @@ class Chat(BaseModel):
     prompt: str = Field(..., min_length=1, max_length=4000)
     session_id: Optional[str] = None
     user_name: Optional[str] = None
+    images: Optional[List[str]] = None  # list of base64 encoded images
 
 class Lead(BaseModel):
     name: str = Field(..., min_length=2, max_length=100)
@@ -180,6 +181,7 @@ ABSOLUTE RULES
 - If key info is missing, ask 2–4 direct questions max.
 - Always calculate pricing when footage is provided.
 - Do NOT assume the customer is in Kingwood specifically — they may be anywhere in Greater Houston.
+- When a customer provides a zip code, NEVER guess or state the city name for that zip. Just confirm: "Great, that zip is in our service area" or ask if it falls outside our known list. Do NOT say "77345 is Conroe" or any zip-to-city mapping — you may be wrong.
 
 ---------------------------------
 CONVERSATION OPENER
@@ -284,12 +286,16 @@ GOAL
 - Move toward scheduling confirmation visit.
 """.strip()
 
-def call_claude(user_message: str, history: list = None) -> str:
+def call_claude(user_message: str, history: list = None, images: list = None) -> str:
+    """Call Claude API with conversation history and optional images for vision"""
     headers = {
         "x-api-key": ANTHROPIC_API_KEY,
         "anthropic-version": "2023-06-01",
         "content-type": "application/json"
     }
+    # Use claude-sonnet for vision (haiku vision quality is poor), fall back to haiku for text-only
+    model = "claude-sonnet-4-20250514" if images else CLAUDE_MODEL
+
     messages = []
     if history:
         for msg in history[:-1]:
@@ -297,9 +303,32 @@ def call_claude(user_message: str, history: list = None) -> str:
                 messages.append({"role": "user", "content": msg["message"]})
             elif msg["type"] == "assistant":
                 messages.append({"role": "assistant", "content": msg["message"]})
-    messages.append({"role": "user", "content": user_message})
+
+    # Build user message content — text + optional images
+    if images:
+        content = []
+        for img_b64 in images:
+            # Detect media type from base64 header if present
+            media_type = "image/jpeg"
+            if img_b64.startswith("data:"):
+                header, img_b64 = img_b64.split(",", 1)
+                if "png" in header:
+                    media_type = "image/png"
+                elif "webp" in header:
+                    media_type = "image/webp"
+                elif "gif" in header:
+                    media_type = "image/gif"
+            content.append({
+                "type": "image",
+                "source": {"type": "base64", "media_type": media_type, "data": img_b64}
+            })
+        content.append({"type": "text", "text": user_message})
+        messages.append({"role": "user", "content": content})
+    else:
+        messages.append({"role": "user", "content": user_message})
+
     payload = {
-        "model": CLAUDE_MODEL,
+        "model": model,
         "max_tokens": 600,
         "system": get_system_prompt(),
         "messages": messages
@@ -401,7 +430,7 @@ def chat(req: Chat, request: Request):
         return {"response": fallback_response, "session_id": session_id, "business": BUSINESS_NAME}
 
     try:
-        ai_response = call_claude(prompt, active_sessions[session_id]["messages"])
+        ai_response = call_claude(prompt, active_sessions[session_id]["messages"], images=req.images)
         if not ai_response:
             ai_response = "Got it. What's the approximate length (feet) and desired height (6ft/7ft/8ft)? Any gates needed?"
 
