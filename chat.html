@@ -882,28 +882,39 @@
     return parts.join('\n');
   }
 
-  // ---- Paste image support (Ctrl+V / ⌘+V) ----
-  document.addEventListener('paste', function(e) {
-    const items = e.clipboardData && e.clipboardData.items;
+  // ---- Paste image support (Ctrl+V / ⌘+V) — works for screenshots & clipboard images ----
+  function handlePasteEvent(e) {
+    const items = (e.clipboardData || window.clipboardData) && (e.clipboardData || window.clipboardData).items;
     if (!items) return;
     let foundImage = false;
     Array.from(items).forEach(item => {
-      if (item.type.startsWith('image/')) {
-        foundImage = true;
+      // Accept any image type including screenshots (image/png from snipping tool)
+      if (item.kind === 'file' && item.type.startsWith('image/')) {
         const file = item.getAsFile();
         if (!file) return;
+        foundImage = true;
         if (chatPhotos.length >= 4) { alert('Max 4 photos per message.'); return; }
-        chatPhotos.push(file);
+        // Create a proper named file from the clipboard blob
+        const namedFile = new File([file], `screenshot-${Date.now()}.png`, { type: file.type });
+        chatPhotos.push(namedFile);
       }
     });
     if (foundImage) {
+      e.preventDefault(); // prevent pasting image data as text
       renderChatThumbs();
-      // Flash the attach bar so user knows it worked
+      // Flash orange border so user sees it worked
       const bar = document.getElementById('chatUploadBar');
       bar.style.outline = '2px solid #e87722';
-      setTimeout(() => bar.style.outline = '', 600);
+      bar.style.borderRadius = '6px';
+      setTimeout(() => { bar.style.outline = ''; bar.style.borderRadius = ''; }, 700);
+      // Also focus the textarea so they can type a message
+      document.getElementById('userInput').focus();
     }
-  });
+  }
+
+  // Listen on both document AND the textarea to catch all paste scenarios
+  document.addEventListener('paste', handlePasteEvent);
+  document.getElementById('userInput').addEventListener('paste', handlePasteEvent);
 
   function expandChat() {
     document.getElementById('chatPanel').classList.add('input-focused');
