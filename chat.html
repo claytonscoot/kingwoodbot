@@ -57,6 +57,36 @@
   .send-btn { background: #e87722; color: white; border: none; border-radius: 12px; padding: 10px 22px; font-size: 15px; font-weight: 700; cursor: pointer; white-space: nowrap; height: 60px; }
   .send-btn:hover { background: #cf6a1a; }
 
+  /* Quote CTA button inside chat bubble */
+  .quote-cta {
+    display: block;
+    margin-top: 12px;
+    background: #e87722;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    padding: 10px 18px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    width: 100%;
+    text-align: center;
+    animation: ctaPulse 2s ease-in-out infinite;
+  }
+  .quote-cta:hover { background: #cf6a1a; animation: none; }
+  @keyframes ctaPulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(232,119,34,0.5); }
+    50% { box-shadow: 0 0 0 7px rgba(232,119,34,0); }
+  }
+
+  /* Lead panel highlight when triggered from chat */
+  .lead-panel.highlighted { animation: panelPop 0.6s ease; border: 2px solid #e87722; border-radius: 16px; }
+  @keyframes panelPop {
+    0% { transform: scale(1); }
+    40% { transform: scale(1.015); }
+    100% { transform: scale(1); }
+  }
+
   /* ---- LEAD PANEL ---- */
   .lead-panel { background: #1e1e1e; border-radius: 16px; width: 100%; max-width: 340px; display: flex; flex-direction: column; height: 850px; overflow: hidden; box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
   .lead-header { background: #e87722; color: white; padding: 18px 20px; }
@@ -80,15 +110,75 @@
   .lead-footer { padding: 12px 16px; text-align: center; color: #555; font-size: 11px; border-top: 1px solid #2a2a2a; }
   .success-msg { display: none; background: #1a3a1a; border: 1px solid #2d6a2d; border-radius: 10px; padding: 16px; color: #7fca7f; font-size: 13px; text-align: center; line-height: 1.6; }
 
+  /* ---- MOBILE STYLES ---- */
   @media (max-width: 768px) {
     body { padding: 10px; gap: 0; flex-direction: column; align-items: center; }
-    .chat-panel { max-width: 100%; height: 680px; border-radius: 16px 16px 0 0; }
-    .lead-panel { max-width: 100%; height: auto; border-radius: 0 0 16px 16px; border-top: 3px solid #e87722; }
+
+    /* Chat panel: collapsible card */
+    .chat-panel {
+      max-width: 100%;
+      height: auto;
+      border-radius: 16px;
+      overflow: hidden;
+      transition: none;
+    }
+
+    /* Collapsed state: hide all but the header */
+    .chat-panel.collapsed .gallery-bar,
+    .chat-panel.collapsed .chat-messages,
+    .chat-panel.collapsed .quick-replies,
+    .chat-panel.collapsed .chat-input-area,
+    .chat-panel.collapsed .chat-disclaimer {
+      display: none;
+    }
+
+    /* Header becomes a tap target */
+    .chat-header {
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .chat-header-text { flex: 1; }
+
+    .chat-toggle-icon {
+      font-size: 20px;
+      margin-left: 12px;
+      transition: transform 0.3s ease;
+      flex-shrink: 0;
+    }
+
+    .chat-panel.collapsed .chat-toggle-icon {
+      transform: rotate(0deg);
+    }
+
+    .chat-panel:not(.collapsed) .chat-toggle-icon {
+      transform: rotate(180deg);
+    }
+
+    /* Expanded chat gets a fixed height */
+    .chat-panel:not(.collapsed) {
+      height: 680px;
+    }
+
+    /* Lead panel below */
+    .lead-panel {
+      max-width: 100%;
+      height: auto;
+      border-radius: 0 0 16px 16px;
+      border-top: 3px solid #e87722;
+    }
+
     .photo-grid { grid-template-columns: 1fr; }
     .chat-header h2 { font-size: 15px; }
     .style-btn { font-size: 11px; padding: 4px 10px; }
     .lead-header { display: flex; align-items: center; gap: 12px; }
-    .lead-header::before { content: '👇'; font-size: 20px; }
+    .lead-header::before { content: '📋'; font-size: 20px; }
+    .lead-header .mobile-title { display: block; }
+    .lead-header .desktop-title { display: none; }
   }
 </style>
 </head>
@@ -107,10 +197,13 @@
 </div>
 
 <!-- CHAT PANEL -->
-<div class="chat-panel">
-  <div class="chat-header">
-    <h2>💬 Astro Outdoor Designs – Fence Assistant</h2>
-    <p>🤖 AI-powered chat — get instant quotes, pricing & answers 24/7</p>
+<div class="chat-panel collapsed" id="chatPanel">
+  <div class="chat-header" id="chatHeaderToggle">
+    <div class="chat-header-text">
+      <h2>💬 Astro Outdoor Designs – Fence Assistant</h2>
+      <p>🤖 AI-powered chat — get instant quotes, pricing & answers 24/7</p>
+    </div>
+    <span class="chat-toggle-icon">▼</span>
   </div>
 
   <div class="gallery-bar">
@@ -154,7 +247,7 @@
     <textarea id="userInput" placeholder="Type your question here... (e.g. I need a 150ft cedar fence with steel posts)" rows="2" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
     <button class="send-btn" onclick="sendMessage()">Send</button>
   </div>
-  <div style="padding: 6px 16px 10px; text-align: center; color: #555; font-size: 11px; line-height: 1.4;">
+  <div class="chat-disclaimer" style="padding: 6px 16px 10px; text-align: center; color: #555; font-size: 11px; line-height: 1.4;">
     ⚠️ This assistant is AI-powered and provides estimates only. All pricing is approximate — contact us directly for an official quote.
   </div>
 </div>
@@ -162,8 +255,8 @@
 <!-- LEAD PANEL -->
 <div class="lead-panel">
   <div class="lead-header">
-    <h2>Talk to us</h2>
-    <p>Fastest way to get scheduled or quoted.</p>
+    <h2>Request a Quote</h2>
+    <p>Fill out the form — we'll call, text, or email you back fast.</p>
   </div>
 
   <div class="contact-tabs">
@@ -213,6 +306,34 @@
 <script>
   let sessionId = null;
   let currentStyle = null;
+  let conversationLog = []; // tracks messages for form prefill
+
+  // ---- Mobile collapsible chat ----
+  const chatPanel = document.getElementById('chatPanel');
+  const chatHeaderToggle = document.getElementById('chatHeaderToggle');
+
+  function isMobile() {
+    return window.innerWidth <= 768;
+  }
+
+  chatHeaderToggle.addEventListener('click', function() {
+    if (!isMobile()) return;
+    chatPanel.classList.toggle('collapsed');
+    // Scroll into view when expanding
+    if (!chatPanel.classList.contains('collapsed')) {
+      setTimeout(() => chatPanel.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+    }
+  });
+
+  // On resize to desktop, always remove collapsed state
+  window.addEventListener('resize', function() {
+    if (!isMobile()) {
+      chatPanel.classList.remove('collapsed');
+    } else {
+      // Re-apply collapsed if we shrink back down and it's not already managed
+      // (don't override user's choice if they opened it on mobile)
+    }
+  });
 
   const FENCE_STYLES = {
     wood: {
@@ -325,6 +446,11 @@
   function askAboutStyle() {
     closeModal();
     const data = FENCE_STYLES[currentStyle];
+    // On mobile, expand chat first
+    if (isMobile() && chatPanel.classList.contains('collapsed')) {
+      chatPanel.classList.remove('collapsed');
+      setTimeout(() => chatPanel.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+    }
     quickSend(`I'm interested in ${data.title}. Can you give me a quote?`);
   }
 
@@ -354,6 +480,10 @@
     if (!text) return;
     input.value = '';
     input.style.height = 'auto';
+
+    // Track conversation for prefill
+    conversationLog.push({ role: 'user', text });
+
     addMessage(text, 'user');
     const loading = addMessage('...', 'bot loading');
 
@@ -366,11 +496,149 @@
       const data = await res.json();
       sessionId = data.session_id;
       loading.remove();
-      addMessage(data.response, 'bot');
+
+      conversationLog.push({ role: 'bot', text: data.response });
+
+      const msgDiv = addMessage(data.response, 'bot');
+
+      // Detect if AI has given a real quote or hit a wall — show appropriate CTA
+      const ctaType = shouldShowQuoteCTA(data.response);
+      if (ctaType === 'quote') {
+        const btn = document.createElement('button');
+        btn.className = 'quote-cta';
+        btn.textContent = '📋 Ready to move forward? Fill out your info →';
+        btn.onclick = () => prefillAndScrollToForm(data.response);
+        msgDiv.appendChild(btn);
+      } else if (ctaType === 'stuck') {
+        const btn = document.createElement('button');
+        btn.className = 'quote-cta';
+        btn.style.background = '#333';
+        btn.style.border = '1px solid #e87722';
+        btn.style.color = '#e87722';
+        btn.style.animation = 'none';
+        btn.textContent = '📞 Reach out to our team directly →';
+        btn.onclick = () => prefillAndScrollToForm(data.response);
+        msgDiv.appendChild(btn);
+      }
+
     } catch (e) {
       loading.remove();
       addMessage('Something went wrong. Please try again or call us at 832-280-5783.', 'bot');
     }
+  }
+
+  // Returns 'quote', 'stuck', or false.
+  // 'quote' = AI produced a real priced estimate with enough conversation depth.
+  // 'stuck' = AI is punting to humans — show a soft reach-out button.
+  // false = keep chatting, don't interrupt yet.
+  function shouldShowQuoteCTA(text) {
+    const botMessages = conversationLog.filter(m => m.role === 'bot');
+
+    // Never fire in the first 2 bot turns — let conversation develop
+    if (botMessages.length < 3) return false;
+
+    // "Stuck" mode: AI is clearly deferring to humans
+    const isStuck = /call (us|or text)|text us at|reach out|contact us directly|email us|832-280-5783|for an official quote|site visit (required|needed)/i.test(text);
+    if (isStuck) return 'stuck';
+
+    // Full quote mode: needs a dollar amount AND footage or an explicit estimate label
+    const hasFootage = /\d{2,4}\s*(lf|linear feet|ft|feet)/i.test(text);
+    const hasDollar = /\$[\d,]{3,}/.test(text); // $100+ so we don't fire on "$6/LF" alone
+    const hasEstimateLabel = /working estimate|total.*estimate|installed.*price|range:/i.test(text);
+
+    if (hasDollar && (hasFootage || hasEstimateLabel)) return 'quote';
+
+    return false;
+  }
+
+  // Build a clean summary from conversation and prefill the lead form
+  function prefillAndScrollToForm(latestResponse) {
+    const summary = buildConversationSummary();
+    document.getElementById('leadDetails').value = summary;
+
+    // Auto-select project type if we can detect it
+    const lower = summary.toLowerCase();
+    const projectSelect = document.getElementById('leadProject');
+    if (lower.includes('chain link')) projectSelect.value = 'New chain link';
+    else if (lower.includes('metal') || lower.includes('steel fence')) projectSelect.value = 'New metal fence';
+    else if (lower.includes('vinyl')) projectSelect.value = 'New vinyl fence';
+    else if (lower.includes('stain')) projectSelect.value = 'Fence staining';
+    else if (lower.includes('gate repair')) projectSelect.value = 'Gate repair';
+    else if (lower.includes('gate')) projectSelect.value = 'Gate installation';
+    else if (lower.includes('repair')) projectSelect.value = 'Fence repair';
+    else if (lower.includes('deck')) projectSelect.value = 'Deck installation';
+    else if (lower.includes('power wash')) projectSelect.value = 'Power washing';
+    else if (lower.includes('cedar') || lower.includes('wood fence')) projectSelect.value = 'New wood fence';
+
+    // Highlight and scroll to the lead panel
+    const leadPanel = document.querySelector('.lead-panel');
+    leadPanel.classList.remove('highlighted');
+    void leadPanel.offsetWidth; // force reflow to restart animation
+    leadPanel.classList.add('highlighted');
+    setTimeout(() => leadPanel.classList.remove('highlighted'), 700);
+
+    leadPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    // Focus on name field so user knows where to start
+    setTimeout(() => document.getElementById('leadName').focus(), 600);
+  }
+
+  // Scrape key fence details from the conversation log
+  function buildConversationSummary() {
+    const lines = [];
+    let footage = null, height = null, style = null, posts = null, gates = [], location = null, estimate = null;
+
+    const allText = conversationLog.map(m => m.text).join(' ');
+
+    // Extract footage
+    const ftMatch = allText.match(/(\d{2,4})\s*(lf|linear feet|ft|foot|feet)/i);
+    if (ftMatch) footage = ftMatch[1] + ' LF';
+
+    // Extract height
+    const htMatch = allText.match(/(\d)'?\s*(tall|height|high|ft|foot)?/i);
+    if (htMatch && ['6','7','8'].includes(htMatch[1])) height = htMatch[1] + "' tall";
+
+    // Extract style
+    if (/board.on.board/i.test(allText)) style = 'Board-on-board';
+    else if (/top cap/i.test(allText)) style = 'Top cap & trim';
+    else if (/privacy/i.test(allText)) style = 'Standard privacy';
+
+    // Extract post type
+    if (/steel post|metal post/i.test(allText)) posts = 'Steel posts';
+    else if (/wood post/i.test(allText)) posts = 'Wood posts';
+
+    // Extract gates
+    if (/double.*gate|drive.*gate/i.test(allText)) gates.push('double drive gate');
+    if (/walk.*gate|single.*gate/i.test(allText)) gates.push('walk gate');
+    if (/sliding.*gate/i.test(allText)) gates.push('sliding gate');
+
+    // Extract location
+    const locMatch = allText.match(/\b(kingwood|humble|houston|woodlands|conroe|tomball|cypress|spring|katy|sugar land|magnolia)\b/i);
+    if (locMatch) location = locMatch[1];
+
+    // Extract estimate from bot messages
+    const botText = conversationLog.filter(m => m.role === 'bot').map(m => m.text).join(' ');
+    const estMatch = botText.match(/working estimate[:\s~]*\$[\d,]+(?:\s*[-–]\s*\$[\d,]+)?/i)
+      || botText.match(/\$[\d,]+(?:\s*[-–]\s*\$[\d,]+)?\s*(?:range|estimate|installed)/i);
+    if (estMatch) estimate = estMatch[0].replace(/<[^>]+>/g, '').trim();
+
+    // Build clean summary
+    const parts = [];
+    if (footage) parts.push(`Length: ${footage}`);
+    if (height) parts.push(`Height: ${height}`);
+    if (style) parts.push(`Style: ${style}`);
+    if (posts) parts.push(`Posts: ${posts}`);
+    if (gates.length) parts.push(`Gates: ${gates.join(', ')}`);
+    if (location) parts.push(`Area: ${location}`);
+    if (estimate) parts.push(`AI estimate: ${estimate}`);
+
+    if (parts.length === 0) {
+      // Fallback: grab last user message
+      const lastUser = [...conversationLog].reverse().find(m => m.role === 'user');
+      return lastUser ? lastUser.text : '';
+    }
+
+    return parts.join('\n');
   }
 
   function quickSend(text) {
@@ -441,6 +709,3 @@
 </script>
 </body>
 </html>
-
-
-
