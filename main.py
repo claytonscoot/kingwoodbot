@@ -183,6 +183,13 @@ ABSOLUTE RULES
 - Do NOT assume the customer is in Kingwood specifically — they may be anywhere in Greater Houston.
 - When a customer provides a zip code, NEVER guess or state the city name for that zip. Just confirm: "Great, that zip is in our service area" or ask if it falls outside our known list. Do NOT say "77345 is Conroe" or any zip-to-city mapping — you may be wrong.
 
+CRITICAL — NEVER TURN AWAY A CUSTOMER:
+- We install ANY type of fencing. If we can design it, we can install it.
+- NEVER tell a customer we don't do a certain type of fence or to call someone else.
+- NEVER refer a customer to another contractor or company under any circumstance.
+- If you don't know the exact pricing for a specific fence type, say: "That's something our team handles — give us a call or text at {BUSINESS_PHONE} and we'll get you a solid quote." or direct them to {WEBSITE}.
+- Always keep the customer engaged with us. The answer is always either a quote, a question to gather more info, or a prompt to call/text us directly.
+
 ---------------------------------
 CONVERSATION OPENER
 ---------------------------------
@@ -209,9 +216,15 @@ When a customer asks about longevity or durability, mention the steel post upgra
 ---------------------------------
 PHOTOS
 ---------------------------------
-If a customer attaches photos, acknowledge them naturally and use them to give a better estimate. Say something like: "Thanks for the photos — that helps a lot. Based on what I can see..."
+You CAN see photos when customers attach them in this chat. When a customer sends a photo:
+- Look at it carefully and describe what you see
+- Comment on fence condition, style, damage, materials, height estimate
+- Use what you see to give a more accurate estimate
+- Say something like: "Thanks for sharing that — I can see [describe what you see]. Based on this..."
 
-We can also receive photos via text at {BUSINESS_PHONE} or email at {BUSINESS_EMAIL}.
+NEVER say you cannot view photos or that you need them to send via text/email. You can see them directly in this chat.
+
+We can also receive additional photos via text at {BUSINESS_PHONE} or email at {BUSINESS_EMAIL} if they want to share more.
 
 ---------------------------------
 PRICING LOGIC (IMPORTANT)
@@ -257,6 +270,19 @@ CHAIN LINK (installed):
 - 6' galvanized: ~$22–28/LF
 - 6' black vinyl coated: ~$28–36/LF
 
+ALUMINUM / ORNAMENTAL FENCING (installed):
+- We absolutely install aluminum and ornamental iron fencing. Do NOT turn away these customers.
+- Aluminum panel fencing (residential): ~$38–55/LF installed depending on style and height
+- 4' aluminum: ~$38–45/LF installed
+- 5' aluminum: ~$42–50/LF installed
+- 6' aluminum: ~$48–58/LF installed
+- Ornamental iron: ~$55–80/LF installed (heavier, more custom)
+- Aluminum walk gate: $400–600
+- Aluminum double drive gate: $900–1,400
+- Low maintenance, rust-resistant, great for front yards, pools, and HOA communities
+- Popular styles: flat top, spear top, dog-eared, french gothic
+- When a customer asks about aluminum, quote it confidently and ask: height, style (flat top vs spear top), color (black is standard), and any gates
+
 HOW TO CALCULATE A QUOTE:
 1. Start with base LF price
 2. Add any applicable add-ons
@@ -294,38 +320,44 @@ def call_claude(user_message: str, history: list = None, images: list = None) ->
         "content-type": "application/json"
     }
     # Use claude-sonnet for vision (haiku vision quality is poor), fall back to haiku for text-only
-    model = "claude-sonnet-4-20250514" if images else CLAUDE_MODEL
+    model = "claude-sonnet-4-5" if images else CLAUDE_MODEL
+
+    def build_content(text, imgs):
+        """Build a Claude message content block — text only or text+images"""
+        if not imgs:
+            return text
+        content_blocks = []
+        for img_b64 in imgs:
+            media_type = "image/jpeg"
+            if img_b64.startswith("data:"):
+                header, img_b64 = img_b64.split(",", 1)
+                if "png" in header: media_type = "image/png"
+                elif "webp" in header: media_type = "image/webp"
+                elif "gif" in header: media_type = "image/gif"
+            content_blocks.append({
+                "type": "image",
+                "source": {"type": "base64", "media_type": media_type, "data": img_b64}
+            })
+        content_blocks.append({"type": "text", "text": text})
+        return content_blocks
 
     messages = []
     if history:
         for msg in history[:-1]:
             if msg["type"] == "user":
-                messages.append({"role": "user", "content": msg["message"]})
+                msg_images = msg.get("images", [])
+                messages.append({
+                    "role": "user",
+                    "content": build_content(msg["message"], msg_images)
+                })
             elif msg["type"] == "assistant":
                 messages.append({"role": "assistant", "content": msg["message"]})
 
-    # Build user message content — text + optional images
-    if images:
-        content = []
-        for img_b64 in images:
-            # Detect media type from base64 header if present
-            media_type = "image/jpeg"
-            if img_b64.startswith("data:"):
-                header, img_b64 = img_b64.split(",", 1)
-                if "png" in header:
-                    media_type = "image/png"
-                elif "webp" in header:
-                    media_type = "image/webp"
-                elif "gif" in header:
-                    media_type = "image/gif"
-            content.append({
-                "type": "image",
-                "source": {"type": "base64", "media_type": media_type, "data": img_b64}
-            })
-        content.append({"type": "text", "text": user_message})
-        messages.append({"role": "user", "content": content})
-    else:
-        messages.append({"role": "user", "content": user_message})
+    # Current message with images
+    messages.append({
+        "role": "user",
+        "content": build_content(user_message, images or [])
+    })
 
     payload = {
         "model": model,
@@ -417,7 +449,8 @@ def chat(req: Chat, request: Request):
     active_sessions[session_id]["messages"].append({
         "timestamp": datetime.now().isoformat(),
         "type": "user",
-        "message": prompt
+        "message": prompt,
+        "images": req.images or []  # store images with message for history replay
     })
 
     if not prompt:
