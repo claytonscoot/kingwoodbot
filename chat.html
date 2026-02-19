@@ -57,6 +57,14 @@
   .send-btn { background: #e87722; color: white; border: none; border-radius: 12px; padding: 10px 22px; font-size: 15px; font-weight: 700; cursor: pointer; white-space: nowrap; height: 60px; }
   .send-btn:hover { background: #cf6a1a; }
 
+  /* Paste indicator */
+  .paste-hint {
+    font-size: 11px;
+    color: #555;
+    text-align: center;
+    padding: 2px 0 0;
+  }
+
   /* Chat input photo attach */
   .chat-input-wrap { flex: 1; display: flex; flex-direction: column; gap: 6px; }
   .chat-input-btns { display: flex; flex-direction: column; gap: 6px; align-items: stretch; justify-content: flex-end; }
@@ -417,7 +425,8 @@
       <button class="send-btn" onclick="sendMessage()">Send</button>
     </div>
   </div>
-  <div class="chat-disclaimer" style="padding: 6px 16px 10px; text-align: center; color: #555; font-size: 11px; line-height: 1.4;">
+  <div class="paste-hint">You can also paste images with Ctrl+V / ⌘+V</div>
+  <div class="chat-disclaimer" style="padding: 4px 16px 10px; text-align: center; color: #555; font-size: 11px; line-height: 1.4;">
     ⚠️ This assistant is AI-powered and provides estimates only. All pricing is approximate — contact us directly for an official quote.
   </div>
 </div>
@@ -701,11 +710,28 @@
 [Customer attached ${photosToSend.length} photo(s) of their project]`
       : text;
 
+    // Convert chat photos to base64 for vision API
+    let imageBase64List = [];
+    if (photosToSend.length > 0) {
+      imageBase64List = await Promise.all(photosToSend.map(file => new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = e => resolve(e.target.result); // includes data: header
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      })));
+    }
+
     try {
+      const chatPayload = {
+        prompt: photosToSend.length > 0 ? text : promptWithPhotoNote,
+        session_id: sessionId
+      };
+      if (imageBase64List.length > 0) chatPayload.images = imageBase64List;
+
       const res = await fetch('https://astro-fence-assistant.onrender.com/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: promptWithPhotoNote, session_id: sessionId })
+        body: JSON.stringify(chatPayload)
       });
       const data = await res.json();
       sessionId = data.session_id;
@@ -855,6 +881,29 @@
 
     return parts.join('\n');
   }
+
+  // ---- Paste image support (Ctrl+V / ⌘+V) ----
+  document.addEventListener('paste', function(e) {
+    const items = e.clipboardData && e.clipboardData.items;
+    if (!items) return;
+    let foundImage = false;
+    Array.from(items).forEach(item => {
+      if (item.type.startsWith('image/')) {
+        foundImage = true;
+        const file = item.getAsFile();
+        if (!file) return;
+        if (chatPhotos.length >= 4) { alert('Max 4 photos per message.'); return; }
+        chatPhotos.push(file);
+      }
+    });
+    if (foundImage) {
+      renderChatThumbs();
+      // Flash the attach bar so user knows it worked
+      const bar = document.getElementById('chatUploadBar');
+      bar.style.outline = '2px solid #e87722';
+      setTimeout(() => bar.style.outline = '', 600);
+    }
+  });
 
   function expandChat() {
     document.getElementById('chatPanel').classList.add('input-focused');
