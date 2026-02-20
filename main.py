@@ -193,6 +193,21 @@ CRITICAL — NEVER TURN AWAY A CUSTOMER:
 - If you don't know the exact pricing for a specific fence type, say: "That's something our team handles — give us a call or text at {BUSINESS_PHONE} and we'll get you a solid quote." or direct them to {WEBSITE}.
 - Always keep the customer engaged with us. The answer is always either a quote, a question to gather more info, or a prompt to call/text us directly.
 
+CRITICAL — CALLBACK REQUESTS:
+- If a customer says "call me", "have the team call me", "can someone call me", or asks for a callback — do NOT say you can't make calls and do NOT just give them the phone number.
+- Instead, collect their contact info RIGHT THERE IN THE CHAT before confirming anything.
+- Say something like: "Absolutely — let me grab your info so the team knows who to call. Can you give me:
+  • First and last name
+  • Phone number
+  • Email address
+  • Zip code
+  • Property address (optional but helpful)
+  • Anything specific you'd like to discuss on the call?"
+- Collect ALL of this before saying the team will call. Do not confirm a callback until you have at minimum: name, phone, and zip code.
+- Once collected, say: "Perfect — I've sent your info to the team. Someone will be in touch shortly to discuss your project."
+- The system will automatically alert our team with everything you collected.
+- This process protects against spam and ensures the team has full context before calling.
+
 ---------------------------------
 CONVERSATION OPENER
 ---------------------------------
@@ -882,6 +897,68 @@ def chat(req: Chat, request: Request):
         name_match = re.search(r"(?:i'?m|my name is|this is|call me)\s+([A-Z][a-z]+)", prompt, re.IGNORECASE)
         if name_match and not active_sessions[session_id].get("soft_lead_name"):
             active_sessions[session_id]["soft_lead_name"] = name_match.group(1)
+
+        # Detect callback confirmation — bot just confirmed callback AND we have name + phone
+        # Fire alert only when the AI response confirms "sent your info to the team" or similar
+        # meaning the bot has already collected all required contact info
+        phone_in_prompt = re.search(r'(\d{3}[-.\s]?\d{3}[-.\s]?\d{4}|\d{10})', prompt)
+        if phone_in_prompt:
+            active_sessions[session_id]["soft_lead_phone"] = phone_in_prompt.group(1)
+
+        # Check if the AI response just confirmed a callback (meaning it collected info)
+        callback_confirmed = any(phrase in ai_response.lower() for phrase in [
+            "sent your info to the team",
+            "passed your info",
+            "team will be in touch",
+            "someone will be in touch",
+            "team will call",
+            "will reach out shortly"
+        ])
+
+        has_name = bool(active_sessions[session_id].get("soft_lead_name"))
+        has_phone = bool(active_sessions[session_id].get("soft_lead_phone"))
+
+        if callback_confirmed and has_name and has_phone and not active_sessions[session_id].get("callback_alert_sent"):
+            active_sessions[session_id]["callback_alert_sent"] = True
+
+            # Build full context from conversation
+            all_user_msgs = [m["message"] for m in active_sessions[session_id]["messages"] if m["type"] == "user"]
+            conversation_context = "
+".join(all_user_msgs[-6:])  # last 6 user messages
+            name = active_sessions[session_id].get("soft_lead_name", "Unknown")
+            phone = active_sessions[session_id].get("soft_lead_phone", "Unknown")
+            email = active_sessions[session_id].get("soft_lead_email", "Not provided")
+
+            def send_callback_alert(phone, name, email, context, sid):
+                try:
+                    clean_phone = ''.join(filter(str.isdigit, phone))
+                    send_brevo_email(
+                        subject=f"📞 CALLBACK REQUEST — {name} — {phone}",
+                        text_content=(
+                            f"A customer requested a callback through the chat.\n"
+                            f"They have been told the team will contact them.\n\n"
+                            f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+                            f"Name: {name}\n"
+                            f"Phone: {phone}\n"
+                            f"Email: {email}\n"
+                            f"Session: {sid[:8]}\n"
+                            f"Time: {datetime.now().strftime('%I:%M %p on %b %d')}\n"
+                            f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+                            f"What they discussed:\n{context}\n\n"
+                            f"Tap to call: tel:{clean_phone}\n"
+                            f"Tap to text: sms:{clean_phone}"
+                        )
+                    )
+                    logger.info(f"📞 Callback alert sent for {name} at {phone}")
+                except Exception as e:
+                    logger.error(f"Callback alert error: {e}")
+
+            t = threading.Thread(
+                target=send_callback_alert,
+                args=[phone, name, email, conversation_context, session_id],
+                daemon=True
+            )
+            t.start()
 
         # Determine if bot should ask for contact info (soft lead prompt)
         # Trigger after 3+ messages if no contact info captured yet and no form submitted
