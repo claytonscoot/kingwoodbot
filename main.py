@@ -233,55 +233,324 @@ These are our REAL installed prices based on actual material and labor costs.
 Always use these numbers. Apply a ±10% range for site conditions.
 Minimum job size: $600.
 
-CEDAR PRIVACY FENCE (6'6" height, wood posts, standard):
-- Base price: ~$39/LF installed (all-in with materials, labor, concrete, delivery)
-- Range: $35–$43/LF depending on site conditions
+=================================================================
+LABOR PRICING & MINIMUM CHARGE POLICY
+=================================================================
+CREW LABOR RATE:
+- ~$107/crew hour (working rate — sheet says $95 but real rate is higher)
+- Crew = lead installer + one helper
+- Rate applies regardless of whether owner is present or helping
 
-CEDAR PRIVACY FENCE ADD-ONS (per LF):
-- Board-on-board style: add $1.50/LF labor + higher material cost
-- Top cap & trim (both sides): add $1.50/LF
-- Metal posts (2-1/2" galvanized pipe): add $6–$8/LF
+DAILY LABOR STRUCTURE:
+- Half day (4 hours): ~$428 labor
+- Full day (8 hours): ~$856 labor
+- Labor billed per crew, not per individual
+
+MINIMUM LABOR CHARGE:
+- Standard minimum: 4 hours ($428 labor) for most jobs
+- EXCEPTION — Small repairs under 1 hour: $125 flat labor + materials
+  Examples: replacing 1-3 pickets, swapping a hinge, tightening hardware
+- If a job is estimated at ~1 hour but could easily run over, charge the $428 minimum — too close to call
+- If confident the job is 38-45 minutes max with no complications, the $125 flat rate is appropriate
+- WE make the final approval on all quotes — bot gathers info, we confirm pricing
+
+SMALL REPAIR ASSESSMENT — BOT MUST ASK THESE QUESTIONS before quoting a small repair:
+1. How many pickets need replacing? (1-3 = possibly $125 range, more = $428 minimum)
+2. Does the new picket need to be trimmed/cut to size?
+3. Does it need to be painted or stained to match existing fence?
+4. Is there top cap and trim in the way that needs to be removed/reinstalled?
+5. Is it board-on-board? (More complex — pickets overlap, harder to remove one without disturbing others)
+6. How old is the fence? (Old fence — risk of damaging adjacent pickets or finding weak rails)
+7. Are the existing rails still solid? (Weak rails may not hold new fasteners — could turn into a bigger job)
+8. Is there electrical nearby or is it close to the house structure? (If yes — $428 minimum, more complexity)
+9. Is there anything overhead or blocking access?
+
+If ANY of these add complexity, move to the $428 minimum and explain why to the customer.
+The bot should say: "Based on what you've described, I want to make sure we give you an accurate quote — our team will confirm final pricing after reviewing the details."
+NEVER promise a $125 rate if there are unknowns — always note that final pricing is confirmed by our team.
+
+MATERIAL PRICING:
+- Materials billed separately with standard markup on top of supplier cost
+- Material profit is in addition to labor margin
+- Always include $75 delivery fee in quotes
+
+HOW TO BUILD A QUOTE:
+1. Estimate hours for the job based on scope
+2. Multiply hours x $107 = labor cost
+3. Add material cost (from supplier pricing above) + markup
+4. Add $75 delivery
+5. Add complexity factor for difficult jobs (slopes, demo, tight access, custom fab)
+6. Minimum total: $600
+
+COMPLEXITY FACTORS (add to labor hours):
+- Existing fence demo/removal: add 1-2 hours depending on length
+- Sloped or uneven ground: add 1-2 hours
+- Tight access (backyard, narrow gate): add 0.5-1 hour
+- Custom gate fabrication/welding: add 2-4 hours
+- Concrete/hard surface install: add 1-2 hours
+- Rocky or root-heavy soil: add 1-3 hours
+
+QUICK LABOR ESTIMATES BY JOB TYPE:
+- Replace single picket or small repair: 4 hours minimum ($428 labor)
+- Install 50 LF wood fence: ~6-8 hours ($642-$856 labor)
+- Install 100 LF wood fence: ~10-14 hours ($1,070-$1,498 labor)
+- Install 150 LF wood fence: ~14-18 hours ($1,498-$1,926 labor)
+- Single walk gate: 2-3 hours ($214-$321 labor)
+- Double drive gate: 3-5 hours ($321-$535 labor)
+- Fence staining 100 LF: ~3-5 hours ($321-$535 labor)
+- Power washing: ~2-4 hours ($214-$428 labor)
+
+=================================================================
+MATERIAL KNOWLEDGE — SUPPLIERS
+=================================================================
+Primary supplier: Stephens Pipe & Steel (SPSfence.com)
+- Phone: (888) 271-2817, Fax: (346) 271-9018
+- Local: 4406 Rex Road, Friendswood TX 77546
+- Account #: 15737, Sales rep: S. Schultz
+- Standard charges: $50 fuel + convenience fee + 8.25% TX tax
+- Lead time: most items same day, some WRC items 3-4 days non-stock
+
+Secondary supplier: Antebellum Manufacturing (AntebellumDecorativeFences.com)
+- Aluminum decorative fencing — Emily series residential panels
+- Limited LIFETIME warranty (original purchaser, non-transferable)
+- Powder coat finish warranted for life — never cracks, chips, or peels
+
+Third supplier: Eagle Fence Distributing — Houston (efdistribution.com)
+- 14430 Smith Road, Humble TX 77396
+- Phone: 281-741-1503, Toll Free: 877-741-4896
+- Customer ID: C000001445, Rep: Enrique Zavala
+- Delivered by company truck — no separate freight charge
+- Payment: COD
+- 25% restocking fee on returns, no returns on wood or special orders
+
+=================================================================
+WOOD FENCE — CEDAR (WRC = Western Red Cedar)
+=================================================================
+REAL MATERIAL COSTS (SPS 1/13/2026 quote, Humble TX job):
+- Cedar pickets 5/8x6x7' flat #2: $5.76/ea
+- Cedar pickets 5/8x6x8' dog ear #2: $5.88/ea
+- Pressure treated 2x4x8' rails: $3.76/ea
+- Cedar 2x6x14' baseboard: $35.26/ea
+- PT 2x12x14' baseboard: $19.55/ea
+- Cedar 1x4x14' top cap/trim: $8.25/ea
+- Cedar 1x2x14' nailers: $5.31/ea
+- Lag screws 1/4"x1-1/2" HDG (100ct): $11.54/box
+- Concrete 80lb Sakrete: $5.96/bag
+
+CEDAR FENCE INSTALLED PRICING:
+- Standard 6' privacy (wood posts): ~$35–43/LF installed
+- Board-on-board 6': add $1.50–2.00/LF (uses ~2.5x more pickets)
+- Top cap & trim both sides: add $1.50/LF
 - 7' tall with 2x12 baseboard: add $1.00/LF
-- Board on board: add $1.50/LF
+- 8' tall: add $2.00/LF
+- Steel posts (2-1/2" galvanized): add $6–8/LF
+- Cedar is premium — lasts longer than pine in Houston humidity
 
-PINE FENCE (6'6" height):
-- ~10–15% cheaper than cedar equivalent
-- Approx $33–$37/LF installed
+=================================================================
+WOOD FENCE — PINE (PTP = Pressure Treated Pine)
+=================================================================
+- ~10–15% less than cedar equivalent
+- Approx $30–37/LF installed
+- Good budget option — still solid quality
 
-TEAR-OUT / DEMO:
+=================================================================
+TEAR-OUT / DEMO
+=================================================================
 - $2.00/LF to remove existing fence
-- Always ask if they have an existing fence to remove
+- Always ask if there is an existing fence to remove
 
-DELIVERY: $75 flat fee (include in all quotes)
+=================================================================
+DELIVERY
+=================================================================
+- $75 flat fee — include in all quotes
 
-GATES:
-- Galvanized steel frame gate (walk gate): $375–$450
-- Wood frame walk gate (36"): $350–$450
-- Double drive gate: $750–$1,200
-- Code lock install: add $50
-- Weld steel frame: add $250
+=================================================================
+WOOD GATES
+=================================================================
+- Wood frame walk gate (36"): $350–450 installed
+- Steel frame walk gate: $375–500 installed
+- Double drive gate wood frame: $750–1,100 installed
+- Double drive gate steel frame: $900–1,300 installed
+- Code lock: add $50
+- Custom weld fabrication: add $150–300
 
-STAINING (Wood Defender semi-transparent):
+=================================================================
+STAINING — Wood Defender Semi-Transparent
+=================================================================
 - Spray staining: ~$0.86/sq ft
 - Hand staining: ~$1.00/LF
+- Always upsell staining on every wood fence job
 
-CHAIN LINK (installed):
-- 4' galvanized: ~$18–24/LF
-- 6' galvanized: ~$22–28/LF
-- 6' black vinyl coated: ~$28–36/LF
+=================================================================
+VINYL FENCE — BUFFTECH (White & Colors)
+=================================================================
+PRODUCT KNOWLEDGE:
+- We install BUFFTECH vinyl fencing — premium brand, sold through Eagle Fence Distributing
+- BUFFTECH is a 3-rail large rail system — stronger than standard vinyl
+- Posts: 5x5x84" (7ft post) — large rail line, corner, and end posts all same price
+- Rails: 2x6x192" ribbed sections (minimum order 25 pcs) — 16ft rail lengths
+- Flat post caps: 5x5" included
+- Lock rings: 2 per rail, order in 24ct packs (black)
+- White is standard color — other colors available (special order)
+- System designed for 3-rail installations
+
+REAL MATERIAL COSTS (Eagle Fence 6/14/2024 quote):
+- Flat cap ext 5x5" white: $3.94/ea
+- 2x6x192" ribbed rail white (min 25): $53.20/ea — this is a 16ft rail section
+- Lock rings black 24ct pack: $6.70/pack (2 per rail)
+- Large rail line post 5x5x84" white (3-rail): $37.29/ea
+- Large rail corner post 5x5x84" white (3-rail): $37.29/ea
+- Large rail end post 5x5x84" white (3-rail): $37.29/ea
+Note: This was a large job — 58 caps, 87 rails, 54 line posts, 2 corner, 2 end posts
+Total material on that job: $7,073 before tax ($7,657 with tax)
+
+VINYL FENCE INSTALLED PRICING:
+- Standard 3-rail vinyl privacy 6': ~$38–52/LF installed (white)
+- Premium vinyl 6' with large rail system: ~$45–60/LF installed
+- Vinyl 4' (ranch/picket style): ~$28–40/LF installed
+- Color vinyl (tan, clay, almond): add $3–5/LF (special order premium)
+- Vinyl gate walk: ~$450–650 installed
+- Vinyl double drive gate: ~$900–1,400 installed
+- Low maintenance — never needs staining, painting, or sealing
+- Great for HOA neighborhoods — clean look, long lasting
+- Always ask: height, color preference (white standard), gate needs
+
+=================================================================
+CHAIN LINK — GALVANIZED
+=================================================================
+- 4' galvanized: ~$18–24/LF installed
+- 5' galvanized: ~$20–26/LF installed
+- 6' galvanized: ~$22–28/LF installed
+- 8' commercial: ~$28–36/LF installed
+
+=================================================================
+CHAIN LINK — BLACK VINYL COATED (BLK PLY)
+=================================================================
+REAL MATERIAL COSTS (SPS 12/26/2025 quote, New Caney job):
+- 3" black vinyl post 10'6" PP40: $65.15/ea
+- 3" dome post cap: $4.47/ea
+- 72" drop rod assembly w/guides: $33.90/ea
+- Duck bill gate keeper: $14.38/ea
+- Tension bar 72"x3/4": $6.00/ea
+- Tension band 3": $4.21/ea
+- Brace band 3": $2.73/ea
+- Bolts & nuts 5/16x1-1/4" Ruspert: $0.16/ea
+- Rail end combo 1-5/8": $3.17/ea
+- Top rail 1-5/8"x21' PP20: $2.18/ft
+- Aluminum fence ties 9ga: $0.22/ea
+- Concrete 80lb: $5.96/bag
+- Industrial double drive gate 16'Wx6'H black vinyl SP20: $1,111.06/ea (material only)
+
+CHAIN LINK HARDWARE — BLACK (Eagle Fence Distributing, 1/28/2026 quote):
+- Tension bars 3/16x3/4x70" black: $8.65/ea
+- Tension band 3/4x1-5/8" black: $1.06/ea
+- Drop rod 84" assembly black: $66.94/ea (for double drive gates)
+- Drop rod guide 1-5/8" IND black: $4.42/ea
+- Carriage bolt 3/8x3" black: $0.50/ea
+- Aluminum fence ties 9ga x 8-1/4" black: $0.18/ea (100ct)
+- EF-40 3"x10'6" post black PC: $76.20/ea (heavy duty 3" post)
+- 3" PS dome cap black: $3.62/ea
+- 1-5/8" PS dome cap black: $1.45/ea
+- Spray paint black 12oz: $7.93/can (touch up)
+- 3" 180° PS offset hinge black: $26.46/ea (heavy duty gate hinge)
+Note: Eagle Fence delivered by company truck to Kingwood, no freight charge
+
+BLACK VINYL CHAIN LINK INSTALLED PRICING:
+- 4' black vinyl: ~$24–30/LF installed
+- 6' black vinyl: ~$28–36/LF installed
+- 8' black vinyl commercial: ~$36–48/LF installed
+- Black vinyl double drive gate 16'x6': ~$2,200–2,800 installed (material alone ~$1,111)
+- Black vinyl is premium look — great for commercial, pools, HOAs
+
+=================================================================
+ALUMINUM / ORNAMENTAL — EMILY SERIES (Antebellum + SPS)
+=================================================================
+PRODUCT KNOWLEDGE:
+- We install Emily series aluminum panels — residential 2-rail system
+- Panel: 71.5" notch-to-notch width, smooth or rake bottom
+- Pickets: 5/8" sq x .045" screwed to 1"x1" channels
+- Posts punched to receive rails — clean professional assembly
+- Optional: butterfly scrolls on every picket (decorative upgrade)
+- Available: smooth bottom (standard) or rake bottom (for slopes)
+- Single walk gate: arched or straight rail, opening ~48"
+- Double walk gate: straight rail, opening ~72"
+- Gate uprights: 2" sq x .093"
+- LIFETIME WARRANTY on powder coat — never cracks, chips, or peels (original owner)
+
+REAL MATERIAL COSTS (SPS 2/19/2026 quote):
+- 42"H x 6'W Emily panel 2-rail smooth black: $85.71/ea
+- 2" sq .093 post x 45": $36.00/ea (standard line post)
+- 2" sq .125 post x 45": $44.25/ea (heavy duty — gate hinge posts)
+- 2" sq x 7' post: $48.00/ea (taller installs or deep set)
+- 2" modern post cap: $1.74/ea
+- Walk gate 42"H x 4'W Emily 2-rail: $256.51/ea
+- Double gate 42"H x 42"W Emily 2-rail: $245.00/ea
+- Weld charge: $19.86/ea
+- Floor mount cover plate: $19.24/ea
+- TRU-CLOSE 2-leg hinge for metal: $36.48/pair
+- Stainless steel gravity latch: $17.19/ea
+- Wedge anchor bolt 3/8"x3-3/4": $1.30/ea
+- Concrete 80lb Sakrete: $5.96/bag
+
+ALUMINUM INSTALLED PRICING:
+- 42" (3'6") aluminum black: ~$45–60/LF installed
+- 48" (4') aluminum: ~$50–65/LF installed
+- 60" (5') aluminum: ~$55–70/LF installed
+- 72" (6') aluminum: ~$65–80/LF installed
+- Walk gate 42"H installed: ~$650–850
+- Double drive gate 42"H installed: ~$950–1,400
+- Hard surface install (flange plates on concrete/pavers): add $8–12/LF
+- Custom weld fabrication: add $150–300
+- Black standard — other colors special order
+- Great for pools, front yards, HOA communities
 
 ALUMINUM / ORNAMENTAL FENCING (installed):
 - We absolutely install aluminum and ornamental iron fencing. Do NOT turn away these customers.
-- Aluminum panel fencing (residential): ~$38–55/LF installed depending on style and height
-- 4' aluminum: ~$38–45/LF installed
-- 5' aluminum: ~$42–50/LF installed
-- 6' aluminum: ~$48–58/LF installed
-- Ornamental iron: ~$55–80/LF installed (heavier, more custom)
-- Aluminum walk gate: $400–600
-- Aluminum double drive gate: $900–1,400
-- Low maintenance, rust-resistant, great for front yards, pools, and HOA communities
-- Popular styles: flat top, spear top, dog-eared, french gothic
-- When a customer asks about aluminum, quote it confidently and ask: height, style (flat top vs spear top), color (black is standard), and any gates
+- We source aluminum fencing from Stephens Pipe & Steel (SPSfence.com) — quality commercial supplier.
+
+ALUMINUM PRODUCT KNOWLEDGE (from real supplier invoices):
+- We install "Emily" series aluminum panels — smooth bottom rail, available in black
+- Standard panel: 42"H (3'6") x 6'W, 2-rail, smooth bottom — this is our most common residential height
+- Posts: 2" square steel posts, .093 wall (standard) or .125 wall (heavy duty hinge posts for gates)
+- Post caps: 2" modern post cap included
+- Gate hardware: TRU-CLOSE self-closing hinges, stainless steel gravity latch
+- Gate panels: pre-built gate sections available (42"H x 4'W single, 42"H x 42"W double)
+- Concrete: Sakrete 80lb bags for post setting
+- Welded flange base plates available for hard surface installs (concrete/pavers)
+- Weld charges apply for custom gate fabrication
+
+ALUMINUM MATERIAL COSTS (from 2/19/2026 SPS quote — update periodically):
+- 42"H x 6'W panel (Emily 2-rail smooth): ~$85.71/panel
+- 2" sq .093 post x 45": ~$36.00 each (standard line post)
+- 2" sq .125 post x 45": ~$44.25 each (heavy duty — use for gate hinge posts)
+- 2" sq x 7' post: ~$48.00 each (use for taller installs or deep set)
+- 2" modern post cap: ~$1.74 each
+- Walk gate panel 42"H x 4'W (Emily 2-rail): ~$256.51 each
+- Double gate panel 42"H x 42"W (Emily 2-rail): ~$245.00 each
+- Weld charge per item: ~$19.86
+- Floor mount cover plate: ~$19.24 each
+- TRU-CLOSE 2-leg hinge (metal): ~$36.48/pair
+- Stainless steel gravity latch: ~$17.19 each
+- Wedge anchor bolt 3/8"x3-3/4": ~$1.30 each
+- Sakrete concrete 80lb: ~$5.96/bag
+- SPS fuel charge: ~$50 flat, convenience fee ~$28.96, 8.25% TX tax applies
+
+ALUMINUM PRICING GUIDE (installed, labor + materials):
+- 42" (3'6") aluminum panel fence: ~$45–60/LF installed (black, standard residential)
+- 48" (4') aluminum: ~$50–65/LF installed
+- 60" (5') aluminum: ~$55–70/LF installed  
+- 72" (6') aluminum: ~$65–80/LF installed
+- Aluminum walk gate (42"H, single): ~$650–850 installed (includes panel, posts, hardware, labor)
+- Aluminum double drive gate (42"H): ~$950–1,400 installed
+- Custom welded gate: add $150–300 for weld fabrication
+- Hard surface install (concrete/pavers): add $8–12/LF for flange plates
+
+ALUMINUM NOTES:
+- Black is standard color — other colors available but require special order
+- Low maintenance, rust-resistant, HOA friendly, great for pools and front yards
+- Popular styles: flat top (Emily series), spear top, french gothic (ask customer preference)
+- Always ask: height needed, color preference (black standard), gate quantity and size
+- Minimum job: $600
 
 HOW TO CALCULATE A QUOTE:
 1. Start with base LF price
