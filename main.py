@@ -11,6 +11,7 @@ import os
 import uuid
 import base64
 import logging
+import threading
 from typing import Optional, Dict, List, Literal
 from contextlib import asynccontextmanager
 import aiofiles
@@ -42,6 +43,8 @@ GOOGLE_SHEET_RANGE = "Sheet1"
 
 active_sessions: Dict[str, dict] = {}
 recent_leads: List[dict] = []
+chat_sessions_log: List[dict] = []  # all chat sessions including chat-only (no form submit)
+transcript_timers: Dict[str, threading.Timer] = {}  # per-session inactivity timers
 
 
 # ----------------------------
@@ -642,6 +645,112 @@ def call_claude(user_message: str, history: list = None, images: list = None) ->
 def generate_session_id() -> str:
     return str(uuid.uuid4())
 
+def build_transcript_email(session_id: str) -> str:
+    """Build a clean email transcript from a session"""
+    session = active_sessions.get(session_id)
+    if not session:
+        return ""
+    messages = session.get("messages", [])
+    if not messages:
+        return ""
+
+    lines = []
+    lines.append(f"Chat Session Transcript")
+    lines.append(f"=" * 50)
+    lines.append(f"Session ID: {session_id[:8]}")
+    lines.append(f"Started: {session.get('created', 'unknown')}")
+    lines.append(f"Last Activity: {session.get('last_activity', 'unknown')}")
+    lines.append(f"Messages: {session.get('message_count', 0)}")
+    if session.get('soft_lead_name'):
+        lines.append(f"Name: {session['soft_lead_name']}")
+    if session.get('soft_lead_phone'):
+        lines.append(f"Phone: {session['soft_lead_phone']}")
+    if session.get('soft_lead_email'):
+        lines.append(f"Email: {session['soft_lead_email']}")
+    lines.append(f"Form Submitted: {'YES' if session.get('form_submitted') else 'NO — chat only'}")
+    lines.append(f"IP: {session.get('ip', 'unknown')}")
+    lines.append("")
+    lines.append("CONVERSATION:")
+    lines.append("-" * 50)
+
+    for msg in messages:
+        role = "CUSTOMER" if msg["type"] == "user" else "BOT"
+        text = msg["message"]
+        img_count = len(msg.get("images", []))
+        img_note = f" [+ {img_count} photo(s)]" if img_count > 0 else ""
+        lines.append(f"
+[{role}]{img_note}:")
+        lines.append(text)
+
+    lines.append("")
+    lines.append("-" * 50)
+    lines.append(f"Astro Outdoor Designs | {BUSINESS_PHONE} | {BUSINESS_EMAIL}")
+    return "
+".join(lines)
+
+def send_transcript_email(session_id: str):
+    """Send transcript email after session inactivity — fires automatically"""
+    try:
+        session = active_sessions.get(session_id)
+        if not session:
+            return
+        msg_count = session.get("message_count", 0)
+        if msg_count < 2:
+            return  # skip 1-message sessions (accidental opens)
+
+        transcript = build_transcript_email(session_id)
+        if not transcript:
+            return
+
+        # Build subject with key info
+        name = session.get('soft_lead_name', '')
+        form_status = "✅ FORM SUBMITTED" if session.get('form_submitted') else "💬 CHAT ONLY — no form"
+        subject = f"💬 Chat Transcript [{form_status}]{' — ' + name if name else ''} | {msg_count} messages"
+
+        send_brevo_email(subject=subject, text_content=transcript)
+        logger.info(f"📧 Transcript sent for session {session_id[:8]} ({msg_count} messages)")
+
+        # Save to chat sessions log
+        chat_sessions_log.append({
+            "session_id": session_id[:8],
+            "timestamp": session.get("created"),
+            "message_count": msg_count,
+            "form_submitted": session.get("form_submitted", False),
+            "soft_lead_name": session.get("soft_lead_name", ""),
+            "soft_lead_phone": session.get("soft_lead_phone", ""),
+        })
+        if len(chat_sessions_log) > 100:
+            chat_sessions_log.pop(0)
+
+    except Exception as e:
+        logger.error(f"Transcript email error: {e}")
+
+def reset_transcript_timer(session_id: str):
+    """Reset the inactivity timer for a session — sends transcript after 8 min of silence"""
+    if session_id in transcript_timers:
+        transcript_timers[session_id].cancel()
+    t = threading.Timer(480, send_transcript_email, args=[session_id])  # 8 minutes
+    t.daemon = True
+    t.start()
+    transcript_timers[session_id] = t
+
+def send_session_start_notification(session_id: str, ip: str):
+    """Fire a notification email the moment someone starts chatting"""
+    try:
+        subject = f"👀 Someone is chatting on your website RIGHT NOW"
+        body = (
+            f"A visitor just started a chat on astrooutdoordesigns.com\n\n"
+            f"Session ID: {session_id[:8]}\n"
+            f"Time: {datetime.now().strftime('%I:%M %p on %b %d')}\n"
+            f"IP: {ip}\n\n"
+            f"You'll receive the full transcript automatically when they leave.\n\n"
+            f"View all chats: https://astro-fence-assistant.onrender.com/admin\n"
+            f"Call/text: {BUSINESS_PHONE}"
+        )
+        send_brevo_email(subject=subject, text_content=body)
+    except Exception as e:
+        logger.error(f"Session start notification error: {e}")
+
 def send_brevo_email(subject: str, text_content: str, attachments: list = None, notify_email: str = None):
     """Shared Brevo email sender"""
     brevo_api_key = os.getenv("BREVO_API_KEY")
@@ -703,15 +812,24 @@ def chat(req: Chat, request: Request):
     prompt = req.prompt.strip()
     session_id = req.session_id or generate_session_id()
 
-    if session_id not in active_sessions:
+    is_new_session = session_id not in active_sessions
+    if is_new_session:
         active_sessions[session_id] = {
             "created": datetime.now().isoformat(),
             "user_name": req.user_name or "Visitor",
             "message_count": 0,
             "last_activity": datetime.now().isoformat(),
             "ip": request.client.host if request.client else "",
-            "messages": []
+            "messages": [],
+            "form_submitted": False,
+            "soft_lead_name": "",
+            "soft_lead_phone": "",
+            "soft_lead_email": "",
         }
+        # Fire session start notification in background
+        ip = request.client.host if request.client else "unknown"
+        t = threading.Thread(target=send_session_start_notification, args=[session_id, ip], daemon=True)
+        t.start()
 
     active_sessions[session_id]["last_activity"] = datetime.now().isoformat()
     active_sessions[session_id]["message_count"] += 1
@@ -721,6 +839,9 @@ def chat(req: Chat, request: Request):
         "message": prompt,
         "images": req.images or []  # store images with message for history replay
     })
+
+    # Reset inactivity transcript timer every message
+    reset_transcript_timer(session_id)
 
     if not prompt:
         fallback_response = "Quick question — what are you trying to build or fix? (Approximate feet + height helps a lot.)"
@@ -748,11 +869,37 @@ def chat(req: Chat, request: Request):
             "message": ai_response
         })
 
+        # Detect if customer shared contact info in chat (soft lead capture)
+        import re
+        phone_match = re.search(r'(\d{3}[-.\s]?\d{3}[-.\s]?\d{4})', prompt)
+        email_match = re.search(r'[\w.+-]+@[\w-]+\.[a-z]{2,}', prompt, re.IGNORECASE)
+        if phone_match and not active_sessions[session_id].get("soft_lead_phone"):
+            active_sessions[session_id]["soft_lead_phone"] = phone_match.group(1)
+        if email_match and not active_sessions[session_id].get("soft_lead_email"):
+            active_sessions[session_id]["soft_lead_email"] = email_match.group(0)
+
+        # Detect name from common patterns like "I'm John" or "my name is Sarah"
+        name_match = re.search(r"(?:i'?m|my name is|this is|call me)\s+([A-Z][a-z]+)", prompt, re.IGNORECASE)
+        if name_match and not active_sessions[session_id].get("soft_lead_name"):
+            active_sessions[session_id]["soft_lead_name"] = name_match.group(1)
+
+        # Determine if bot should ask for contact info (soft lead prompt)
+        # Trigger after 3+ messages if no contact info captured yet and no form submitted
+        msg_count = active_sessions[session_id]["message_count"]
+        has_contact = (active_sessions[session_id].get("soft_lead_phone") or
+                      active_sessions[session_id].get("soft_lead_email"))
+        show_soft_capture = (
+            msg_count == 4 and
+            not has_contact and
+            not active_sessions[session_id].get("form_submitted")
+        )
+
         return {
             "response": ai_response,
             "session_id": session_id,
-            "message_count": active_sessions[session_id]["message_count"],
-            "business": BUSINESS_NAME
+            "message_count": msg_count,
+            "business": BUSINESS_NAME,
+            "show_soft_capture": show_soft_capture  # frontend uses this to show contact prompt
         }
 
     except requests.exceptions.Timeout:
@@ -969,6 +1116,48 @@ def get_admin_data():
 def get_recent_leads():
     return JSONResponse({"leads": recent_leads, "total": len(recent_leads),
         "business_phone": BUSINESS_PHONE, "business_email": BUSINESS_EMAIL})
+
+@app.get("/admin/sessions")
+def get_chat_sessions():
+    """Return all chat sessions including chat-only (no form submitted)"""
+    sessions = []
+    for sid, sess in active_sessions.items():
+        msg_count = sess.get("message_count", 0)
+        if msg_count < 2:
+            continue
+        sessions.append({
+            "session_id": sid[:8],
+            "created": sess.get("created"),
+            "last_activity": sess.get("last_activity"),
+            "message_count": msg_count,
+            "form_submitted": sess.get("form_submitted", False),
+            "soft_lead_name": sess.get("soft_lead_name", ""),
+            "soft_lead_phone": sess.get("soft_lead_phone", ""),
+            "soft_lead_email": sess.get("soft_lead_email", ""),
+            "ip": sess.get("ip", ""),
+            "preview": sess["messages"][-1]["message"][:120] if sess.get("messages") else ""
+        })
+    sessions.sort(key=lambda x: x.get("last_activity", ""), reverse=True)
+    return JSONResponse({
+        "sessions": sessions,
+        "total": len(sessions),
+        "chat_only": len([s for s in sessions if not s["form_submitted"]]),
+        "with_form": len([s for s in sessions if s["form_submitted"]])
+    })
+
+@app.get("/admin/transcript/{session_id}")
+def get_transcript(session_id: str):
+    """Get full transcript for a session"""
+    # Find by short ID
+    full_sid = None
+    for sid in active_sessions:
+        if sid.startswith(session_id) or sid[:8] == session_id:
+            full_sid = sid
+            break
+    if not full_sid:
+        raise HTTPException(status_code=404, detail="Session not found")
+    transcript = build_transcript_email(full_sid)
+    return JSONResponse({"transcript": transcript, "session_id": session_id})
 
 @app.get("/contact-info")
 def get_contact_info():
