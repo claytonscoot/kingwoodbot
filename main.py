@@ -46,6 +46,11 @@ recent_leads: List[dict] = []
 chat_sessions_log: List[dict] = []  # all chat sessions including chat-only (no form submit)
 transcript_timers: Dict[str, threading.Timer] = {}  # per-session inactivity timers
 
+# Rate limiting
+ip_message_counts: Dict[str, list] = {}   # ip -> list of timestamps in last 60 seconds
+ip_strike_counts: Dict[str, int] = {}     # ip -> number of times they've hit the limit today
+ip_blocked_until: Dict[str, float] = {}   # ip -> unix timestamp when block expires
+
 
 # ----------------------------
 # GOOGLE SHEETS HELPER
@@ -714,6 +719,64 @@ def call_claude(user_message: str, history: list = None, images: list = None) ->
 def generate_session_id() -> str:
     return str(uuid.uuid4())
 
+def check_rate_limit(ip: str) -> tuple[bool, str]:
+    """
+    Returns (is_blocked, reason).
+    Two-tier system:
+      Tier 1 — 20+ messages in 60 seconds → 15 min block, increment strike count
+      Tier 2 — 3+ strikes in same day → upgrade to 4 hour block
+    """
+    import time
+    now = time.time()
+
+    # Check if currently blocked
+    blocked_until = ip_blocked_until.get(ip, 0)
+    if now < blocked_until:
+        remaining = int((blocked_until - now) / 60)
+        return True, f"Too many requests. Please try again in {remaining} minutes."
+
+    # Clean up timestamps older than 60 seconds
+    timestamps = ip_message_counts.get(ip, [])
+    timestamps = [t for t in timestamps if now - t < 60]
+    timestamps.append(now)
+    ip_message_counts[ip] = timestamps
+
+    # Tier 1 — 20 messages in 60 seconds
+    if len(timestamps) > 20:
+        strikes = ip_strike_counts.get(ip, 0) + 1
+        ip_strike_counts[ip] = strikes
+
+        if strikes >= 3:
+            # Tier 2 — 4 hour block
+            ip_blocked_until[ip] = now + (4 * 3600)
+            logger.warning(f"🚫 4-HOUR BLOCK: {ip} — {strikes} strikes")
+            # Alert email in background
+            def alert_block(ip_addr, strike_count):
+                try:
+                    send_brevo_email(
+                        subject=f"🚫 IP BLOCKED 4 HOURS — {ip_addr} ({strike_count} strikes)",
+                        text_content=(
+                            f"An IP address has been blocked for 4 hours due to repeated abuse.\n\n"
+                            f"IP: {ip_addr}\n"
+                            f"Strikes: {strike_count}\n"
+                            f"Blocked until: {datetime.fromtimestamp(now + 4*3600).strftime('%I:%M %p')}\n"
+                            f"Time: {datetime.now().strftime('%I:%M %p on %b %d')}\n\n"
+                            f"This could be a competitor, bot, or automated script probing your chatbot."
+                        )
+                    )
+                except Exception as e:
+                    logger.error(f"Block alert error: {e}")
+            threading.Thread(target=alert_block, args=[ip, strikes], daemon=True).start()
+            return True, "Too many requests. Access temporarily suspended."
+        else:
+            # Tier 1 — 15 minute block
+            ip_blocked_until[ip] = now + (15 * 60)
+            logger.warning(f"⚠️ 15-MIN BLOCK: {ip} — strike {strikes}")
+            return True, "Too many requests. Please slow down and try again in 15 minutes."
+
+    return False, ""
+
+
 def build_transcript_email(session_id: str) -> str:
     """Build a clean email transcript from a session"""
     session = active_sessions.get(session_id)
@@ -747,15 +810,13 @@ def build_transcript_email(session_id: str) -> str:
         text = msg["message"]
         img_count = len(msg.get("images", []))
         img_note = f" [+ {img_count} photo(s)]" if img_count > 0 else ""
-        lines.append(f"
-[{role}]{img_note}:")
+        lines.append(f"\n[{role}]{img_note}:")
         lines.append(text)
 
     lines.append("")
     lines.append("-" * 50)
     lines.append(f"Astro Outdoor Designs | {BUSINESS_PHONE} | {BUSINESS_EMAIL}")
-    return "
-".join(lines)
+    return "\n".join(lines)
 
 def send_transcript_email(session_id: str):
     """Send transcript email after session inactivity — fires automatically"""
@@ -901,6 +962,15 @@ def chat(req: Chat, request: Request):
     prompt = req.prompt.strip()
     session_id = req.session_id or generate_session_id()
 
+    # Rate limit check
+    client_ip = request.client.host if request.client else "unknown"
+    is_blocked, block_reason = check_rate_limit(client_ip)
+    if is_blocked:
+        return JSONResponse(
+            status_code=429,
+            content={"response": block_reason, "session_id": session_id, "blocked": True}
+        )
+
     is_new_session = session_id not in active_sessions
     if is_new_session:
         active_sessions[session_id] = {
@@ -997,8 +1067,7 @@ def chat(req: Chat, request: Request):
 
             # Build full context from conversation
             all_user_msgs = [m["message"] for m in active_sessions[session_id]["messages"] if m["type"] == "user"]
-            conversation_context = "
-".join(all_user_msgs[-6:])  # last 6 user messages
+            conversation_context = "\n".join(all_user_msgs[-6:])  # last 6 user messages
             name = active_sessions[session_id].get("soft_lead_name", "Unknown")
             phone = active_sessions[session_id].get("soft_lead_phone", "Unknown")
             email = active_sessions[session_id].get("soft_lead_email", "Not provided")
