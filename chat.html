@@ -421,7 +421,7 @@
     </div>
     <div class="chat-input-btns">
       <button class="attach-btn" onclick="document.getElementById('chatPhotoUpload').click()" title="Attach photos">📷</button>
-      <input type="file" id="chatPhotoUpload" accept="image/*" multiple style="display:none" onchange="handleChatFiles(this.files)" />
+      <input type="file" id="chatPhotoUpload" accept="image/*,application/pdf" multiple style="display:none" onchange="handleChatFiles(this.files)" />
       <button class="send-btn" onclick="sendMessage()">Send</button>
     </div>
   </div>
@@ -688,34 +688,44 @@
     renderChatThumbs();
     conversationLog.push({ role: 'user', text });
 
-    // Show user message with any attached photos
+    // Show user message with any attached photos/PDFs
     const userMsgDiv = addMessage(text, 'user');
     if (photosToSend.length > 0) {
       const photoRow = document.createElement('div');
       photoRow.className = 'chat-photo-msg';
       photosToSend.forEach(file => {
-        const img = document.createElement('img');
-        img.src = URL.createObjectURL(file);
-        photoRow.appendChild(img);
+        if (file.type === 'application/pdf') {
+          const pdfChip = document.createElement('div');
+          pdfChip.style.cssText = 'display:inline-flex;align-items:center;gap:4px;background:#1a1a1a;border:1px solid #e87722;border-radius:4px;padding:4px 8px;font-size:12px;color:#e87722;margin:2px';
+          pdfChip.innerHTML = `📄 ${file.name}`;
+          photoRow.appendChild(pdfChip);
+        } else {
+          const img = document.createElement('img');
+          img.src = URL.createObjectURL(file);
+          photoRow.appendChild(img);
+        }
       });
       userMsgDiv.appendChild(photoRow);
     }
 
     const loading = addMessage('...', 'bot loading');
 
-    // Build prompt — include photo note so AI knows images were shared
-    const promptWithPhotoNote = photosToSend.length > 0
-      ? `${text}
+    // Split files FIRST before referencing them
+    const imageFiles = photosToSend.filter(f => f.type.startsWith('image/'));
+    const pdfFiles = photosToSend.filter(f => f.type === 'application/pdf');
 
-[Customer attached ${photosToSend.length} photo(s) of their project]`
-      : text;
+    // Build prompt — include file note so AI knows what was shared
+    let fileNote = '';
+    if (imageFiles.length > 0) fileNote += `[Customer attached ${imageFiles.length} photo(s) of their project]`;
+    if (pdfFiles.length > 0) fileNote += `${fileNote ? ' ' : ''}[Customer attached ${pdfFiles.length} PDF document(s): ${pdfFiles.map(f => f.name).join(', ')}]`;
+    const promptWithPhotoNote = fileNote ? `${text}\n\n${fileNote}` : text;
 
-    // Convert chat photos to base64 for vision API
+    // Convert images to base64 for vision API
     let imageBase64List = [];
-    if (photosToSend.length > 0) {
-      imageBase64List = await Promise.all(photosToSend.map(file => new Promise((resolve, reject) => {
+    if (imageFiles.length > 0) {
+      imageBase64List = await Promise.all(imageFiles.map(file => new Promise((resolve, reject) => {
         const reader = new FileReader();
-        reader.onload = e => resolve(e.target.result); // includes data: header
+        reader.onload = e => resolve(e.target.result);
         reader.onerror = reject;
         reader.readAsDataURL(file);
       })));
@@ -723,7 +733,7 @@
 
     try {
       const chatPayload = {
-        prompt: photosToSend.length > 0 ? text : promptWithPhotoNote,
+        prompt: promptWithPhotoNote,
         session_id: sessionId
       };
       if (imageBase64List.length > 0) chatPayload.images = imageBase64List;
@@ -962,10 +972,17 @@
 
   function handleChatFiles(files) {
     Array.from(files).forEach(file => {
-      if (!file.type.startsWith('image/')) return;
-      if (chatPhotos.length >= 4) { alert('Max 4 photos per message.'); return; }
-      chatPhotos.push(file);
+      const isImage = file.type.startsWith('image/');
+      const isPDF = file.type === 'application/pdf';
+      if (!isImage && !isPDF) return;
+      if (chatPhotos.length >= 4) { alert('Max 4 files per message.'); return; }
+      // Deduplicate — prevent same file being added twice
+      const isDupe = chatPhotos.some(f => f.name === file.name && f.size === file.size);
+      if (!isDupe) chatPhotos.push(file);
     });
+    // Clear the file input so selecting the same file again triggers onchange
+    const input = document.getElementById('chatPhotoUpload');
+    if (input) input.value = '';
     renderChatThumbs();
   }
 
@@ -978,10 +995,14 @@
     const bar = document.getElementById('chatUploadBar');
     bar.innerHTML = '';
     chatPhotos.forEach((file, i) => {
-      const url = URL.createObjectURL(file);
       const div = document.createElement('div');
       div.className = 'chat-thumb';
-      div.innerHTML = `<img src="${url}"><button class="remove-chat-thumb" onclick="removeChatThumb(${i})">×</button>`;
+      if (file.type === 'application/pdf') {
+        div.innerHTML = `<div style="width:48px;height:48px;background:#1a1a1a;border:1px solid #444;border-radius:4px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:10px;color:#e87722;gap:2px"><span style="font-size:18px">📄</span><span>PDF</span></div><button class="remove-chat-thumb" onclick="removeChatThumb(${i})">×</button>`;
+      } else {
+        const url = URL.createObjectURL(file);
+        div.innerHTML = `<img src="${url}"><button class="remove-chat-thumb" onclick="removeChatThumb(${i})">×</button>`;
+      }
       bar.appendChild(div);
     });
   }
