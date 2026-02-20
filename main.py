@@ -717,13 +717,33 @@ def send_transcript_email(session_id: str):
         if not transcript:
             return
 
+        # Collect any photos the customer uploaded during the chat
+        attachments = []
+        photo_count = 0
+        for msg in session.get("messages", []):
+            if msg.get("type") == "user" and msg.get("images"):
+                for idx, img_b64 in enumerate(msg["images"]):
+                    photo_count += 1
+                    # img_b64 may have a data URI prefix — strip it
+                    if "," in img_b64:
+                        img_b64 = img_b64.split(",", 1)[1]
+                    attachments.append({
+                        "content": img_b64,
+                        "name": f"customer_photo_{photo_count}.jpg"
+                    })
+
         # Build subject with key info
         name = session.get('soft_lead_name', '')
         form_status = "✅ FORM SUBMITTED" if session.get('form_submitted') else "💬 CHAT ONLY — no form"
-        subject = f"💬 Chat Transcript [{form_status}]{' — ' + name if name else ''} | {msg_count} messages"
+        photo_note = f" 📷 {photo_count} photo(s)" if photo_count > 0 else ""
+        subject = f"💬 Chat Transcript [{form_status}]{photo_note}{' — ' + name if name else ''} | {msg_count} messages"
 
-        send_brevo_email(subject=subject, text_content=transcript)
-        logger.info(f"📧 Transcript sent for session {session_id[:8]} ({msg_count} messages)")
+        send_brevo_email(
+            subject=subject,
+            text_content=transcript,
+            attachments=attachments if attachments else None
+        )
+        logger.info(f"📧 Transcript sent for session {session_id[:8]} ({msg_count} messages, {photo_count} photos)")
 
         # Save to chat sessions log
         chat_sessions_log.append({
@@ -929,9 +949,10 @@ def chat(req: Chat, request: Request):
             phone = active_sessions[session_id].get("soft_lead_phone", "Unknown")
             email = active_sessions[session_id].get("soft_lead_email", "Not provided")
 
-            def send_callback_alert(phone, name, email, context, sid):
+            def send_callback_alert(phone, name, email, context, sid, session_photos):
                 try:
                     clean_phone = ''.join(filter(str.isdigit, phone))
+                    photo_note = f"\n📷 {len(session_photos)} project photo(s) attached." if session_photos else ""
                     send_brevo_email(
                         subject=f"📞 CALLBACK REQUEST — {name} — {phone}",
                         text_content=(
@@ -944,18 +965,33 @@ def chat(req: Chat, request: Request):
                             f"Session: {sid[:8]}\n"
                             f"Time: {datetime.now().strftime('%I:%M %p on %b %d')}\n"
                             f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
-                            f"What they discussed:\n{context}\n\n"
+                            f"What they discussed:\n{context}{photo_note}\n\n"
                             f"Tap to call: tel:{clean_phone}\n"
                             f"Tap to text: sms:{clean_phone}"
-                        )
+                        ),
+                        attachments=session_photos if session_photos else None
                     )
                     logger.info(f"📞 Callback alert sent for {name} at {phone}")
                 except Exception as e:
                     logger.error(f"Callback alert error: {e}")
 
+            # Collect photos from session for callback alert
+            callback_photos = []
+            photo_num = 0
+            for msg in active_sessions[session_id].get("messages", []):
+                if msg.get("type") == "user" and msg.get("images"):
+                    for img_b64 in msg["images"]:
+                        photo_num += 1
+                        if "," in img_b64:
+                            img_b64 = img_b64.split(",", 1)[1]
+                        callback_photos.append({
+                            "content": img_b64,
+                            "name": f"project_photo_{photo_num}.jpg"
+                        })
+
             t = threading.Thread(
                 target=send_callback_alert,
-                args=[phone, name, email, conversation_context, session_id],
+                args=[phone, name, email, conversation_context, session_id, callback_photos],
                 daemon=True
             )
             t.start()
