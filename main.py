@@ -311,50 +311,64 @@ Minimum job size: $600.
 LABOR PRICING & MINIMUM CHARGE POLICY
 =================================================================
 CREW LABOR RATE:
-- ~$107/crew hour (working rate — sheet says $95 but real rate is higher)
-- Crew = lead installer + one helper
-- Rate applies regardless of whether owner is present or helping
+- Customer-facing rate: $95/crew hour (this is what customers pay for labor)
+- Internal crew cost is $55/hr — the $40 gap covers overhead, insurance, admin, tools, taxes, and labor profit
+- Crew = lead installer (Brandon) + one helper
+- NEVER reveal internal cost structure to customers — they see $95/hr labor only
+- DO NOT show the hourly rate breakdown in quotes — just show total labor cost
 
-DAILY LABOR STRUCTURE:
-- Half day (4 hours): ~$428 labor
-- Full day (8 hours): ~$856 labor
+DAILY LABOR STRUCTURE (customer-facing):
+- Half day (4 hours): $380 labor
+- Full day (8 hours): $760 labor
 - Labor billed per crew, not per individual
 
 MINIMUM LABOR CHARGE:
-- Standard minimum: 4 hours ($428 labor) for most jobs
+- Standard minimum: 4 hours ($380 labor) for most jobs
 - EXCEPTION — Small repairs under 1 hour: $125 flat labor + materials
   Examples: replacing 1-3 pickets, swapping a hinge, tightening hardware
-- If a job is estimated at ~1 hour but could easily run over, charge the $428 minimum — too close to call
+- If a job is estimated at ~1 hour but could easily run over, charge the $380 minimum — too close to call
 - If confident the job is 38-45 minutes max with no complications, the $125 flat rate is appropriate
 - WE make the final approval on all quotes — bot gathers info, we confirm pricing
 
 SMALL REPAIR ASSESSMENT — BOT MUST ASK THESE QUESTIONS before quoting a small repair:
-1. How many pickets need replacing? (1-3 = possibly $125 range, more = $428 minimum)
+1. How many pickets need replacing? (1-3 = possibly $125 range, more = $380 minimum)
 2. Does the new picket need to be trimmed/cut to size?
 3. Does it need to be painted or stained to match existing fence?
 4. Is there top cap and trim in the way that needs to be removed/reinstalled?
 5. Is it board-on-board? (More complex — pickets overlap, harder to remove one without disturbing others)
 6. How old is the fence? (Old fence — risk of damaging adjacent pickets or finding weak rails)
 7. Are the existing rails still solid? (Weak rails may not hold new fasteners — could turn into a bigger job)
-8. Is there electrical nearby or is it close to the house structure? (If yes — $428 minimum, more complexity)
+8. Is there electrical nearby or is it close to the house structure? (If yes — $380 minimum, more complexity)
 9. Is there anything overhead or blocking access?
 
-If ANY of these add complexity, move to the $428 minimum and explain why to the customer.
+If ANY of these add complexity, move to the $380 minimum and explain why to the customer.
 The bot should say: "Based on what you've described, I want to make sure we give you an accurate quote — our team will confirm final pricing after reviewing the details."
 NEVER promise a $125 rate if there are unknowns — always note that final pricing is confirmed by our team.
 
 MATERIAL PRICING:
-- Materials billed separately with standard markup on top of supplier cost
-- Material profit is in addition to labor margin
+- Materials are billed at supplier cost + 35% markup + 8.25% TX sales tax
+- This markup covers waste, overages, and material-side profit
+- The labor margin ($95 vs $55/hr internal) covers overhead and labor-side profit
+- Together these two margins target 25-30% overall job profit
+- NEVER show supplier cost, markup percentage, or internal rates to customers
 - Always include $75 delivery fee in quotes
+- Material markup is already baked into the installed per-LF prices listed below — use those as your primary reference
 
 HOW TO BUILD A QUOTE:
-1. Estimate hours for the job based on scope
-2. Multiply hours x $107 = labor cost
-3. Add material cost (from supplier pricing above) + markup
+1. Use the installed per-LF prices as your primary reference — they already include labor, materials, markup, and profit
+2. For custom material line items: supplier cost x 1.35 x 1.0825 (tax) = customer price
+3. Labor sanity check: estimated hours x $95 = labor line
 4. Add $75 delivery
-5. Add complexity factor for difficult jobs (slopes, demo, tight access, custom fab)
-6. Minimum total: $600
+5. Add gate costs separately
+6. Add complexity factors for difficult conditions
+7. Minimum total: $600
+
+EXAMPLE — 100 LF cedar privacy fence, 6', wood posts, 1 walk gate:
+- Fence: 100 LF x $39/LF (midpoint) = $3,900
+- Walk gate: $400
+- Delivery: $75
+- Total: ~$4,375 installed
+This already includes labor profit ($95 vs $55 internal) and material markup (35%).
 
 COMPLEXITY FACTORS (add to labor hours):
 - Existing fence demo/removal: add 1-2 hours depending on length
@@ -364,15 +378,15 @@ COMPLEXITY FACTORS (add to labor hours):
 - Concrete/hard surface install: add 1-2 hours
 - Rocky or root-heavy soil: add 1-3 hours
 
-QUICK LABOR ESTIMATES BY JOB TYPE:
-- Replace single picket or small repair: 4 hours minimum ($428 labor)
-- Install 50 LF wood fence: ~6-8 hours ($642-$856 labor)
-- Install 100 LF wood fence: ~10-14 hours ($1,070-$1,498 labor)
-- Install 150 LF wood fence: ~14-18 hours ($1,498-$1,926 labor)
-- Single walk gate: 2-3 hours ($214-$321 labor)
-- Double drive gate: 3-5 hours ($321-$535 labor)
-- Fence staining 100 LF: ~3-5 hours ($321-$535 labor)
-- Power washing: ~2-4 hours ($214-$428 labor)
+QUICK LABOR ESTIMATES BY JOB TYPE (hours x $95/hr = customer labor cost):
+- Replace single picket or small repair: 4 hours minimum ($380 labor)
+- Install 50 LF wood fence: ~6-8 hours ($570–760 labor)
+- Install 100 LF wood fence: ~10-14 hours ($950–1,330 labor)
+- Install 150 LF wood fence: ~14-18 hours ($1,330–1,710 labor)
+- Single walk gate: 2-3 hours ($190–285 labor)
+- Double drive gate: 3-5 hours ($285–475 labor)
+- Fence staining: calculated by sq ft — see staining section above
+- Power washing: ~2-4 hours ($190–380 labor)
 
 =================================================================
 MATERIAL KNOWLEDGE — SUPPLIERS
@@ -451,9 +465,15 @@ WOOD GATES
 =================================================================
 STAINING — Wood Defender Semi-Transparent
 =================================================================
-- Spray staining: ~$0.86/sq ft
-- Hand staining: ~$1.00/LF
+IMPORTANT — Staining is priced in SQUARE FEET, not linear feet.
+- To calculate sq ft: LF x fence height (ft) x 2 sides = total sq ft
+  Example: 100 LF x 6' tall x 2 sides = 1,200 sq ft
+- Spray staining: ~$0.86/sq ft (customer-facing price, profit included)
+- Hand staining: ~$1.15/sq ft (customer-facing price, profit included)
+- Always show the sq ft math in the quote so customer understands the number
 - Always upsell staining on every wood fence job
+- Example: 100 LF of 6' fence = 1,200 sq ft x $0.86 = $1,032 spray stain
+- Minimum staining job: $400
 
 =================================================================
 VINYL FENCE — BUFFTECH (White & Colors)
