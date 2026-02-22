@@ -22,13 +22,12 @@ XERO_CLIENT_SECRET = os.getenv("XERO_CLIENT_SECRET", "")
 XERO_REDIRECT_URI = os.getenv("XERO_REDIRECT_URI", "https://astro-fence-assistant.onrender.com/xero/callback")
 XERO_SCOPES = "openid profile email accounting.contacts accounting.transactions projects offline_access"
 
-XERO_TOKEN_FILE = "xero_token.json"  # stored on disk between restarts
+XERO_TOKEN_FILE = "xero_token.json"
 
 # ----------------------------
 # TOKEN MANAGEMENT
 # ----------------------------
 def save_token(token_data: dict):
-    """Save token to disk"""
     try:
         with open(XERO_TOKEN_FILE, "w") as f:
             json.dump(token_data, f)
@@ -37,7 +36,6 @@ def save_token(token_data: dict):
         logger.error(f"Token save error: {e}")
 
 def load_token() -> Optional[dict]:
-    """Load token from disk"""
     try:
         if os.path.exists(XERO_TOKEN_FILE):
             with open(XERO_TOKEN_FILE, "r") as f:
@@ -47,7 +45,6 @@ def load_token() -> Optional[dict]:
     return None
 
 def refresh_access_token(token_data: dict) -> Optional[dict]:
-    """Refresh expired access token using refresh token"""
     try:
         resp = requests.post(
             "https://identity.xero.com/connect/token",
@@ -70,19 +67,16 @@ def refresh_access_token(token_data: dict) -> Optional[dict]:
         return None
 
 def get_valid_token() -> Optional[dict]:
-    """Get a valid token, refreshing if needed"""
     token = load_token()
     if not token:
         return None
-    # Check if expired (access tokens last 30 min)
     saved_at = datetime.fromisoformat(token.get("saved_at", datetime.now().isoformat()))
     age_minutes = (datetime.now() - saved_at).total_seconds() / 60
-    if age_minutes > 25:  # refresh before 30 min expiry
+    if age_minutes > 25:
         token = refresh_access_token(token)
     return token
 
 def get_tenant_id(token_data: dict) -> Optional[str]:
-    """Get the Xero tenant (organisation) ID"""
     try:
         resp = requests.get(
             "https://api.xero.com/connections",
@@ -101,7 +95,6 @@ def get_tenant_id(token_data: dict) -> Optional[str]:
 # OAUTH FLOW
 # ----------------------------
 def get_auth_url() -> str:
-    """Build the Xero OAuth2 authorization URL"""
     return (
         f"https://login.xero.com/identity/connect/authorize"
         f"?response_type=code"
@@ -112,7 +105,6 @@ def get_auth_url() -> str:
     )
 
 def exchange_code_for_token(code: str) -> Optional[dict]:
-    """Exchange auth code for access + refresh tokens"""
     try:
         resp = requests.post(
             "https://identity.xero.com/connect/token",
@@ -145,32 +137,51 @@ def xero_headers(token_data: dict, tenant_id: str) -> dict:
         "Accept": "application/json"
     }
 
-def find_or_create_contact(token_data: dict, tenant_id: str, name: str, phone: str = "", email: str = "") -> Optional[str]:
-    """Find existing contact by phone/email or create new one. Returns ContactID."""
+def find_or_create_contact(token_data: dict, tenant_id: str, contact_info: dict) -> Optional[str]:
+    """
+    Find existing contact or create new one with full address info.
+    contact_info = {
+        "first_name": str, "last_name": str, "email": str,
+        "phone": str, "address": str, "city": str, "state": str, "zip": str
+    }
+    Returns ContactID.
+    """
     headers = xero_headers(token_data, tenant_id)
+    full_name = f"{contact_info.get('first_name', '')} {contact_info.get('last_name', '')}".strip()
+    if not full_name:
+        full_name = f"Chat Lead {datetime.now().strftime('%m%d%H%M')}"
 
     # Search for existing contact by name
     try:
-        search_name = name.replace("&", "%26")
         resp = requests.get(
-            f"https://api.xero.com/api.xro/2.0/Contacts?where=Name.Contains(\"{name}\")",
+            f'https://api.xero.com/api.xro/2.0/Contacts?where=Name.Contains("{full_name}")',
             headers=headers,
             timeout=10
         )
         if resp.status_code == 200:
             contacts = resp.json().get("Contacts", [])
             if contacts:
-                logger.info(f"Found existing Xero contact: {name}")
+                logger.info(f"Found existing Xero contact: {full_name}")
                 return contacts[0]["ContactID"]
     except Exception as e:
         logger.warning(f"Contact search error: {e}")
 
-    # Build contact payload
-    contact_payload = {"Name": name}
-    if phone:
-        contact_payload["Phones"] = [{"PhoneType": "MOBILE", "PhoneNumber": phone}]
-    if email:
-        contact_payload["EmailAddress"] = email
+    # Build full contact payload
+    contact_payload = {
+        "FirstName": contact_info.get("first_name", ""),
+        "LastName": contact_info.get("last_name", ""),
+        "Name": full_name,
+        "EmailAddress": contact_info.get("email", ""),
+        "Phones": [{"PhoneType": "MOBILE", "PhoneNumber": contact_info.get("phone", "")}],
+        "Addresses": [{
+            "AddressType": "STREET",
+            "AddressLine1": contact_info.get("address", ""),
+            "City": contact_info.get("city", ""),
+            "Region": contact_info.get("state", "TX"),
+            "PostalCode": contact_info.get("zip", ""),
+            "Country": "US"
+        }]
+    }
 
     try:
         resp = requests.post(
@@ -181,23 +192,47 @@ def find_or_create_contact(token_data: dict, tenant_id: str, name: str, phone: s
         )
         resp.raise_for_status()
         contact_id = resp.json()["Contacts"][0]["ContactID"]
-        logger.info(f"✅ Created Xero contact: {name} ({contact_id})")
+        logger.info(f"✅ Created Xero contact: {full_name} ({contact_id})")
         return contact_id
     except Exception as e:
         logger.error(f"Contact create error: {e}")
         return None
 
-def create_xero_quote(token_data: dict, tenant_id: str, contact_id: str, session_data: dict, line_items: list) -> Optional[dict]:
-    """
-    Create a Quote in Xero with line items.
-    line_items = [{"description": str, "quantity": float, "unitAmount": float, "lineAmount": float}, ...]
-    """
-    headers = xero_headers(token_data, tenant_id)
+def create_xero_project(token_data: dict, tenant_id: str, contact_id: str, project_name: str, total_estimate: float) -> Optional[dict]:
+    """Create a Project in Xero linked to the contact. Must be done before quote."""
+    headers = {
+        "Authorization": f"Bearer {token_data['access_token']}",
+        "Xero-tenant-id": tenant_id,
+        "Content-Type": "application/json",
+        "Accept": "application/json"
+    }
+    project_payload = {
+        "contactId": contact_id,
+        "name": project_name,
+        "estimateAmount": round(total_estimate, 2),
+        "deadlineUtc": (datetime.now() + timedelta(days=60)).strftime("%Y-%m-%dT00:00:00Z"),
+        "currencyCode": "USD"
+    }
+    try:
+        resp = requests.post(
+            "https://api.xero.com/projects.xro/2.0/Projects",
+            headers=headers,
+            json=project_payload,
+            timeout=15
+        )
+        resp.raise_for_status()
+        project = resp.json()
+        logger.info(f"✅ Created Xero project: {project_name}")
+        return project
+    except Exception as e:
+        logger.error(f"Project create error: {e}")
+        return None
 
-    name = session_data.get("soft_lead_name", "Customer")
+def create_xero_quote(token_data: dict, tenant_id: str, contact_id: str, quote_title: str, line_items: list, summary: str) -> Optional[dict]:
+    """Create a Draft Quote in Xero linked to the contact."""
+    headers = xero_headers(token_data, tenant_id)
     quote_number = f"AOD-{datetime.now().strftime('%y%m%d-%H%M')}"
 
-    # Build Xero line items
     xero_lines = []
     for item in line_items:
         xero_lines.append({
@@ -205,7 +240,7 @@ def create_xero_quote(token_data: dict, tenant_id: str, contact_id: str, session
             "Quantity": item.get("quantity", 1),
             "UnitAmount": round(item.get("unitAmount", 0), 2),
             "LineAmount": round(item.get("lineAmount", 0), 2),
-            "AccountCode": "200"  # standard sales account
+            "AccountCode": "200"
         })
 
     quote_payload = {
@@ -215,8 +250,8 @@ def create_xero_quote(token_data: dict, tenant_id: str, contact_id: str, session
         "Date": datetime.now().strftime("%Y-%m-%d"),
         "ExpiryDate": (datetime.now() + timedelta(days=30)).strftime("%Y-%m-%d"),
         "Status": "DRAFT",
-        "Title": f"Fence Project — {name}",
-        "Summary": session_data.get("project_summary", "Fence installation quote from chat session"),
+        "Title": quote_title,
+        "Summary": summary[:500] if summary else "Fence installation quote from chat session",
         "Terms": "Quote valid for 30 days. Final price confirmed after site visit. Includes materials, labor, and delivery.",
         "LineAmountTypes": "EXCLUSIVE"
     }
@@ -233,62 +268,19 @@ def create_xero_quote(token_data: dict, tenant_id: str, contact_id: str, session
         logger.info(f"✅ Created Xero quote: {quote_number}")
         return quote
     except Exception as e:
-        logger.error(f"Quote create error: {e}: {resp.text if 'resp' in dir() else ''}")
-        return None
-
-def create_xero_project(token_data: dict, tenant_id: str, contact_id: str, session_data: dict, total_estimate: float) -> Optional[dict]:
-    """Create a Project in Xero linked to the contact"""
-    headers = {
-        "Authorization": f"Bearer {token_data['access_token']}",
-        "Xero-tenant-id": tenant_id,
-        "Content-Type": "application/json",
-        "Accept": "application/json"
-    }
-
-    name = session_data.get("soft_lead_name", "Customer")
-    project_name = f"Fence — {name} — {datetime.now().strftime('%b %d %Y')}"
-
-    project_payload = {
-        "contactId": contact_id,
-        "name": project_name,
-        "estimateAmount": round(total_estimate, 2),
-        "deadlineUtc": (datetime.now() + timedelta(days=60)).strftime("%Y-%m-%dT00:00:00Z"),
-        "currencyCode": "USD"
-    }
-
-    try:
-        resp = requests.post(
-            "https://api.xero.com/projects.xro/2.0/Projects",
-            headers=headers,
-            json=project_payload,
-            timeout=15
-        )
-        resp.raise_for_status()
-        project = resp.json()
-        logger.info(f"✅ Created Xero project: {project_name}")
-        return project
-    except Exception as e:
-        logger.error(f"Project create error: {e}")
+        logger.error(f"Quote create error: {e}")
         return None
 
 # ----------------------------
-# QUOTE PARSER — Extract line items from chat transcript
+# QUOTE PARSER
 # ----------------------------
 def parse_quote_from_transcript(messages: list) -> dict:
-    """
-    Parse the chat transcript to extract quote line items and contact info.
-    Looks for the last bot message that contains dollar amounts and fence specs.
-    """
     result = {
         "line_items": [],
         "total": 0.0,
-        "project_summary": "",
-        "contact_name": "",
-        "contact_phone": "",
-        "contact_email": ""
+        "project_summary": ""
     }
 
-    # Find the last assistant message with pricing
     last_quote_msg = ""
     for msg in reversed(messages):
         if msg.get("type") == "assistant" and "$" in msg.get("message", ""):
@@ -298,9 +290,8 @@ def parse_quote_from_transcript(messages: list) -> dict:
     if not last_quote_msg:
         return result
 
-    result["project_summary"] = last_quote_msg[:300].replace("\n", " ").strip()
+    result["project_summary"] = last_quote_msg[:500].replace("\n", " ").strip()
 
-    # Extract line items — look for patterns like "Something: $X,XXX" or "- Item: $XXX"
     line_pattern = re.findall(
         r'[-•*]?\s*([A-Za-z][^:$\n]{3,60}):\s*\$?([\d,]+(?:\.\d{2})?)',
         last_quote_msg
@@ -311,14 +302,12 @@ def parse_quote_from_transcript(messages: list) -> dict:
         desc = desc.strip().strip("*").strip()
         if len(desc) < 4:
             continue
-        # Skip totals and headers — we'll add total separately
         skip_words = ["total", "quote", "option", "savings", "includes", "note"]
         if any(w in desc.lower() for w in skip_words):
             continue
         if desc in seen:
             continue
         seen.add(desc)
-
         try:
             amount = float(amount_str.replace(",", ""))
             if amount > 0:
@@ -331,7 +320,6 @@ def parse_quote_from_transcript(messages: list) -> dict:
         except ValueError:
             continue
 
-    # Try to find grand total
     total_patterns = [
         r'(?:TOTAL|Grand Total|Total)[^\$]*\$?([\d,]+(?:\.\d{2})?)',
         r'\*\*.*?TOTAL.*?\*\*[^\$]*\$?([\d,]+(?:\.\d{2})?)'
@@ -345,27 +333,31 @@ def parse_quote_from_transcript(messages: list) -> dict:
             except ValueError:
                 pass
 
-    # If no total found, sum line items
     if result["total"] == 0 and result["line_items"]:
         result["total"] = sum(i["lineAmount"] for i in result["line_items"])
 
     return result
 
 # ----------------------------
-# MAIN FUNCTION — Called when a qualified lead session ends
+# MAIN PIPELINE — Contact → Project → Quote (correct Xero order)
 # ----------------------------
-def push_session_to_xero(session_id: str, session_data: dict) -> dict:
+def push_to_xero_with_contact(contact_info: dict, session_data: dict) -> dict:
     """
-    Full pipeline: parse session → create contact → create quote → create project
-    Returns dict with status and links.
+    Full pipeline in correct Xero order:
+    1. Create Contact (with full address)
+    2. Create Project (linked to contact)
+    3. Create Quote (linked to contact)
+
+    contact_info = {
+        first_name, last_name, email, phone,
+        address, city, state, zip
+    }
     """
     result = {"success": False, "quote_number": None, "project_name": None, "error": None}
 
-    # Check if Xero is connected
     token = get_valid_token()
     if not token:
-        result["error"] = "Xero not connected — visit /xero/auth to connect"
-        logger.warning("Xero not connected — skipping push")
+        result["error"] = "Xero not connected"
         return result
 
     tenant_id = get_tenant_id(token)
@@ -377,47 +369,51 @@ def push_session_to_xero(session_id: str, session_data: dict) -> dict:
     messages = session_data.get("messages", [])
     parsed = parse_quote_from_transcript(messages)
 
-    # Get contact details from session
-    name = session_data.get("soft_lead_name", "").strip()
-    phone = session_data.get("soft_lead_phone", "").strip()
-    email = session_data.get("soft_lead_email", "").strip()
+    full_name = f"{contact_info.get('first_name', '')} {contact_info.get('last_name', '')}".strip()
+    if not full_name:
+        full_name = "Chat Lead"
 
-    # If no name captured, use a fallback
-    if not name:
-        name = f"Chat Lead {session_id[:6]}"
-
-    parsed["contact_name"] = name
-    parsed["contact_phone"] = phone
-    parsed["contact_email"] = email
-
-    # Skip if no pricing was found in chat
-    if not parsed["line_items"] and parsed["total"] == 0:
-        result["error"] = "No pricing found in chat — quote not created"
-        logger.info(f"Session {session_id[:8]} had no pricing — skipping Xero push")
-        return result
-
-    # Step 1: Find or create contact
-    contact_id = find_or_create_contact(token, tenant_id, name, phone, email)
+    # STEP 1: Create Contact
+    contact_id = find_or_create_contact(token, tenant_id, contact_info)
     if not contact_id:
         result["error"] = "Failed to create Xero contact"
         return result
 
-    # Step 2: Create quote
-    quote = create_xero_quote(token, tenant_id, contact_id, parsed, parsed["line_items"])
-    if quote:
-        result["quote_number"] = quote.get("QuoteNumber")
-        result["quote_id"] = quote.get("QuoteID")
+    total = parsed["total"] or sum(i["lineAmount"] for i in parsed["line_items"]) or 0
+    project_name = f"Fence — {full_name} — {datetime.now().strftime('%b %d %Y')}"
+    quote_title = f"Fence Project — {full_name}"
 
-    # Step 3: Create project
-    total = parsed["total"] or sum(i["lineAmount"] for i in parsed["line_items"])
-    project = create_xero_project(token, tenant_id, contact_id, {"soft_lead_name": name, "project_summary": parsed["project_summary"]}, total)
+    # STEP 2: Create Project
+    project = create_xero_project(token, tenant_id, contact_id, project_name, total)
     if project:
         result["project_name"] = project.get("name")
         result["project_id"] = project.get("projectId")
 
-    result["success"] = bool(quote or project)
-    result["contact_name"] = name
+    # STEP 3: Create Quote (linked to same contact)
+    if parsed["line_items"]:
+        quote = create_xero_quote(
+            token, tenant_id, contact_id,
+            quote_title, parsed["line_items"], parsed["project_summary"]
+        )
+        if quote:
+            result["quote_number"] = quote.get("QuoteNumber")
+            result["quote_id"] = quote.get("QuoteID")
+
+    result["success"] = bool(contact_id)
+    result["contact_name"] = full_name
     result["total_estimate"] = total
 
-    logger.info(f"✅ Xero push complete for {name}: quote={result.get('quote_number')}, project={result.get('project_name')}")
+    logger.info(f"✅ Xero pipeline complete for {full_name}: project={result.get('project_name')}, quote={result.get('quote_number')}")
     return result
+
+# Keep backward compat for auto-push from transcript timer
+def push_session_to_xero(session_id: str, session_data: dict) -> dict:
+    """Auto-push from transcript timer — uses whatever contact info was captured in chat."""
+    contact_info = {
+        "first_name": session_data.get("soft_lead_name", "").split(" ")[0] if session_data.get("soft_lead_name") else "",
+        "last_name": " ".join(session_data.get("soft_lead_name", "").split(" ")[1:]) if session_data.get("soft_lead_name") else "",
+        "email": session_data.get("soft_lead_email", ""),
+        "phone": session_data.get("soft_lead_phone", ""),
+        "address": "", "city": "", "state": "TX", "zip": ""
+    }
+    return push_to_xero_with_contact(contact_info, session_data)
