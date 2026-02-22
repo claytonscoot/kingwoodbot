@@ -16,7 +16,7 @@ from typing import Optional, Dict, List, Literal
 from contextlib import asynccontextmanager
 import aiofiles
 # XERO INTEGRATION
-from xero_integration import get_auth_url, exchange_code_for_token, get_valid_token, push_session_to_xero, load_token
+from xero_integration import get_auth_url, exchange_code_for_token, get_valid_token, push_session_to_xero, load_token, push_to_xero_with_contact
 from fastapi.responses import RedirectResponse
 
 # Configure logging
@@ -688,11 +688,9 @@ def call_claude(user_message: str, history: list = None, images: list = None) ->
         "anthropic-version": "2023-06-01",
         "content-type": "application/json"
     }
-    # Use claude-sonnet for vision (haiku vision quality is poor), fall back to haiku for text-only
     model = "claude-sonnet-4-5" if images else CLAUDE_MODEL
 
     def build_content(text, imgs):
-        """Build a Claude message content block — text only or text+images"""
         if not imgs:
             return text
         content_blocks = []
@@ -722,7 +720,6 @@ def call_claude(user_message: str, history: list = None, images: list = None) ->
             elif msg["type"] == "assistant":
                 messages.append({"role": "assistant", "content": msg["message"]})
 
-    # Current message with images
     messages.append({
         "role": "user",
         "content": build_content(user_message, images or [])
@@ -743,37 +740,26 @@ def generate_session_id() -> str:
     return str(uuid.uuid4())
 
 def check_rate_limit(ip: str) -> tuple[bool, str]:
-    """
-    Returns (is_blocked, reason).
-    Two-tier system:
-      Tier 1 — 20+ messages in 60 seconds → 15 min block, increment strike count
-      Tier 2 — 3+ strikes in same day → upgrade to 4 hour block
-    """
     import time
     now = time.time()
 
-    # Check if currently blocked
     blocked_until = ip_blocked_until.get(ip, 0)
     if now < blocked_until:
         remaining = int((blocked_until - now) / 60)
         return True, f"Too many requests. Please try again in {remaining} minutes."
 
-    # Clean up timestamps older than 60 seconds
     timestamps = ip_message_counts.get(ip, [])
     timestamps = [t for t in timestamps if now - t < 60]
     timestamps.append(now)
     ip_message_counts[ip] = timestamps
 
-    # Tier 1 — 20 messages in 60 seconds
     if len(timestamps) > 20:
         strikes = ip_strike_counts.get(ip, 0) + 1
         ip_strike_counts[ip] = strikes
 
         if strikes >= 3:
-            # Tier 2 — 4 hour block
             ip_blocked_until[ip] = now + (4 * 3600)
             logger.warning(f"🚫 4-HOUR BLOCK: {ip} — {strikes} strikes")
-            # Alert email in background
             def alert_block(ip_addr, strike_count):
                 try:
                     send_brevo_email(
@@ -792,7 +778,6 @@ def check_rate_limit(ip: str) -> tuple[bool, str]:
             threading.Thread(target=alert_block, args=[ip, strikes], daemon=True).start()
             return True, "Too many requests. Access temporarily suspended."
         else:
-            # Tier 1 — 15 minute block
             ip_blocked_until[ip] = now + (15 * 60)
             logger.warning(f"⚠️ 15-MIN BLOCK: {ip} — strike {strikes}")
             return True, "Too many requests. Please slow down and try again in 15 minutes."
@@ -801,7 +786,6 @@ def check_rate_limit(ip: str) -> tuple[bool, str]:
 
 
 def build_transcript_email(session_id: str) -> str:
-    """Build a clean email transcript from a session"""
     session = active_sessions.get(session_id)
     if not session:
         return ""
@@ -842,26 +826,24 @@ def build_transcript_email(session_id: str) -> str:
     return "\n".join(lines)
 
 def send_transcript_email(session_id: str):
-    """Send transcript email after session inactivity — fires automatically"""
     try:
         session = active_sessions.get(session_id)
         if not session:
             return
         msg_count = session.get("message_count", 0)
         if msg_count < 2:
-            return  # skip 1-message sessions (accidental opens)
+            return
 
         transcript = build_transcript_email(session_id)
         if not transcript:
             return
-# Collect any photos the customer uploaded during the chat
+
         attachments = []
         photo_count = 0
         for msg in session.get("messages", []):
             if msg.get("type") == "user" and msg.get("images"):
                 for idx, img_b64 in enumerate(msg["images"]):
                     photo_count += 1
-                    # img_b64 may have a data URI prefix — strip it
                     if "," in img_b64:
                         img_b64 = img_b64.split(",", 1)[1]
                     attachments.append({
@@ -869,7 +851,6 @@ def send_transcript_email(session_id: str):
                         "name": f"customer_photo_{photo_count}.jpg"
                     })
 
-        # Build subject with key info
         name = session.get('soft_lead_name', '')
         form_status = "✅ FORM SUBMITTED" if session.get('form_submitted') else "💬 CHAT ONLY — no form"
         photo_note = f" 📷 {photo_count} photo(s)" if photo_count > 0 else ""
@@ -882,7 +863,6 @@ def send_transcript_email(session_id: str):
         )
         logger.info(f"📧 Transcript sent for session {session_id[:8]} ({msg_count} messages, {photo_count} photos)")
 
-        # Save to chat sessions log
         chat_sessions_log.append({
             "session_id": session_id[:8],
             "timestamp": session.get("created"),
@@ -907,16 +887,14 @@ def send_transcript_email(session_id: str):
         logger.error(f"Transcript email error: {e}")
 
 def reset_transcript_timer(session_id: str):
-    """Reset the inactivity timer for a session — sends transcript after 8 min of silence"""
     if session_id in transcript_timers:
         transcript_timers[session_id].cancel()
-    t = threading.Timer(480, send_transcript_email, args=[session_id])  # 8 minutes
+    t = threading.Timer(480, send_transcript_email, args=[session_id])
     t.daemon = True
     t.start()
     transcript_timers[session_id] = t
 
 def send_session_start_notification(session_id: str, ip: str):
-    """Fire a notification email the moment someone starts chatting"""
     try:
         subject = f"👀 Someone is chatting on your website RIGHT NOW"
         body = (
@@ -933,7 +911,6 @@ def send_session_start_notification(session_id: str, ip: str):
         logger.error(f"Session start notification error: {e}")
 
 def send_brevo_email(subject: str, text_content: str, attachments: list = None, notify_email: str = None):
-    """Shared Brevo email sender"""
     brevo_api_key = os.getenv("BREVO_API_KEY")
     if not brevo_api_key:
         logger.warning("BREVO_API_KEY not set — skipping email notification.")
@@ -993,7 +970,6 @@ def chat(req: Chat, request: Request):
     prompt = req.prompt.strip()
     session_id = req.session_id or generate_session_id()
 
-    # Rate limit check
     client_ip = request.client.host if request.client else "unknown"
     is_blocked, block_reason = check_rate_limit(client_ip)
     if is_blocked:
@@ -1016,7 +992,6 @@ def chat(req: Chat, request: Request):
             "soft_lead_phone": "",
             "soft_lead_email": "",
         }
-        # Fire session start notification in background
         ip = request.client.host if request.client else "unknown"
         t = threading.Thread(target=send_session_start_notification, args=[session_id, ip], daemon=True)
         t.start()
@@ -1030,7 +1005,6 @@ def chat(req: Chat, request: Request):
         "images": req.images or []
     })
 
-    # Reset inactivity transcript timer every message
     reset_transcript_timer(session_id)
 
     if not prompt:
@@ -1059,7 +1033,6 @@ def chat(req: Chat, request: Request):
             "message": ai_response
         })
 
-        # Detect if customer shared contact info in chat (soft lead capture)
         import re
         phone_match = re.search(r'(\d{3}[-.\s]?\d{3}[-.\s]?\d{4})', prompt)
         email_match = re.search(r'[\w.+-]+@[\w-]+\.[a-z]{2,}', prompt, re.IGNORECASE)
@@ -1068,7 +1041,6 @@ def chat(req: Chat, request: Request):
         if email_match and not active_sessions[session_id].get("soft_lead_email"):
             active_sessions[session_id]["soft_lead_email"] = email_match.group(0)
 
-        # Detect name from common patterns like "I'm John" or "my name is Sarah"
         name_match = re.search(r"(?:i'?m|my name is|this is|call me)\s+([A-Z][a-z]+)", prompt, re.IGNORECASE)
         if name_match and not active_sessions[session_id].get("soft_lead_name"):
             active_sessions[session_id]["soft_lead_name"] = name_match.group(1)
@@ -1077,7 +1049,6 @@ def chat(req: Chat, request: Request):
         if phone_in_prompt:
             active_sessions[session_id]["soft_lead_phone"] = phone_in_prompt.group(1)
 
-        # Check if the AI response just confirmed a callback
         callback_confirmed = any(phrase in ai_response.lower() for phrase in [
             "sent your info to the team",
             "passed your info",
@@ -1452,6 +1423,48 @@ def xero_status():
     if not token:
         return JSONResponse({"connected": False, "connect_url": "/xero/auth"})
     return JSONResponse({"connected": True, "token_saved_at": token.get("saved_at")})
+
+@app.post("/xero/capture-and-push")
+async def xero_capture_and_push(request: Request):
+    """
+    Receives full contact info from the chat popup form.
+    Creates Contact → Project → Quote in Xero in correct order.
+    """
+    try:
+        body = await request.json()
+        session_id = body.get("session_id", "")
+        contact_info = {
+            "first_name": body.get("first_name", "").strip(),
+            "last_name":  body.get("last_name", "").strip(),
+            "email":      body.get("email", "").strip(),
+            "phone":      body.get("phone", "").strip(),
+            "address":    body.get("address", "").strip(),
+            "city":       body.get("city", "").strip(),
+            "state":      body.get("state", "TX").strip(),
+            "zip":        body.get("zip", "").strip(),
+        }
+
+        # Find the session for transcript parsing
+        full_sid = None
+        for sid in active_sessions:
+            if sid.startswith(session_id) or sid[:8] == session_id:
+                full_sid = sid
+                break
+
+        session_data = active_sessions.get(full_sid, {"messages": []})
+        result = push_to_xero_with_contact(contact_info, session_data)
+
+        # Update session soft lead info with what was entered
+        if full_sid and full_sid in active_sessions:
+            name = f"{contact_info['first_name']} {contact_info['last_name']}".strip()
+            active_sessions[full_sid]["soft_lead_name"] = name
+            active_sessions[full_sid]["soft_lead_email"] = contact_info["email"]
+            active_sessions[full_sid]["soft_lead_phone"] = contact_info["phone"]
+
+        return JSONResponse(result)
+    except Exception as e:
+        logger.error(f"Xero capture-and-push error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/xero/push-session/{session_id}")
 def xero_push_session(session_id: str):
