@@ -15,6 +15,9 @@ import threading
 from typing import Optional, Dict, List, Literal
 from contextlib import asynccontextmanager
 import aiofiles
+# XERO INTEGRATION
+from xero_integration import get_auth_url, exchange_code_for_token, get_valid_token, push_session_to_xero, load_token
+from fastapi.responses import RedirectResponse
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -851,8 +854,7 @@ def send_transcript_email(session_id: str):
         transcript = build_transcript_email(session_id)
         if not transcript:
             return
-
-        # Collect any photos the customer uploaded during the chat
+# Collect any photos the customer uploaded during the chat
         attachments = []
         photo_count = 0
         for msg in session.get("messages", []):
@@ -891,6 +893,15 @@ def send_transcript_email(session_id: str):
         })
         if len(chat_sessions_log) > 100:
             chat_sessions_log.pop(0)
+
+        # XERO — Auto-push qualified sessions
+        if msg_count >= 3:
+            try:
+                xero_result = push_session_to_xero(session_id, session)
+                if xero_result.get("success"):
+                    logger.info(f"📊 Xero: quote={xero_result.get('quote_number')}, project={xero_result.get('project_name')}")
+            except Exception as xe:
+                logger.error(f"Xero push error: {xe}")
 
     except Exception as e:
         logger.error(f"Transcript email error: {e}")
@@ -1016,7 +1027,7 @@ def chat(req: Chat, request: Request):
         "timestamp": datetime.now().isoformat(),
         "type": "user",
         "message": prompt,
-        "images": req.images or []  # store images with message for history replay
+        "images": req.images or []
     })
 
     # Reset inactivity transcript timer every message
@@ -1050,8 +1061,8 @@ def chat(req: Chat, request: Request):
 
         # Detect if customer shared contact info in chat (soft lead capture)
         import re
-        phone_match = re.search(r'(\d{3}[-.\s]?\d{3}[-.\s]?\d{4})', prompt)
-        email_match = re.search(r'[\w.+-]+@[\w-]+\.[a-z]{2,}', prompt, re.IGNORECASE)
+        phone_match = re.search(r'(\d{3}[-.\s]?\d{3}[-.\s]?\d{4})', prompt)
+        email_match = re.search(r'[\w.+-]+@[\w-]+\.[a-z]{2,}', prompt, re.IGNORECASE)
         if phone_match and not active_sessions[session_id].get("soft_lead_phone"):
             active_sessions[session_id]["soft_lead_phone"] = phone_match.group(1)
         if email_match and not active_sessions[session_id].get("soft_lead_email"):
@@ -1062,14 +1073,11 @@ def chat(req: Chat, request: Request):
         if name_match and not active_sessions[session_id].get("soft_lead_name"):
             active_sessions[session_id]["soft_lead_name"] = name_match.group(1)
 
-        # Detect callback confirmation — bot just confirmed callback AND we have name + phone
-        # Fire alert only when the AI response confirms "sent your info to the team" or similar
-        # meaning the bot has already collected all required contact info
-        phone_in_prompt = re.search(r'(\d{3}[-.\s]?\d{3}[-.\s]?\d{4}|\d{10})', prompt)
+        phone_in_prompt = re.search(r'(\d{3}[-.\s]?\d{3}[-.\s]?\d{4}|\d{10})', prompt)
         if phone_in_prompt:
             active_sessions[session_id]["soft_lead_phone"] = phone_in_prompt.group(1)
 
-        # Check if the AI response just confirmed a callback (meaning it collected info)
+        # Check if the AI response just confirmed a callback
         callback_confirmed = any(phrase in ai_response.lower() for phrase in [
             "sent your info to the team",
             "passed your info",
@@ -1085,9 +1093,8 @@ def chat(req: Chat, request: Request):
         if callback_confirmed and has_name and has_phone and not active_sessions[session_id].get("callback_alert_sent"):
             active_sessions[session_id]["callback_alert_sent"] = True
 
-            # Build full context from conversation
             all_user_msgs = [m["message"] for m in active_sessions[session_id]["messages"] if m["type"] == "user"]
-            conversation_context = "\n".join(all_user_msgs[-6:])  # last 6 user messages
+            conversation_context = "\n".join(all_user_msgs[-6:])
             name = active_sessions[session_id].get("soft_lead_name", "Unknown")
             phone = active_sessions[session_id].get("soft_lead_phone", "Unknown")
             email = active_sessions[session_id].get("soft_lead_email", "Not provided")
@@ -1118,7 +1125,6 @@ def chat(req: Chat, request: Request):
                 except Exception as e:
                     logger.error(f"Callback alert error: {e}")
 
-            # Collect photos from session for callback alert
             callback_photos = []
             photo_num = 0
             for msg in active_sessions[session_id].get("messages", []):
@@ -1139,8 +1145,6 @@ def chat(req: Chat, request: Request):
             )
             t.start()
 
-        # Determine if bot should ask for contact info (soft lead prompt)
-        # Trigger after 3+ messages if no contact info captured yet and no form submitted
         msg_count = active_sessions[session_id]["message_count"]
         has_contact = (active_sessions[session_id].get("soft_lead_phone") or
                       active_sessions[session_id].get("soft_lead_email"))
@@ -1155,7 +1159,7 @@ def chat(req: Chat, request: Request):
             "session_id": session_id,
             "message_count": msg_count,
             "business": BUSINESS_NAME,
-            "show_soft_capture": show_soft_capture  # frontend uses this to show contact prompt
+            "show_soft_capture": show_soft_capture
         }
 
     except requests.exceptions.Timeout:
@@ -1250,13 +1254,11 @@ async def submit_lead_with_photos(
     photo_3: UploadFile = File(default=None),
     photo_4: UploadFile = File(default=None),
 ):
-    """Handle lead form submissions with optional photo attachments"""
     try:
         ip = request.client.host if request.client else ""
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         lead_id = str(uuid.uuid4())[:8]
 
-        # Collect uploaded photos and encode as base64 for Brevo
         photos = []
         for photo in [photo_0, photo_1, photo_2, photo_3, photo_4]:
             if photo and photo.filename:
@@ -1375,7 +1377,6 @@ def get_recent_leads():
 
 @app.get("/admin/sessions")
 def get_chat_sessions():
-    """Return all chat sessions including chat-only (no form submitted)"""
     sessions = []
     for sid, sess in active_sessions.items():
         msg_count = sess.get("message_count", 0)
@@ -1403,8 +1404,6 @@ def get_chat_sessions():
 
 @app.get("/admin/transcript/{session_id}")
 def get_transcript(session_id: str):
-    """Get full transcript for a session"""
-    # Find by short ID
     full_sid = None
     for sid in active_sessions:
         if sid.startswith(session_id) or sid[:8] == session_id:
@@ -1423,6 +1422,49 @@ def get_contact_info():
         "website": WEBSITE, "service_area": SERVICE_AREA,
         "quick_help": BUSINESS_EMAIL
     })
+
+
+# ----------------------------
+# XERO ROUTES
+# ----------------------------
+@app.get("/xero/auth")
+def xero_auth():
+    return RedirectResponse(url=get_auth_url())
+
+@app.get("/xero/callback")
+def xero_callback(code: str = None, error: str = None, state: str = None):
+    if error:
+        return JSONResponse({"error": error}, status_code=400)
+    if not code:
+        return JSONResponse({"error": "No code received"}, status_code=400)
+    token = exchange_code_for_token(code)
+    if not token:
+        return JSONResponse({"error": "Token exchange failed"}, status_code=500)
+    return JSONResponse({
+        "success": True,
+        "message": "✅ Xero connected! Bot will now auto-create contacts, projects, and quotes.",
+        "next_step": "Close this tab — you're done!"
+    })
+
+@app.get("/xero/status")
+def xero_status():
+    token = load_token()
+    if not token:
+        return JSONResponse({"connected": False, "connect_url": "/xero/auth"})
+    return JSONResponse({"connected": True, "token_saved_at": token.get("saved_at")})
+
+@app.post("/xero/push-session/{session_id}")
+def xero_push_session(session_id: str):
+    full_sid = None
+    for sid in active_sessions:
+        if sid.startswith(session_id) or sid[:8] == session_id:
+            full_sid = sid
+            break
+    if not full_sid:
+        raise HTTPException(status_code=404, detail="Session not found")
+    result = push_session_to_xero(full_sid, active_sessions[full_sid])
+    return JSONResponse(result)
+
 
 if __name__ == "__main__":
     import uvicorn
