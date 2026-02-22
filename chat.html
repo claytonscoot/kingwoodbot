@@ -433,7 +433,7 @@
       Hi — we can help with a quote.<br>
       To dial this in quick, tell us:
       <br>• Approx length (feet)
-      <br>• Height (6/7/8ft)
+      <br>• Height (6'6" / 7' / 8')
       <br>• Style (standard / board-on-board / top cap)
       <br>• Steel posts or wood posts
       <br>• Any gates (walk / double / sliding)
@@ -511,7 +511,7 @@
         <option value="Other">Other</option>
       </select>
     </div>
-    <textarea id="leadDetails" placeholder="Project details * (approx feet, height 6/7/8ft, style, gates, timing)"></textarea>
+    <textarea id="leadDetails" placeholder="Project details * (approx feet, height 6'6&quot;/7/8, style, gates, timing)"></textarea>
 
     <!-- Image upload -->
     <div class="upload-area" id="uploadArea" onclick="document.getElementById('photoUpload').click()" ondragover="handleDragOver(event)" ondrop="handleDrop(event)">
@@ -951,8 +951,16 @@
     const ftMatch = allText.match(/(\d{2,4})\s*(lf|linear feet|ft|foot|feet)/i);
     if (ftMatch) footage = ftMatch[1] + ' LF';
 
-    const htMatch = allText.match(/(\d)'?\s*(tall|height|high|ft|foot)?/i);
-    if (htMatch && ['6','7','8'].includes(htMatch[1])) height = htMatch[1] + "' tall";
+    // Height capture: supports 6'6", 6.5, 7, 8
+    const htMatch =
+      allText.match(/\b(6\s*'\s*6\s*"?|6\.5|7\s*'?\s*(?:ft|foot)?|8\s*'?\s*(?:ft|foot)?)\b/i);
+
+    if (htMatch) {
+      const raw = htMatch[1].replace(/\s+/g, '').toLowerCase();
+      if (raw.startsWith("6'6") || raw === '6.5') height = `6'6" tall`;
+      else if (raw.startsWith('7')) height = `7' tall`;
+      else if (raw.startsWith('8')) height = `8' tall`;
+    }
 
     if (/board.on.board/i.test(allText)) style = 'Board-on-board';
     else if (/top cap/i.test(allText)) style = 'Top cap & trim';
