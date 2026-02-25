@@ -26,23 +26,54 @@ XERO_TOKEN_FILE = "xero_token.json"
 
 # ----------------------------
 # TOKEN MANAGEMENT
+# Tokens are stored in the XERO_TOKEN_DATA environment variable so they
+# survive Render restarts (free tier has no persistent disk).
+#
+# HOW TO SET UP AFTER FIRST AUTH:
+# 1. Deploy this file
+# 2. Go to https://astro-fence-assistant.onrender.com/xero/auth
+# 3. Complete Xero login
+# 4. Check your Render logs — find the line starting with:
+#    "📋 COPY THIS INTO RENDER ENV VAR 'XERO_TOKEN_DATA'"
+# 5. Copy that entire JSON string into a Render env var named XERO_TOKEN_DATA
+# 6. Done — token now survives every restart
 # ----------------------------
+
 def save_token(token_data: dict):
+    encoded = json.dumps(token_data)
+
+    # Save to local file (useful in dev, lost on Render restart)
     try:
         with open(XERO_TOKEN_FILE, "w") as f:
-            json.dump(token_data, f)
-        logger.info("✅ Xero token saved")
+            f.write(encoded)
     except Exception as e:
-        logger.error(f"Token save error: {e}")
+        logger.warning(f"Local token file save failed: {e}")
+
+    # Always log so you can copy it into XERO_TOKEN_DATA env var
+    logger.info("✅ Xero token saved")
+    logger.info(f"📋 COPY THIS INTO RENDER ENV VAR 'XERO_TOKEN_DATA' → {encoded}")
+
 
 def load_token() -> Optional[dict]:
+    # 1. Try XERO_TOKEN_DATA environment variable first — survives Render restarts
+    env_token = os.getenv("XERO_TOKEN_DATA", "").strip()
+    if env_token:
+        try:
+            token = json.loads(env_token)
+            return token
+        except Exception as e:
+            logger.warning(f"Failed to parse XERO_TOKEN_DATA env var: {e}")
+
+    # 2. Fallback to local file (dev / first-run before env var is set)
     try:
         if os.path.exists(XERO_TOKEN_FILE):
             with open(XERO_TOKEN_FILE, "r") as f:
                 return json.load(f)
     except Exception as e:
         logger.error(f"Token load error: {e}")
+
     return None
+
 
 def refresh_access_token(token_data: dict) -> Optional[dict]:
     try:
@@ -66,6 +97,7 @@ def refresh_access_token(token_data: dict) -> Optional[dict]:
         logger.error(f"Token refresh error: {e}")
         return None
 
+
 def get_valid_token() -> Optional[dict]:
     token = load_token()
     if not token:
@@ -75,6 +107,7 @@ def get_valid_token() -> Optional[dict]:
     if age_minutes > 25:
         token = refresh_access_token(token)
     return token
+
 
 def get_tenant_id(token_data: dict) -> Optional[str]:
     try:
@@ -91,6 +124,7 @@ def get_tenant_id(token_data: dict) -> Optional[str]:
         logger.error(f"Tenant ID error: {e}")
     return None
 
+
 # ----------------------------
 # OAUTH FLOW
 # ----------------------------
@@ -103,6 +137,7 @@ def get_auth_url() -> str:
         f"&scope={XERO_SCOPES.replace(' ', '%20')}"
         f"&state=astrofencebot"
     )
+
 
 def exchange_code_for_token(code: str) -> Optional[dict]:
     try:
@@ -126,6 +161,7 @@ def exchange_code_for_token(code: str) -> Optional[dict]:
         logger.error(f"Token exchange error: {e}")
         return None
 
+
 # ----------------------------
 # XERO API HELPERS
 # ----------------------------
@@ -136,6 +172,7 @@ def xero_headers(token_data: dict, tenant_id: str) -> dict:
         "Content-Type": "application/json",
         "Accept": "application/json"
     }
+
 
 def find_or_create_contact(token_data: dict, tenant_id: str, contact_info: dict) -> Optional[str]:
     """
@@ -198,8 +235,9 @@ def find_or_create_contact(token_data: dict, tenant_id: str, contact_info: dict)
         logger.error(f"Contact create error: {e}")
         return None
 
+
 def create_xero_project(token_data: dict, tenant_id: str, contact_id: str, project_name: str, total_estimate: float) -> Optional[dict]:
-    """Create a Project in Xero linked to the contact. Must be done before quote."""
+    """Create a Project in Xero linked to the contact."""
     headers = {
         "Authorization": f"Bearer {token_data['access_token']}",
         "Xero-tenant-id": tenant_id,
@@ -227,6 +265,7 @@ def create_xero_project(token_data: dict, tenant_id: str, contact_id: str, proje
     except Exception as e:
         logger.error(f"Project create error: {e}")
         return None
+
 
 def create_xero_quote(token_data: dict, tenant_id: str, contact_id: str, quote_title: str, line_items: list, summary: str) -> Optional[dict]:
     """Create a Draft Quote in Xero linked to the contact."""
@@ -270,6 +309,7 @@ def create_xero_quote(token_data: dict, tenant_id: str, contact_id: str, quote_t
     except Exception as e:
         logger.error(f"Quote create error: {e}")
         return None
+
 
 # ----------------------------
 # QUOTE PARSER
@@ -338,6 +378,7 @@ def parse_quote_from_transcript(messages: list) -> dict:
 
     return result
 
+
 # ----------------------------
 # MAIN PIPELINE — Contact → Project → Quote (correct Xero order)
 # ----------------------------
@@ -347,11 +388,6 @@ def push_to_xero_with_contact(contact_info: dict, session_data: dict) -> dict:
     1. Create Contact (with full address)
     2. Create Project (linked to contact)
     3. Create Quote (linked to contact)
-
-    contact_info = {
-        first_name, last_name, email, phone,
-        address, city, state, zip
-    }
     """
     result = {"success": False, "quote_number": None, "project_name": None, "error": None}
 
@@ -365,7 +401,6 @@ def push_to_xero_with_contact(contact_info: dict, session_data: dict) -> dict:
         result["error"] = "Could not get Xero tenant ID"
         return result
 
-    # Parse quote from transcript
     messages = session_data.get("messages", [])
     parsed = parse_quote_from_transcript(messages)
 
@@ -389,7 +424,7 @@ def push_to_xero_with_contact(contact_info: dict, session_data: dict) -> dict:
         result["project_name"] = project.get("name")
         result["project_id"] = project.get("projectId")
 
-    # STEP 3: Create Quote (linked to same contact)
+    # STEP 3: Create Quote
     if parsed["line_items"]:
         quote = create_xero_quote(
             token, tenant_id, contact_id,
@@ -406,14 +441,20 @@ def push_to_xero_with_contact(contact_info: dict, session_data: dict) -> dict:
     logger.info(f"✅ Xero pipeline complete for {full_name}: project={result.get('project_name')}, quote={result.get('quote_number')}")
     return result
 
+
 # Keep backward compat for auto-push from transcript timer
 def push_session_to_xero(session_id: str, session_data: dict) -> dict:
     """Auto-push from transcript timer — uses whatever contact info was captured in chat."""
+    name = session_data.get("soft_lead_name", "")
+    name_parts = name.split(" ", 1) if name else ["", ""]
     contact_info = {
-        "first_name": session_data.get("soft_lead_name", "").split(" ")[0] if session_data.get("soft_lead_name") else "",
-        "last_name": " ".join(session_data.get("soft_lead_name", "").split(" ")[1:]) if session_data.get("soft_lead_name") else "",
+        "first_name": name_parts[0],
+        "last_name": name_parts[1] if len(name_parts) > 1 else "",
         "email": session_data.get("soft_lead_email", ""),
         "phone": session_data.get("soft_lead_phone", ""),
-        "address": "", "city": "", "state": "TX", "zip": ""
+        "address": session_data.get("soft_lead_address", ""),
+        "city": session_data.get("soft_lead_city", ""),
+        "state": "TX",
+        "zip": session_data.get("soft_lead_zip", ""),
     }
     return push_to_xero_with_contact(contact_info, session_data)
