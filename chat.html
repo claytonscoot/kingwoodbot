@@ -539,7 +539,7 @@
   const chatPanel = document.getElementById('chatPanel');
   const chatHeaderToggle = document.getElementById('chatHeaderToggle');
 
-  // ---- Lead panel toggle (moved up so resize handler is safe) ----
+  // ---- Lead panel toggle ----
   const leadPanel = document.getElementById('leadPanel');
   const leadHeaderToggle = document.getElementById('leadHeaderToggle');
 
@@ -570,7 +570,7 @@
   });
 
   // -----------------------------
-  // NEW: /session-info fetch helper
+  // /session-info fetch helper
   // -----------------------------
   async function fetchSessionInfo(sid) {
     if (!sid) return null;
@@ -587,7 +587,6 @@
     }
   }
 
-  // FIXED: splitName must return {first,last}
   function splitName(fullName) {
     const s = (fullName || '').trim().replace(/\s+/g, ' ');
     if (!s) return { first: '', last: '' };
@@ -608,7 +607,7 @@
     // Open modal
     document.getElementById('xeroModal').classList.add('open');
 
-    // NEW: prefill from /session-info/{session_id}
+    // Prefill from /session-info/{session_id}
     try {
       const info = await fetchSessionInfo(sessionId);
 
@@ -695,6 +694,7 @@
       const data = await res.json();
 
       if (data.success) {
+        // FIX: Show success message and close modal only — do NOT open lead form
         document.getElementById('xeroSuccess').style.display = 'block';
         document.getElementById('xeroSuccess').innerHTML =
           `✅ You're all set, ${first}!<br>Your quote has been created and our team will reach out shortly.<br><br>` +
@@ -702,14 +702,11 @@
           `📞 Questions? Call or text us at <strong>832-280-5783</strong>`;
         btn.style.display = 'none';
 
+        // Just close the modal after delay — no lead form redirect
         setTimeout(() => {
           closeXeroModal();
-          document.getElementById('leadName').value = `${first} ${last}`;
-          document.getElementById('leadEmail').value = email;
-          document.getElementById('leadPhone').value = document.getElementById('xPhone').value.trim();
-          document.getElementById('leadZip').value = zip || city;
-          prefillAndScrollToForm('');
-        }, 2500);
+        }, 3000);
+
       } else {
         document.getElementById('xeroError').style.display = 'block';
         document.getElementById('xeroError').textContent =
@@ -818,7 +815,6 @@
     }
   };
 
-  // FIXED: pass button element instead of using global event
   function showGallery(style, btnEl) {
     currentStyle = style;
     const data = FENCE_STYLES[style];
@@ -1059,7 +1055,35 @@
     return parts.join('\n');
   }
 
-  function handlePasteEvent(e) {
+  // FIX: Single paste handler on the textarea only — prevents duplicate images
+  // Removed the document-level paste listener that caused double-add on paste inside textarea
+  document.getElementById('userInput').addEventListener('paste', function(e) {
+    const items = (e.clipboardData || window.clipboardData) && (e.clipboardData || window.clipboardData).items;
+    if (!items) return;
+    let foundImage = false;
+    Array.from(items).forEach(item => {
+      if (item.kind === 'file' && item.type.startsWith('image/')) {
+        const file = item.getAsFile();
+        if (!file) return;
+        foundImage = true;
+        if (chatPhotos.length >= 4) { alert('Max 4 photos per message.'); return; }
+        const namedFile = new File([file], `screenshot-${Date.now()}.png`, { type: file.type });
+        chatPhotos.push(namedFile);
+      }
+    });
+    if (foundImage) {
+      e.preventDefault();
+      renderChatThumbs();
+      const bar = document.getElementById('chatUploadBar');
+      bar.style.outline = '2px solid #e87722';
+      bar.style.borderRadius = '6px';
+      setTimeout(() => { bar.style.outline = ''; bar.style.borderRadius = ''; }, 700);
+    }
+  });
+
+  // Document-level paste: only fires when textarea is NOT focused (e.g. user pastes elsewhere on page)
+  document.addEventListener('paste', function(e) {
+    if (document.activeElement === document.getElementById('userInput')) return; // already handled above
     const items = (e.clipboardData || window.clipboardData) && (e.clipboardData || window.clipboardData).items;
     if (!items) return;
     let foundImage = false;
@@ -1082,10 +1106,7 @@
       setTimeout(() => { bar.style.outline = ''; bar.style.borderRadius = ''; }, 700);
       document.getElementById('userInput').focus();
     }
-  }
-
-  document.addEventListener('paste', handlePasteEvent);
-  document.getElementById('userInput').addEventListener('paste', handlePasteEvent);
+  });
 
   function expandChat() {
     document.getElementById('chatPanel').classList.add('input-focused');
@@ -1120,7 +1141,6 @@
     el.style.height = Math.min(el.scrollHeight, 100) + 'px';
   }
 
-  // FIXED: accept clicked button element
   function setTab(tab, btnEl) {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
     if (btnEl) btnEl.classList.add('active');
