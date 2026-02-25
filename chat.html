@@ -966,17 +966,13 @@
 
   function shouldShowQuoteCTA(text) {
     const botMessages = conversationLog.filter(m => m.role === 'bot');
-    if (botMessages.length < 3) return false;
-
+    if (botMessages.length < 2) return false;
     const isStuck = /call (us|or text)|text us at|reach out|contact us directly|email us|832-280-5783|for an official quote|site visit (required|needed)/i.test(text);
     if (isStuck) return 'stuck';
-
-    const hasFootage = /\d{2,4}\s*(lf|linear feet|ft|feet)/i.test(text);
-    const hasDollar = /\$[\d,]{3,}/.test(text);
-    const hasEstimateLabel = /working estimate|total.*estimate|installed.*price|range:/i.test(text);
-
-    if (hasDollar && (hasFootage || hasEstimateLabel)) return 'quote';
-
+    const hasDollar = /\$[\d,]{2,}/.test(text);
+    const hasEstimateLabel = /working estimate|total.*estimate|installed.*price|TOTAL INSTALLED|range:/i.test(text);
+    if (hasDollar && hasEstimateLabel) return 'quote';
+    if (hasDollar) return 'quote';
     return false;
   }
 
