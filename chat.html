@@ -572,28 +572,24 @@
   // NEW: /session-info fetch helper
   // -----------------------------
   async function fetchSessionInfo(sid) {
-    if (!sid) return null;
-    try {
-      const res = await fetch(`https://astro-fence-assistant.onrender.com/session-info/${encodeURIComponent(sid)}`, {
-        method: 'GET',
-        headers: { 'Accept': 'application/json' }
-      });
-      if (!res.ok) return null;S
-      return await res.json();
-    } catch (e) {
-      console.warn('fetchSessionInfo error:', e);
-      return null;
-    }
+  if (!sid) return null;
+  try {
+    const res = await fetch(`https://astro-fence-assistant.onrender.com/session-info/${encodeURIComponent(sid)}`, {
+      method: 'GET',
+      headers: { 'Accept': 'application/json' }
+    });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch (e) {
+    console.warn('fetchSessionInfo error:', e);
+    return null;
   }
+}
 
-  function splitName(fullName) {
-    const s = (fullName || '').trim().replace(/\s+/g, ' ');
-    if (!s) return { first: '', last: '' };
-    const parts = s.split(' ');
-    if (parts.length === 1) return { first: parts[0], last: '' };
-    return { first: parts[0], last: parts.slice(1).join(' ') };
-  }
-
+function splitName(fullName) {
+  const s = (fullName || '').trim().replace(/\s+/g, ' ');
+  // ...
+}
   // ---- XERO MODAL ----
   async function openXeroModal() {
     // Reset state
