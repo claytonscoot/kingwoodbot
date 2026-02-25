@@ -414,16 +414,16 @@
   <div class="gallery-bar">
     <p>Browse our work</p>
     <div class="style-buttons">
-      <button class="style-btn" onclick="showGallery('wood')">🌲 Cedar/Wood</button>
-      <button class="style-btn" onclick="showGallery('metal')">⚙️ Metal/Steel</button>
-      <button class="style-btn" onclick="showGallery('chainlink')">🔗 Chain Link</button>
-      <button class="style-btn" onclick="showGallery('vinyl')">🤍 Vinyl</button>
-      <button class="style-btn" onclick="showGallery('gate')">🚪 Gates</button>
-      <button class="style-btn" onclick="showGallery('staining')">🖌️ Staining</button>
-      <button class="style-btn" onclick="showGallery('powerwashing')">💧 Power Washing</button>
-      <button class="style-btn" onclick="showGallery('lighting')">🎄 Christmas Lights</button>
-      <button class="style-btn" onclick="showGallery('firewood')">🪵 Firewood</button>
-      <button class="style-btn" onclick="showGallery('deck')">🪵 Deck</button>
+      <button class="style-btn" onclick="showGallery('wood', this)">🌲 Cedar/Wood</button>
+      <button class="style-btn" onclick="showGallery('metal', this)">⚙️ Metal/Steel</button>
+      <button class="style-btn" onclick="showGallery('chainlink', this)">🔗 Chain Link</button>
+      <button class="style-btn" onclick="showGallery('vinyl', this)">🤍 Vinyl</button>
+      <button class="style-btn" onclick="showGallery('gate', this)">🚪 Gates</button>
+      <button class="style-btn" onclick="showGallery('staining', this)">🖌️ Staining</button>
+      <button class="style-btn" onclick="showGallery('powerwashing', this)">💧 Power Washing</button>
+      <button class="style-btn" onclick="showGallery('lighting', this)">🎄 Christmas Lights</button>
+      <button class="style-btn" onclick="showGallery('firewood', this)">🪵 Firewood</button>
+      <button class="style-btn" onclick="showGallery('deck', this)">🪵 Deck</button>
     </div>
     <a href="https://astrooutdoordesigns.com/our-work/" target="_blank" style="display:inline-block; margin-top:8px; color:#e87722; font-size:12px; text-decoration:none; font-weight:600;">📷 View Our Full Photo Gallery →</a>
   </div>
@@ -476,9 +476,9 @@
   </div>
 
   <div class="contact-tabs">
-    <button class="tab-btn active" onclick="setTab('call')">Call</button>
-    <button class="tab-btn" onclick="setTab('text')">Text</button>
-    <button class="tab-btn" onclick="setTab('email')">Email</button>
+    <button class="tab-btn active" onclick="setTab('call', this)">Call</button>
+    <button class="tab-btn" onclick="setTab('text', this)">Text</button>
+    <button class="tab-btn" onclick="setTab('email', this)">Email</button>
   </div>
 
   <div class="lead-form" id="leadForm">
@@ -504,6 +504,7 @@
         <option value="New vinyl fence">New vinyl fence</option>
         <option value="Gate installation">Gate installation</option>
         <option value="Gate repair">Gate repair</option>
+        <option value="Fence installation">Fence installation</option>
         <option value="Fence repair">Fence repair</option>
         <option value="Fence staining">Fence staining</option>
         <option value="Deck installation">Deck installation</option>
@@ -538,6 +539,10 @@
   const chatPanel = document.getElementById('chatPanel');
   const chatHeaderToggle = document.getElementById('chatHeaderToggle');
 
+  // ---- Lead panel toggle (moved up so resize handler is safe) ----
+  const leadPanel = document.getElementById('leadPanel');
+  const leadHeaderToggle = document.getElementById('leadHeaderToggle');
+
   function isMobile() {
     return window.innerWidth <= 768;
   }
@@ -557,10 +562,6 @@
     }
   });
 
-  // ---- Lead panel toggle ----
-  const leadPanel = document.getElementById('leadPanel');
-  const leadHeaderToggle = document.getElementById('leadHeaderToggle');
-
   leadHeaderToggle.addEventListener('click', function() {
     leadPanel.classList.toggle('collapsed');
     if (!leadPanel.classList.contains('collapsed')) {
@@ -572,24 +573,29 @@
   // NEW: /session-info fetch helper
   // -----------------------------
   async function fetchSessionInfo(sid) {
-  if (!sid) return null;
-  try {
-    const res = await fetch(`https://astro-fence-assistant.onrender.com/session-info/${encodeURIComponent(sid)}`, {
-      method: 'GET',
-      headers: { 'Accept': 'application/json' }
-    });
-    if (!res.ok) return null;
-    return await res.json();
-  } catch (e) {
-    console.warn('fetchSessionInfo error:', e);
-    return null;
+    if (!sid) return null;
+    try {
+      const res = await fetch(`https://astro-fence-assistant.onrender.com/session-info/${encodeURIComponent(sid)}`, {
+        method: 'GET',
+        headers: { 'Accept': 'application/json' }
+      });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch (e) {
+      console.warn('fetchSessionInfo error:', e);
+      return null;
+    }
   }
-}
 
-function splitName(fullName) {
-  const s = (fullName || '').trim().replace(/\s+/g, ' ');
-  // ...
-}
+  // FIXED: splitName must return {first,last}
+  function splitName(fullName) {
+    const s = (fullName || '').trim().replace(/\s+/g, ' ');
+    if (!s) return { first: '', last: '' };
+    const parts = s.split(' ');
+    if (parts.length === 1) return { first: parts[0], last: '' };
+    return { first: parts[0], last: parts.slice(1).join(' ') };
+  }
+
   // ---- XERO MODAL ----
   async function openXeroModal() {
     // Reset state
@@ -607,7 +613,6 @@ function splitName(fullName) {
       const info = await fetchSessionInfo(sessionId);
 
       if (info) {
-        // Accept either soft_lead_* keys or alternate keys if you return them
         const fullName = info.soft_lead_name || info.lead_name || info.name || '';
         const email    = info.soft_lead_email || info.lead_email || info.email || '';
         const phone    = info.soft_lead_phone || info.lead_phone || info.phone || '';
@@ -639,7 +644,7 @@ function splitName(fullName) {
       console.warn('xero prefill failed:', e);
     }
 
-    // Fallback: pre-fill phone if captured from chat (your original logic)
+    // Fallback: pre-fill phone if captured from chat
     const phoneEl = document.getElementById('xPhone');
     if (phoneEl && !phoneEl.value) {
       const allText = conversationLog.map(m => m.text).join(' ');
@@ -697,7 +702,6 @@ function splitName(fullName) {
           `📞 Questions? Call or text us at <strong>832-280-5783</strong>`;
         btn.style.display = 'none';
 
-        // After 2.5s close modal and prefill lead form too
         setTimeout(() => {
           closeXeroModal();
           document.getElementById('leadName').value = `${first} ${last}`;
@@ -721,7 +725,6 @@ function splitName(fullName) {
     }
   }
 
-  // Close xero modal when clicking backdrop
   document.getElementById('xeroModal').addEventListener('click', function(e) {
     if (e.target === this) closeXeroModal();
   });
@@ -815,7 +818,8 @@ function splitName(fullName) {
     }
   };
 
-  function showGallery(style) {
+  // FIXED: pass button element instead of using global event
+  function showGallery(style, btnEl) {
     currentStyle = style;
     const data = FENCE_STYLES[style];
     document.getElementById('modalTitle').textContent = data.title;
@@ -827,7 +831,7 @@ function splitName(fullName) {
     ).join('');
     document.getElementById('photoModal').classList.add('open');
     document.querySelectorAll('.style-btn').forEach(b => b.classList.remove('active'));
-    event.target.classList.add('active');
+    if (btnEl) btnEl.classList.add('active');
   }
 
   function closeModal() {
@@ -935,7 +939,6 @@ function splitName(fullName) {
 
       const msgDiv = addMessage(data.response, 'bot');
 
-      // Show CTA — opens Xero contact popup
       const ctaType = shouldShowQuoteCTA(data.response);
       if (ctaType === 'quote') {
         const btn = document.createElement('button');
@@ -1014,7 +1017,6 @@ function splitName(fullName) {
     const ftMatch = allText.match(/(\d{2,4})\s*(lf|linear feet|ft|foot|feet)/i);
     if (ftMatch) footage = ftMatch[1] + ' LF';
 
-    // Height capture: supports 6'6", 6.5, 7, 8
     const htMatch =
       allText.match(/\b(6\s*'\s*6\s*"?|6\.5|7\s*'?\s*(?:ft|foot)?|8\s*'?\s*(?:ft|foot)?)\b/i);
 
@@ -1061,7 +1063,6 @@ function splitName(fullName) {
     return parts.join('\n');
   }
 
-  // ---- Paste image support ----
   function handlePasteEvent(e) {
     const items = (e.clipboardData || window.clipboardData) && (e.clipboardData || window.clipboardData).items;
     if (!items) return;
@@ -1123,9 +1124,10 @@ function splitName(fullName) {
     el.style.height = Math.min(el.scrollHeight, 100) + 'px';
   }
 
-  function setTab(tab) {
+  // FIXED: accept clicked button element
+  function setTab(tab, btnEl) {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    event.target.classList.add('active');
+    if (btnEl) btnEl.classList.add('active');
     document.getElementById('leadContact').value = tab;
   }
 
