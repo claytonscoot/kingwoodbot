@@ -401,8 +401,10 @@ def parse_quote_from_transcript(messages: list) -> dict:
 
     last_quote_msg = ""
     for msg in reversed(messages):
-        if msg.get("type") == "assistant" and "$" in msg.get("message", ""):
-            last_quote_msg = msg["message"]
+        role = msg.get("type") or msg.get("role") or ""
+        content = msg.get("message") or msg.get("content") or ""
+        if role == "assistant" and "$" in content:
+            last_quote_msg = content
             break
 
     if not last_quote_msg:
