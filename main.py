@@ -12,6 +12,7 @@ import uuid
 import base64
 import logging
 import threading
+import re
 from typing import Optional, Dict, List, Literal
 from contextlib import asynccontextmanager
 import aiofiles
@@ -46,13 +47,13 @@ GOOGLE_SHEET_RANGE = "Sheet1"
 
 active_sessions: Dict[str, dict] = {}
 recent_leads: List[dict] = []
-chat_sessions_log: List[dict] = []  # all chat sessions including chat-only (no form submit)
-transcript_timers: Dict[str, threading.Timer] = {}  # per-session inactivity timers
+chat_sessions_log: List[dict] = []
+transcript_timers: Dict[str, threading.Timer] = {}
 
 # Rate limiting
-ip_message_counts: Dict[str, list] = {}   # ip -> list of timestamps in last 60 seconds
-ip_strike_counts: Dict[str, int] = {}     # ip -> number of times they've hit the limit today
-ip_blocked_until: Dict[str, float] = {}   # ip -> unix timestamp when block expires
+ip_message_counts: Dict[str, list] = {}
+ip_strike_counts: Dict[str, int] = {}
+ip_blocked_until: Dict[str, float] = {}
 
 
 # ----------------------------
@@ -111,7 +112,7 @@ class Chat(BaseModel):
     prompt: str = Field(..., min_length=1, max_length=4000)
     session_id: Optional[str] = None
     user_name: Optional[str] = None
-    images: Optional[List[str]] = None  # list of base64 encoded images
+    images: Optional[List[str]] = None
 
 class Lead(BaseModel):
     name: str = Field(..., min_length=2, max_length=100)
@@ -447,7 +448,7 @@ WOOD FENCE — PINE (PTP = Pressure Treated Pine)
 =================================================================
 TEAR-OUT / DEMO
 =================================================================
-- $2.00/LF to remove existing fence
+- $3.00/LF to remove existing fence (updated rate)
 - Always ask if there is an existing fence to remove
 
 =================================================================
@@ -604,47 +605,6 @@ ALUMINUM INSTALLED PRICING:
 - Black standard — other colors special order
 - Great for pools, front yards, HOA communities
 
-ALUMINUM / ORNAMENTAL FENCING (installed):
-- We absolutely install aluminum and ornamental iron fencing. Do NOT turn away these customers.
-- We source aluminum fencing from Stephens Pipe & Steel (SPSfence.com) — quality commercial supplier.
-
-ALUMINUM PRODUCT KNOWLEDGE (from real supplier invoices):
-- We install "Emily" series aluminum panels — smooth bottom rail, available in black
-- Standard panel: 42"H (3'6") x 6'W, 2-rail, smooth bottom — this is our most common residential height
-- Posts: 2" square steel posts, .093 wall (standard) or .125 wall (heavy duty hinge posts for gates)
-- Post caps: 2" modern post cap included
-- Gate hardware: TRU-CLOSE self-closing hinges, stainless steel gravity latch
-- Gate panels: pre-built gate sections available (42"H x 4'W single, 42"H x 42"W double)
-- Concrete: Sakrete 80lb bags for post setting
-- Welded flange base plates available for hard surface installs (concrete/pavers)
-- Weld charges apply for custom gate fabrication
-
-ALUMINUM MATERIAL COSTS (from 2/19/2026 SPS quote — update periodically):
-- 42"H x 6'W panel (Emily 2-rail smooth): ~$85.71/panel
-- 2" sq .093 post x 45": ~$36.00 each (standard line post)
-- 2" sq .125 post x 45": ~$44.25 each (heavy duty — use for gate hinge posts)
-- 2" sq x 7' post: ~$48.00 each (use for taller installs or deep set)
-- 2" modern post cap: ~$1.74 each
-- Walk gate panel 42"H x 4'W (Emily 2-rail): ~$256.51 each
-- Double gate panel 42"H x 42"W (Emily 2-rail): ~$245.00 each
-- Weld charge per item: ~$19.86
-- Floor mount cover plate: ~$19.24 each
-- TRU-CLOSE 2-leg hinge (metal): ~$36.48/pair
-- Stainless steel gravity latch: ~$17.19 each
-- Wedge anchor bolt 3/8"x3-3/4": ~$1.30 each
-- Sakrete concrete 80lb: ~$5.96/bag
-- SPS fuel charge: ~$50 flat, convenience fee ~$28.96, 8.25% TX tax applies
-
-ALUMINUM PRICING GUIDE (installed, labor + materials):
-- 42" (3'6") aluminum panel fence: ~$45–60/LF installed (black, standard residential)
-- 48" (4') aluminum: ~$50–65/LF installed
-- 60" (5') aluminum: ~$55–70/LF installed  
-- 72" (6') aluminum: ~$65–80/LF installed
-- Aluminum walk gate (42"H, single): ~$650–850 installed (includes panel, posts, hardware, labor)
-- Aluminum double drive gate (42"H): ~$950–1,400 installed
-- Custom welded gate: add $150–300 for weld fabrication
-- Hard surface install (concrete/pavers): add $8–12/LF for flange plates
-
 ALUMINUM NOTES:
 - Black is standard color — other colors available but require special order
 - Low maintenance, rust-resistant, HOA friendly, great for pools and front yards
@@ -655,7 +615,7 @@ ALUMINUM NOTES:
 HOW TO CALCULATE A QUOTE:
 1. Start with base LF price
 2. Add any applicable add-ons
-3. Add tear-out if replacing old fence ($2/LF)
+3. Add tear-out if replacing old fence ($3/LF)
 4. Add $75 delivery
 5. Add gate costs
 6. Show the math clearly
@@ -682,7 +642,6 @@ GOAL
 """.strip()
 
 def call_claude(user_message: str, history: list = None, images: list = None) -> str:
-    """Call Claude API with conversation history and optional images for vision"""
     headers = {
         "x-api-key": ANTHROPIC_API_KEY,
         "anthropic-version": "2023-06-01",
@@ -785,6 +744,60 @@ def check_rate_limit(ip: str) -> tuple[bool, str]:
     return False, ""
 
 
+def extract_contact_info(prompt: str, session: dict):
+    """
+    Extract name, phone, email, and address from a chat message
+    and store in session. Handles patterns like:
+      - "new quote for David Kelly"
+      - "David Kelly. 5915 Elmwood Hill Ln Kingwood Texas 77345"
+      - inline email / phone
+    """
+    # --- Phone ---
+    phone_match = re.search(r'(\d{3}[-.\s]?\d{3}[-.\s]?\d{4}|\d{10})', prompt)
+    if phone_match:
+        session["soft_lead_phone"] = phone_match.group(1)
+
+    # --- Email ---
+    email_match = re.search(r'[\w.+-]+@[\w-]+\.[a-z]{2,}', prompt, re.IGNORECASE)
+    if email_match and not session.get("soft_lead_email"):
+        session["soft_lead_email"] = email_match.group(0)
+
+    # --- Name: classic patterns ("I'm X", "my name is X") ---
+    if not session.get("soft_lead_name"):
+        classic = re.search(r"(?:i'?m|my name is|this is|call me)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)", prompt, re.IGNORECASE)
+        if classic:
+            session["soft_lead_name"] = classic.group(1).strip()
+
+    # --- Name: "new quote for David Kelly" / "quote for David Kelly" ---
+    if not session.get("soft_lead_name"):
+        quote_for = re.search(
+            r'(?:quote\s+(?:for|please\s+for)|quoting\s+for|customer\s+is|client\s+is)\s+([A-Z][a-z]+\s+[A-Z][a-z]+)',
+            prompt
+        )
+        if quote_for:
+            session["soft_lead_name"] = quote_for.group(1).strip()
+
+    # --- Name: standalone "First Last" at start of message ---
+    if not session.get("soft_lead_name"):
+        standalone = re.search(r'^([A-Z][a-z]+\s+[A-Z][a-z]+)[.\s,]', prompt.strip())
+        if standalone:
+            candidate = standalone.group(1)
+            if not re.search(r'\d', candidate):
+                session["soft_lead_name"] = candidate
+
+    # --- Address: "1234 Street Name Ln Kingwood Texas 77345" ---
+    address_match = re.search(
+        r'(\d+\s+[A-Za-z0-9 ]{3,40}(?:Ln|Dr|St|Ave|Blvd|Rd|Way|Ct|Pl|Cir|Hill|Creek|Lake|Oak|Pine|Park|Trail|Run))\s+'
+        r'([A-Za-z ]+?)\s+(?:Texas|TX)\s+(\d{5})',
+        prompt, re.IGNORECASE
+    )
+    if address_match:
+        session["soft_lead_address"] = address_match.group(1).strip()
+        city_raw = re.sub(r'^(?:in|near|at)\s+', '', address_match.group(2).strip(), flags=re.IGNORECASE)
+        session["soft_lead_city"] = city_raw.strip()
+        session["soft_lead_zip"] = address_match.group(3)
+
+
 def build_transcript_email(session_id: str) -> str:
     session = active_sessions.get(session_id)
     if not session:
@@ -806,6 +819,8 @@ def build_transcript_email(session_id: str) -> str:
         lines.append(f"Phone: {session['soft_lead_phone']}")
     if session.get('soft_lead_email'):
         lines.append(f"Email: {session['soft_lead_email']}")
+    if session.get('soft_lead_address'):
+        lines.append(f"Address: {session['soft_lead_address']}, {session.get('soft_lead_city','')} TX {session.get('soft_lead_zip','')}")
     lines.append(f"Form Submitted: {'YES' if session.get('form_submitted') else 'NO — chat only'}")
     lines.append(f"IP: {session.get('ip', 'unknown')}")
     lines.append("")
@@ -880,6 +895,8 @@ def send_transcript_email(session_id: str):
                 xero_result = push_session_to_xero(session_id, session)
                 if xero_result.get("success"):
                     logger.info(f"📊 Xero: quote={xero_result.get('quote_number')}, project={xero_result.get('project_name')}")
+                else:
+                    logger.warning(f"⚠️ Xero auto-push failed: {xero_result.get('error')}")
             except Exception as xe:
                 logger.error(f"Xero push error: {xe}")
 
@@ -991,6 +1008,9 @@ def chat(req: Chat, request: Request):
             "soft_lead_name": "",
             "soft_lead_phone": "",
             "soft_lead_email": "",
+            "soft_lead_address": "",
+            "soft_lead_city": "",
+            "soft_lead_zip": "",
         }
         ip = request.client.host if request.client else "unknown"
         t = threading.Thread(target=send_session_start_notification, args=[session_id, ip], daemon=True)
@@ -1033,22 +1053,10 @@ def chat(req: Chat, request: Request):
             "message": ai_response
         })
 
-        import re
-        phone_match = re.search(r'(\d{3}[-.\s]?\d{3}[-.\s]?\d{4})', prompt)
-        email_match = re.search(r'[\w.+-]+@[\w-]+\.[a-z]{2,}', prompt, re.IGNORECASE)
-        if phone_match and not active_sessions[session_id].get("soft_lead_phone"):
-            active_sessions[session_id]["soft_lead_phone"] = phone_match.group(1)
-        if email_match and not active_sessions[session_id].get("soft_lead_email"):
-            active_sessions[session_id]["soft_lead_email"] = email_match.group(0)
+        # --- Extract all contact info from this message ---
+        extract_contact_info(prompt, active_sessions[session_id])
 
-        name_match = re.search(r"(?:i'?m|my name is|this is|call me)\s+([A-Z][a-z]+)", prompt, re.IGNORECASE)
-        if name_match and not active_sessions[session_id].get("soft_lead_name"):
-            active_sessions[session_id]["soft_lead_name"] = name_match.group(1)
-
-        phone_in_prompt = re.search(r'(\d{3}[-.\s]?\d{3}[-.\s]?\d{4}|\d{10})', prompt)
-        if phone_in_prompt:
-            active_sessions[session_id]["soft_lead_phone"] = phone_in_prompt.group(1)
-
+        # --- Callback alert logic ---
         callback_confirmed = any(phrase in ai_response.lower() for phrase in [
             "sent your info to the team",
             "passed your info",
@@ -1396,6 +1404,34 @@ def get_contact_info():
 
 
 # ----------------------------
+# SESSION INFO — for pre-filling the Xero quote modal
+# ----------------------------
+@app.get("/session-info/{session_id}")
+def get_session_info(session_id: str):
+    """Return captured contact info so the frontend can pre-fill the quote modal."""
+    full_sid = None
+    for sid in active_sessions:
+        if sid.startswith(session_id) or sid[:8] == session_id:
+            full_sid = sid
+            break
+    if not full_sid:
+        return JSONResponse({})
+    sess = active_sessions[full_sid]
+    name = sess.get("soft_lead_name", "")
+    name_parts = name.split(" ", 1) if name else ["", ""]
+    return JSONResponse({
+        "first_name": name_parts[0] if name_parts[0] else "",
+        "last_name":  name_parts[1] if len(name_parts) > 1 else "",
+        "email":      sess.get("soft_lead_email", ""),
+        "phone":      sess.get("soft_lead_phone", ""),
+        "address":    sess.get("soft_lead_address", ""),
+        "city":       sess.get("soft_lead_city", ""),
+        "state":      "TX",
+        "zip":        sess.get("soft_lead_zip", ""),
+    })
+
+
+# ----------------------------
 # XERO ROUTES
 # ----------------------------
 @app.get("/xero/auth")
@@ -1414,7 +1450,7 @@ def xero_callback(code: str = None, error: str = None, state: str = None):
     return JSONResponse({
         "success": True,
         "message": "✅ Xero connected! Bot will now auto-create contacts, projects, and quotes.",
-        "next_step": "Close this tab — you're done!"
+        "next_step": "Check your Render logs for the XERO_TOKEN_DATA value and paste it into your environment variables."
     })
 
 @app.get("/xero/status")
@@ -1454,12 +1490,15 @@ async def xero_capture_and_push(request: Request):
         session_data = active_sessions.get(full_sid, {"messages": []})
         result = push_to_xero_with_contact(contact_info, session_data)
 
-        # Update session soft lead info with what was entered
+        # Update session with confirmed contact info
         if full_sid and full_sid in active_sessions:
             name = f"{contact_info['first_name']} {contact_info['last_name']}".strip()
             active_sessions[full_sid]["soft_lead_name"] = name
             active_sessions[full_sid]["soft_lead_email"] = contact_info["email"]
             active_sessions[full_sid]["soft_lead_phone"] = contact_info["phone"]
+            active_sessions[full_sid]["soft_lead_address"] = contact_info["address"]
+            active_sessions[full_sid]["soft_lead_city"] = contact_info["city"]
+            active_sessions[full_sid]["soft_lead_zip"] = contact_info["zip"]
 
         return JSONResponse(result)
     except Exception as e:
