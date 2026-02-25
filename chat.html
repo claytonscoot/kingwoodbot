@@ -574,11 +574,11 @@
   async function fetchSessionInfo(sid) {
     if (!sid) return null;
     try {
-      const res = await fetch(`/session-info/${encodeURIComponent(sid)}`, {
+      const res = await fetch(`https://astro-fence-assistant.onrender.com/session-info/${encodeURIComponent(sid)}`, {
         method: 'GET',
         headers: { 'Accept': 'application/json' }
       });
-      if (!res.ok) return null;
+      if (!res.ok) return null;S
       return await res.json();
     } catch (e) {
       console.warn('fetchSessionInfo error:', e);
