@@ -568,22 +568,89 @@
     }
   });
 
-  // ---- XERO MODAL ----
-  function openXeroModal() {
-    // Pre-fill phone if captured from chat
-    const phoneEl = document.getElementById('xPhone');
-    if (phoneEl && !phoneEl.value) {
-      const allText = conversationLog.map(m => m.text).join(' ');
-      const phoneMatch = allText.match(/(\d{3}[-.\s]?\d{3}[-.\s]?\d{4})/);
-      if (phoneMatch) phoneEl.value = phoneMatch[1];
+  // -----------------------------
+  // NEW: /session-info fetch helper
+  // -----------------------------
+  async function fetchSessionInfo(sid) {
+    if (!sid) return null;
+    try {
+      const res = await fetch(`/session-info/${encodeURIComponent(sid)}`, {
+        method: 'GET',
+        headers: { 'Accept': 'application/json' }
+      });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch (e) {
+      console.warn('fetchSessionInfo error:', e);
+      return null;
     }
+  }
+
+  function splitName(fullName) {
+    const s = (fullName || '').trim().replace(/\s+/g, ' ');
+    if (!s) return { first: '', last: '' };
+    const parts = s.split(' ');
+    if (parts.length === 1) return { first: parts[0], last: '' };
+    return { first: parts[0], last: parts.slice(1).join(' ') };
+  }
+
+  // ---- XERO MODAL ----
+  async function openXeroModal() {
     // Reset state
     document.getElementById('xeroSuccess').style.display = 'none';
     document.getElementById('xeroError').style.display = 'none';
     document.getElementById('xSubmitBtn').style.display = 'block';
     document.getElementById('xSubmitBtn').textContent = 'Send My Quote →';
     document.getElementById('xSubmitBtn').disabled = false;
+
+    // Open modal
     document.getElementById('xeroModal').classList.add('open');
+
+    // NEW: prefill from /session-info/{session_id}
+    try {
+      const info = await fetchSessionInfo(sessionId);
+
+      if (info) {
+        // Accept either soft_lead_* keys or alternate keys if you return them
+        const fullName = info.soft_lead_name || info.lead_name || info.name || '';
+        const email    = info.soft_lead_email || info.lead_email || info.email || '';
+        const phone    = info.soft_lead_phone || info.lead_phone || info.phone || '';
+        const address  = info.soft_lead_address || info.address || '';
+        const city     = info.soft_lead_city || info.city || '';
+        const zip      = info.soft_lead_zip || info.zip || '';
+
+        const firstEl = document.getElementById('xFirst');
+        const lastEl  = document.getElementById('xLast');
+        const emailEl = document.getElementById('xEmail');
+        const phoneEl = document.getElementById('xPhone');
+        const addrEl  = document.getElementById('xAddress');
+        const cityEl  = document.getElementById('xCity');
+        const zipEl   = document.getElementById('xZip');
+
+        if (fullName && (!firstEl.value && !lastEl.value)) {
+          const parts = splitName(fullName);
+          if (!firstEl.value) firstEl.value = parts.first;
+          if (!lastEl.value)  lastEl.value  = parts.last;
+        }
+
+        if (email && !emailEl.value) emailEl.value = email;
+        if (phone && !phoneEl.value) phoneEl.value = phone;
+        if (address && !addrEl.value) addrEl.value = address;
+        if (city && !cityEl.value) cityEl.value = city;
+        if (zip && !zipEl.value) zipEl.value = zip;
+      }
+    } catch (e) {
+      console.warn('xero prefill failed:', e);
+    }
+
+    // Fallback: pre-fill phone if captured from chat (your original logic)
+    const phoneEl = document.getElementById('xPhone');
+    if (phoneEl && !phoneEl.value) {
+      const allText = conversationLog.map(m => m.text).join(' ');
+      const phoneMatch = allText.match(/(\d{3}[-.\s]?\d{3}[-.\s]?\d{4})/);
+      if (phoneMatch) phoneEl.value = phoneMatch[1];
+    }
+
     setTimeout(() => document.getElementById('xFirst').focus(), 100);
   }
 
