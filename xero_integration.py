@@ -9,6 +9,7 @@ import json
 import requests
 import logging
 import re
+import time
 from datetime import datetime, timedelta
 from typing import Optional
 
@@ -17,12 +18,15 @@ logger = logging.getLogger(__name__)
 # ----------------------------
 # XERO CONFIG
 # ----------------------------
-XERO_CLIENT_ID = os.getenv("XERO_CLIENT_ID", "")
-XERO_CLIENT_SECRET = os.getenv("XERO_CLIENT_SECRET", "")
-XERO_REDIRECT_URI = os.getenv("XERO_REDIRECT_URI", "https://astro-fence-assistant.onrender.com/xero/callback")
+XERO_CLIENT_ID = os.getenv("XERO_CLIENT_ID", "").strip()
+XERO_CLIENT_SECRET = os.getenv("XERO_CLIENT_SECRET", "").strip()
+XERO_REDIRECT_URI = os.getenv("XERO_REDIRECT_URI", "https://astro-fence-assistant.onrender.com/xero/callback").strip()
 XERO_SCOPES = "openid profile email accounting.contacts accounting.transactions projects offline_access"
 
 XERO_TOKEN_FILE = "xero_token.json"
+
+TOKEN_URL = "https://identity.xero.com/connect/token"
+CONNECTIONS_URL = "https://api.xero.com/connections"
 
 # ----------------------------
 # TOKEN MANAGEMENT
@@ -40,6 +44,13 @@ XERO_TOKEN_FILE = "xero_token.json"
 # ----------------------------
 
 def save_token(token_data: dict):
+    """
+    Saves token locally (dev) and logs a JSON string you can paste into Render env var.
+    Also stamps acquired_at for accurate expiry checks.
+    """
+    # Stamp for accurate expiry checks (Xero returns expires_in seconds)
+    token_data["acquired_at"] = time.time()
+
     encoded = json.dumps(token_data)
 
     # Save to local file (useful in dev, lost on Render restart)
@@ -75,24 +86,50 @@ def load_token() -> Optional[dict]:
     return None
 
 
-def refresh_access_token(token_data: dict) -> Optional[dict]:
+def _token_is_expired(token_data: dict, buffer_seconds: int = 60) -> bool:
+    """
+    Uses acquired_at + expires_in from token response (most reliable).
+    """
     try:
+        acquired_at = float(token_data.get("acquired_at", 0))
+        expires_in = float(token_data.get("expires_in", 0))
+        if acquired_at <= 0 or expires_in <= 0:
+            return True
+        return (time.time() + buffer_seconds) >= (acquired_at + expires_in)
+    except Exception:
+        return True
+
+
+def refresh_access_token(token_data: dict) -> Optional[dict]:
+    """
+    Correct refresh: use Basic Auth with client_id/client_secret.
+    """
+    try:
+        if not token_data.get("refresh_token"):
+            logger.error("No refresh_token available; re-auth required.")
+            return None
+
         resp = requests.post(
-            "https://identity.xero.com/connect/token",
+            TOKEN_URL,
             data={
                 "grant_type": "refresh_token",
                 "refresh_token": token_data["refresh_token"],
-                "client_id": XERO_CLIENT_ID,
-                "client_secret": XERO_CLIENT_SECRET,
             },
+            auth=(XERO_CLIENT_ID, XERO_CLIENT_SECRET),
             timeout=15
         )
         resp.raise_for_status()
+
         new_token = resp.json()
-        new_token["saved_at"] = datetime.now().isoformat()
+
+        # Preserve refresh_token if Xero doesn't send a new one (rare but possible)
+        if "refresh_token" not in new_token and token_data.get("refresh_token"):
+            new_token["refresh_token"] = token_data["refresh_token"]
+
         save_token(new_token)
         logger.info("✅ Xero token refreshed")
         return new_token
+
     except Exception as e:
         logger.error(f"Token refresh error: {e}")
         return None
@@ -102,17 +139,18 @@ def get_valid_token() -> Optional[dict]:
     token = load_token()
     if not token:
         return None
-    saved_at = datetime.fromisoformat(token.get("saved_at", datetime.now().isoformat()))
-    age_minutes = (datetime.now() - saved_at).total_seconds() / 60
-    if age_minutes > 25:
+
+    # Refresh based on real expiry if possible
+    if _token_is_expired(token):
         token = refresh_access_token(token)
+
     return token
 
 
 def get_tenant_id(token_data: dict) -> Optional[str]:
     try:
         resp = requests.get(
-            "https://api.xero.com/connections",
+            CONNECTIONS_URL,
             headers={"Authorization": f"Bearer {token_data['access_token']}"},
             timeout=10
         )
@@ -142,19 +180,17 @@ def get_auth_url() -> str:
 def exchange_code_for_token(code: str) -> Optional[dict]:
     try:
         resp = requests.post(
-            "https://identity.xero.com/connect/token",
+            TOKEN_URL,
             data={
                 "grant_type": "authorization_code",
                 "code": code,
                 "redirect_uri": XERO_REDIRECT_URI,
-                "client_id": XERO_CLIENT_ID,
-                "client_secret": XERO_CLIENT_SECRET,
             },
+            auth=(XERO_CLIENT_ID, XERO_CLIENT_SECRET),
             timeout=15
         )
         resp.raise_for_status()
         token = resp.json()
-        token["saved_at"] = datetime.now().isoformat()
         save_token(token)
         return token
     except Exception as e:
@@ -174,6 +210,28 @@ def xero_headers(token_data: dict, tenant_id: str) -> dict:
     }
 
 
+def _safe_xero_where_value(value: str) -> str:
+    """
+    Prevent breaking the Xero 'where=' filter if name includes quotes.
+    """
+    return (value or "").replace('"', '\\"').replace("'", "\\'")
+
+
+def _xero_request_with_auto_refresh(method: str, url: str, headers: dict, token_data: dict, **kwargs):
+    """
+    If Xero returns 401, refresh token once and retry.
+    """
+    resp = requests.request(method, url, headers=headers, timeout=15, **kwargs)
+    if resp.status_code == 401:
+        logger.info("🔄 Xero 401 — refreshing token and retrying once...")
+        new_token = refresh_access_token(token_data)
+        if not new_token:
+            return resp
+        headers["Authorization"] = f"Bearer {new_token['access_token']}"
+        resp = requests.request(method, url, headers=headers, timeout=15, **kwargs)
+    return resp
+
+
 def find_or_create_contact(token_data: dict, tenant_id: str, contact_info: dict) -> Optional[str]:
     """
     Find existing contact or create new one with full address info.
@@ -184,31 +242,48 @@ def find_or_create_contact(token_data: dict, tenant_id: str, contact_info: dict)
     Returns ContactID.
     """
     headers = xero_headers(token_data, tenant_id)
-    full_name = f"{contact_info.get('first_name', '')} {contact_info.get('last_name', '')}".strip()
+
+    first = (contact_info.get("first_name", "") or "").strip()
+    last = (contact_info.get("last_name", "") or "").strip()
+    email = (contact_info.get("email", "") or "").strip()
+
+    full_name = f"{first} {last}".strip()
     if not full_name:
         full_name = f"Chat Lead {datetime.now().strftime('%m%d%H%M')}"
 
-    # Search for existing contact by name
+    # Prefer search by email (most reliable)
+    if email:
+        try:
+            safe_email = _safe_xero_where_value(email)
+            url = f'https://api.xero.com/api.xro/2.0/Contacts?where=EmailAddress=="{safe_email}"'
+            resp = _xero_request_with_auto_refresh("GET", url, headers, token_data)
+            if resp.status_code == 200:
+                contacts = resp.json().get("Contacts", [])
+                if contacts:
+                    logger.info(f"Found existing Xero contact by email: {email}")
+                    return contacts[0]["ContactID"]
+        except Exception as e:
+            logger.warning(f"Contact search by email error: {e}")
+
+    # Fallback: search by name (can match wrong people; keep narrow)
     try:
-        resp = requests.get(
-            f'https://api.xero.com/api.xro/2.0/Contacts?where=Name.Contains("{full_name}")',
-            headers=headers,
-            timeout=10
-        )
+        safe_name = _safe_xero_where_value(full_name)
+        url = f'https://api.xero.com/api.xro/2.0/Contacts?where=Name=="{safe_name}"'
+        resp = _xero_request_with_auto_refresh("GET", url, headers, token_data)
         if resp.status_code == 200:
             contacts = resp.json().get("Contacts", [])
             if contacts:
-                logger.info(f"Found existing Xero contact: {full_name}")
+                logger.info(f"Found existing Xero contact by exact name: {full_name}")
                 return contacts[0]["ContactID"]
     except Exception as e:
         logger.warning(f"Contact search error: {e}")
 
     # Build full contact payload
     contact_payload = {
-        "FirstName": contact_info.get("first_name", ""),
-        "LastName": contact_info.get("last_name", ""),
+        "FirstName": first,
+        "LastName": last,
         "Name": full_name,
-        "EmailAddress": contact_info.get("email", ""),
+        "EmailAddress": email,
         "Phones": [{"PhoneType": "MOBILE", "PhoneNumber": contact_info.get("phone", "")}],
         "Addresses": [{
             "AddressType": "STREET",
@@ -221,11 +296,12 @@ def find_or_create_contact(token_data: dict, tenant_id: str, contact_info: dict)
     }
 
     try:
-        resp = requests.post(
+        resp = _xero_request_with_auto_refresh(
+            "POST",
             "https://api.xero.com/api.xro/2.0/Contacts",
-            headers=headers,
-            json={"Contacts": [contact_payload]},
-            timeout=10
+            headers,
+            token_data,
+            json={"Contacts": [contact_payload]}
         )
         resp.raise_for_status()
         contact_id = resp.json()["Contacts"][0]["ContactID"]
@@ -252,11 +328,12 @@ def create_xero_project(token_data: dict, tenant_id: str, contact_id: str, proje
         "currencyCode": "USD"
     }
     try:
-        resp = requests.post(
+        resp = _xero_request_with_auto_refresh(
+            "POST",
             "https://api.xero.com/projects.xro/2.0/Projects",
-            headers=headers,
-            json=project_payload,
-            timeout=15
+            headers,
+            token_data,
+            json=project_payload
         )
         resp.raise_for_status()
         project = resp.json()
@@ -296,11 +373,12 @@ def create_xero_quote(token_data: dict, tenant_id: str, contact_id: str, quote_t
     }
 
     try:
-        resp = requests.post(
+        resp = _xero_request_with_auto_refresh(
+            "POST",
             "https://api.xero.com/api.xro/2.0/Quotes",
-            headers=headers,
-            json={"Quotes": [quote_payload]},
-            timeout=15
+            headers,
+            token_data,
+            json={"Quotes": [quote_payload]}
         )
         resp.raise_for_status()
         quote = resp.json()["Quotes"][0]
