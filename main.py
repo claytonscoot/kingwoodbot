@@ -323,7 +323,7 @@ CREW LABOR RATE:
 
 DAILY LABOR STRUCTURE (customer-facing):
 - Half day (4 hours): $380 labor
-- Full day (8 hours): $760 labor
+- Full day (8 hours): $760 aler
 - Labor billed per crew, not per individual
 
 MINIMUM LABOR CHARGE:
@@ -418,20 +418,9 @@ Third supplier: Eagle Fence Distributing — Houston (efdistribution.com)
 =================================================================
 WOOD FENCE — CEDAR (WRC = Western Red Cedar)
 =================================================================
-REAL MATERIAL COSTS (SPS 1/13/2026 quote, Humble TX job):
-- Cedar pickets 5/8x6x7' flat #2: $5.76/ea
-- Cedar pickets 5/8x6x8' dog ear #2: $5.88/ea
-- Pressure treated 2x4x8' rails: $3.76/ea
-- Cedar 2x6x14' baseboard: $35.26/ea
-- PT 2x12x14' baseboard: $19.55/ea
-- Cedar 1x4x14' top cap/trim: $8.25/ea
-- Cedar 1x2x14' nailers: $5.31/ea
-- Lag screws 1/4"x1-1/2" HDG (100ct): $11.54/box
-- Concrete 80lb Sakrete: $5.96/bag
-
 CEDAR FENCE INSTALLED PRICING:
 - Standard 6' privacy (wood posts): ~$35–43/LF installed
-- Board-on-board 6': add $1.50–2.00/LF (uses ~2.5x more pickets)
+- Board-on-board 6': add $1.50–2.00/LF
 - Top cap & trim both sides: add $1.50/LF
 - 7' tall with 2x12 baseboard: add $1.00/LF
 - 8' tall: add $2.00/LF
@@ -443,12 +432,11 @@ WOOD FENCE — PINE (PTP = Pressure Treated Pine)
 =================================================================
 - ~10–15% less than cedar equivalent
 - Approx $30–37/LF installed
-- Good budget option — still solid quality
 
 =================================================================
 TEAR-OUT / DEMO
 =================================================================
-- $3.00/LF to remove existing fence (updated rate)
+- $3.00/LF to remove existing fence
 - Always ask if there is an existing fence to remove
 
 =================================================================
@@ -469,49 +457,20 @@ WOOD GATES
 =================================================================
 STAINING — Wood Defender Semi-Transparent
 =================================================================
-IMPORTANT — Staining is priced in SQUARE FEET, not linear feet.
-- To calculate sq ft: LF x fence height (ft) x 2 sides = total sq ft
-  Example: 100 LF x 6' tall x 2 sides = 1,200 sq ft
-- Spray staining: ~$0.86/sq ft (customer-facing price, profit included)
-- Hand staining: ~$1.15/sq ft (customer-facing price, profit included)
-- Always show the sq ft math in the quote so customer understands the number
-- Always upsell staining on every wood fence job
-- Example: 100 LF of 6' fence = 1,200 sq ft x $0.86 = $1,032 spray stain
+- Spray staining: ~$0.86/sq ft
+- Hand staining: ~$1.15/sq ft
+- Always show the sq ft math in the quote
 - Minimum staining job: $400
 
 =================================================================
-VINYL FENCE — BUFFTECH (White & Colors)
+VINYL FENCE — BUFFTECH
 =================================================================
-PRODUCT KNOWLEDGE:
-- We install BUFFTECH vinyl fencing — premium brand, sold through Eagle Fence Distributing
-- BUFFTECH is a 3-rail large rail system — stronger than standard vinyl
-- Posts: 5x5x84" (7ft post) — large rail line, corner, and end posts all same price
-- Rails: 2x6x192" ribbed sections (minimum order 25 pcs) — 16ft rail lengths
-- Flat post caps: 5x5" included
-- Lock rings: 2 per rail, order in 24ct packs (black)
-- White is standard color — other colors available (special order)
-- System designed for 3-rail installations
-
-REAL MATERIAL COSTS (Eagle Fence 6/14/2024 quote):
-- Flat cap ext 5x5" white: $3.94/ea
-- 2x6x192" ribbed rail white (min 25): $53.20/ea — this is a 16ft rail section
-- Lock rings black 24ct pack: $6.70/pack (2 per rail)
-- Large rail line post 5x5x84" white (3-rail): $37.29/ea
-- Large rail corner post 5x5x84" white (3-rail): $37.29/ea
-- Large rail end post 5x5x84" white (3-rail): $37.29/ea
-Note: This was a large job — 58 caps, 87 rails, 54 line posts, 2 corner, 2 end posts
-Total material on that job: $7,073 before tax ($7,657 with tax)
-
-VINYL FENCE INSTALLED PRICING:
-- Standard 3-rail vinyl privacy 6': ~$38–52/LF installed (white)
+- Standard 3-rail vinyl privacy 6': ~$38–52/LF installed
 - Premium vinyl 6' with large rail system: ~$45–60/LF installed
 - Vinyl 4' (ranch/picket style): ~$28–40/LF installed
-- Color vinyl (tan, clay, almond): add $3–5/LF (special order premium)
+- Color vinyl: add $3–5/LF
 - Vinyl gate walk: ~$450–650 installed
 - Vinyl double drive gate: ~$900–1,400 installed
-- Low maintenance — never needs staining, painting, or sealing
-- Great for HOA neighborhoods — clean look, long lasting
-- Always ask: height, color preference (white standard), gate needs
 
 =================================================================
 CHAIN LINK — GALVANIZED
@@ -522,78 +481,16 @@ CHAIN LINK — GALVANIZED
 - 8' commercial: ~$28–36/LF installed
 
 =================================================================
-CHAIN LINK — BLACK VINYL COATED (BLK PLY)
+CHAIN LINK — BLACK VINYL COATED
 =================================================================
-REAL MATERIAL COSTS (SPS 12/26/2025 quote, New Caney job):
-- 3" black vinyl post 10'6" PP40: $65.15/ea
-- 3" dome post cap: $4.47/ea
-- 72" drop rod assembly w/guides: $33.90/ea
-- Duck bill gate keeper: $14.38/ea
-- Tension bar 72"x3/4": $6.00/ea
-- Tension band 3": $4.21/ea
-- Brace band 3": $2.73/ea
-- Bolts & nuts 5/16x1-1/4" Ruspert: $0.16/ea
-- Rail end combo 1-5/8": $3.17/ea
-- Top rail 1-5/8"x21' PP20: $2.18/ft
-- Aluminum fence ties 9ga: $0.22/ea
-- Concrete 80lb: $5.96/bag
-- Industrial double drive gate 16'Wx6'H black vinyl SP20: $1,111.06/ea (material only)
-
-CHAIN LINK HARDWARE — BLACK (Eagle Fence Distributing, 1/28/2026 quote):
-- Tension bars 3/16x3/4x70" black: $8.65/ea
-- Tension band 3/4x1-5/8" black: $1.06/ea
-- Drop rod 84" assembly black: $66.94/ea (for double drive gates)
-- Drop rod guide 1-5/8" IND black: $4.42/ea
-- Carriage bolt 3/8x3" black: $0.50/ea
-- Aluminum fence ties 9ga x 8-1/4" black: $0.18/ea (100ct)
-- EF-40 3"x10'6" post black PC: $76.20/ea (heavy duty 3" post)
-- 3" PS dome cap black: $3.62/ea
-- 1-5/8" PS dome cap black: $1.45/ea
-- Spray paint black 12oz: $7.93/can (touch up)
-- 3" 180° PS offset hinge black: $26.46/ea (heavy duty gate hinge)
-Note: Eagle Fence delivered by company truck to Kingwood, no freight charge
-IMPORTANT: All material prices listed above are PRE-TAX supplier costs for internal reference only.
-When quoting materials to customers, ALWAYS add 8.25% TX sales tax to get the customer-facing price.
-Example: $76.20 post → $76.20 x 1.0825 = $82.49 customer price. Never show pre-tax costs to customers.
-
-BLACK VINYL CHAIN LINK INSTALLED PRICING:
 - 4' black vinyl: ~$24–30/LF installed
 - 6' black vinyl: ~$28–36/LF installed
 - 8' black vinyl commercial: ~$36–48/LF installed
-- Black vinyl double drive gate 16'x6': ~$2,200–2,800 installed (material alone ~$1,111)
-- Black vinyl is premium look — great for commercial, pools, HOAs
+- Black vinyl double drive gate 16'x6': ~$2,200–2,800 installed
 
 =================================================================
-ALUMINUM / ORNAMENTAL — EMILY SERIES (Antebellum + SPS)
+ALUMINUM / ORNAMENTAL — EMILY SERIES
 =================================================================
-PRODUCT KNOWLEDGE:
-- We install Emily series aluminum panels — residential 2-rail system
-- Panel: 71.5" notch-to-notch width, smooth or rake bottom
-- Pickets: 5/8" sq x .045" screwed to 1"x1" channels
-- Posts punched to receive rails — clean professional assembly
-- Optional: butterfly scrolls on every picket (decorative upgrade)
-- Available: smooth bottom (standard) or rake bottom (for slopes)
-- Single walk gate: arched or straight rail, opening ~48"
-- Double walk gate: straight rail, opening ~72"
-- Gate uprights: 2" sq x .093"
-- LIFETIME WARRANTY on powder coat — never cracks, chips, or peels (original owner)
-
-REAL MATERIAL COSTS (SPS 2/19/2026 quote):
-- 42"H x 6'W Emily panel 2-rail smooth black: $85.71/ea
-- 2" sq .093 post x 45": $36.00/ea (standard line post)
-- 2" sq .125 post x 45": $44.25/ea (heavy duty — gate hinge posts)
-- 2" sq x 7' post: $48.00/ea (taller installs or deep set)
-- 2" modern post cap: $1.74/ea
-- Walk gate 42"H x 4'W Emily 2-rail: $256.51/ea
-- Double gate 42"H x 42"W Emily 2-rail: $245.00/ea
-- Weld charge: $19.86/ea
-- Floor mount cover plate: $19.24/ea
-- TRU-CLOSE 2-leg hinge for metal: $36.48/pair
-- Stainless steel gravity latch: $17.19/ea
-- Wedge anchor bolt 3/8"x3-3/4": $1.30/ea
-- Concrete 80lb Sakrete: $5.96/bag
-
-ALUMINUM INSTALLED PRICING:
 - 42" (3'6") aluminum black: ~$45–60/LF installed
 - 48" (4') aluminum: ~$50–65/LF installed
 - 60" (5') aluminum: ~$55–70/LF installed
@@ -601,27 +498,7 @@ ALUMINUM INSTALLED PRICING:
 - Walk gate 42"H installed: ~$650–850
 - Double drive gate 42"H installed: ~$950–1,400
 - Hard surface install (flange plates on concrete/pavers): add $8–12/LF
-- Custom weld fabrication: add $150–300
 - Black standard — other colors special order
-- Great for pools, front yards, HOA communities
-
-ALUMINUM NOTES:
-- Black is standard color — other colors available but require special order
-- Low maintenance, rust-resistant, HOA friendly, great for pools and front yards
-- Popular styles: flat top (Emily series), spear top, french gothic (ask customer preference)
-- Always ask: height needed, color preference (black standard), gate quantity and size
-- Minimum job: $600
-
-HOW TO CALCULATE A QUOTE:
-1. Start with base LF price
-2. Add any applicable add-ons
-3. Add tear-out if replacing old fence ($3/LF)
-4. Add $75 delivery
-5. Add gate costs
-6. Show the math clearly
-7. Label as working estimate — final price confirmed after site visit
-
-Always explain: Flat yard assumed. Normal access assumed. Final quote confirmed after site visit or photos.
 
 ---------------------------------
 CONTACT INFO
@@ -744,13 +621,76 @@ def check_rate_limit(ip: str) -> tuple[bool, str]:
     return False, ""
 
 
+# ----------------------------
+# FENCE TYPE EXTRACTION
+# NEW: detects fence style/type from chat message and stores in session
+# Used by xero_integration.py to build a descriptive project name
+# ----------------------------
+def extract_fence_type(text: str) -> str:
+    """
+    Returns a short fence type label from a message, e.g.:
+    '42" Emily Aluminum Black', 'Cedar Wood', 'Black Vinyl Chain Link', etc.
+    Returns empty string if nothing detected.
+    """
+    t = text.lower()
+
+    # Aluminum / ornamental — check first since it's most specific
+    if any(w in t for w in ['emily', 'aluminum', 'aluminium', 'ornamental', 'metal fence', 'steel panel']):
+        height = ''
+        h = re.search(r'(42|48|60|72)\s*"?', text)
+        if h:
+            height = f'{h.group(1)}" '
+        color = 'Black' if 'black' in t else ''
+        return f'{height}Emily Aluminum {color}'.strip()
+
+    # Chain link
+    if 'chain link' in t or 'chainlink' in t:
+        if 'black' in t or 'vinyl' in t:
+            return 'Black Vinyl Chain Link'
+        return 'Galvanized Chain Link'
+
+    # Vinyl
+    if 'vinyl' in t:
+        return 'Vinyl Fence'
+
+    # Cedar / wood
+    if 'cedar' in t:
+        if 'board on board' in t or 'board-on-board' in t:
+            return 'Cedar Board-on-Board'
+        if 'top cap' in t:
+            return 'Cedar Top Cap & Trim'
+        return 'Cedar Wood Fence'
+
+    if 'wood fence' in t or 'pine fence' in t or 'pressure treated' in t:
+        return 'Wood Fence'
+
+    # Pool fence
+    if 'pool fence' in t or 'pool barrier' in t:
+        return 'Pool Fence'
+
+    # Gate only
+    if 'gate' in t and not any(w in t for w in ['fence', 'cedar', 'vinyl', 'chain', 'aluminum']):
+        if 'double' in t or 'drive' in t:
+            return 'Double Drive Gate'
+        if 'sliding' in t:
+            return 'Sliding Gate'
+        return 'Gate Installation'
+
+    # Staining
+    if 'stain' in t:
+        return 'Fence Staining'
+
+    # Power washing
+    if 'power wash' in t or 'pressure wash' in t:
+        return 'Power Washing'
+
+    return ''
+
+
 def extract_contact_info(prompt: str, session: dict):
     """
-    Extract name, phone, email, and address from a chat message
-    and store in session. Handles patterns like:
-      - "new quote for David Kelly"
-      - "David Kelly. 5915 Elmwood Hill Ln Kingwood Texas 77345"
-      - inline email / phone
+    Extract name, phone, email, address, and fence type from a chat message
+    and store in session.
     """
     # --- Phone ---
     phone_match = re.search(r'(\d{3}[-.\s]?\d{3}[-.\s]?\d{4}|\d{10})', prompt)
@@ -762,13 +702,13 @@ def extract_contact_info(prompt: str, session: dict):
     if email_match and not session.get("soft_lead_email"):
         session["soft_lead_email"] = email_match.group(0)
 
-    # --- Name: classic patterns ("I'm X", "my name is X") ---
+    # --- Name: classic patterns ---
     if not session.get("soft_lead_name"):
         classic = re.search(r"(?:i'?m|my name is|this is|call me)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)", prompt, re.IGNORECASE)
         if classic:
             session["soft_lead_name"] = classic.group(1).strip()
 
-    # --- Name: "new quote for David Kelly" / "quote for David Kelly" ---
+    # --- Name: "quote for David Kelly" ---
     if not session.get("soft_lead_name"):
         quote_for = re.search(
             r'(?:quote\s+(?:for|please\s+for)|quoting\s+for|customer\s+is|client\s+is)\s+([A-Z][a-z]+\s+[A-Z][a-z]+)',
@@ -777,7 +717,7 @@ def extract_contact_info(prompt: str, session: dict):
         if quote_for:
             session["soft_lead_name"] = quote_for.group(1).strip()
 
-    # --- Name: standalone "First Last" at start of message ---
+    # --- Name: standalone "First Last" at start ---
     if not session.get("soft_lead_name"):
         standalone = re.search(r'^([A-Z][a-z]+\s+[A-Z][a-z]+)[.\s,]', prompt.strip())
         if standalone:
@@ -785,7 +725,7 @@ def extract_contact_info(prompt: str, session: dict):
             if not re.search(r'\d', candidate):
                 session["soft_lead_name"] = candidate
 
-    # --- Address: "1234 Street Name Ln Kingwood Texas 77345" ---
+    # --- Address ---
     address_match = re.search(
         r'(\d+\s+[A-Za-z0-9 ]{3,40}(?:Ln|Dr|St|Ave|Blvd|Rd|Way|Ct|Pl|Cir|Hill|Creek|Lake|Oak|Pine|Park|Trail|Run))\s+'
         r'([A-Za-z ]+?)\s+(?:Texas|TX)\s+(\d{5})',
@@ -796,6 +736,13 @@ def extract_contact_info(prompt: str, session: dict):
         city_raw = re.sub(r'^(?:in|near|at)\s+', '', address_match.group(2).strip(), flags=re.IGNORECASE)
         session["soft_lead_city"] = city_raw.strip()
         session["soft_lead_zip"] = address_match.group(3)
+
+    # --- NEW: Fence type extraction ---
+    # Only update if not already set, or if new message has more specific info
+    fence_type = extract_fence_type(prompt)
+    if fence_type and not session.get("fence_type"):
+        session["fence_type"] = fence_type
+        logger.info(f"🔧 Fence type detected: {fence_type}")
 
 
 def build_transcript_email(session_id: str) -> str:
@@ -821,6 +768,8 @@ def build_transcript_email(session_id: str) -> str:
         lines.append(f"Email: {session['soft_lead_email']}")
     if session.get('soft_lead_address'):
         lines.append(f"Address: {session['soft_lead_address']}, {session.get('soft_lead_city','')} TX {session.get('soft_lead_zip','')}")
+    if session.get('fence_type'):
+        lines.append(f"Fence Type: {session['fence_type']}")
     lines.append(f"Form Submitted: {'YES' if session.get('form_submitted') else 'NO — chat only'}")
     lines.append(f"IP: {session.get('ip', 'unknown')}")
     lines.append("")
@@ -1011,6 +960,7 @@ def chat(req: Chat, request: Request):
             "soft_lead_address": "",
             "soft_lead_city": "",
             "soft_lead_zip": "",
+            "fence_type": "",      # NEW: fence type for Xero project name
         }
         ip = request.client.host if request.client else "unknown"
         t = threading.Thread(target=send_session_start_notification, args=[session_id, ip], daemon=True)
@@ -1053,8 +1003,15 @@ def chat(req: Chat, request: Request):
             "message": ai_response
         })
 
-        # --- Extract all contact info from this message ---
+        # --- Extract all contact info + fence type from this message ---
         extract_contact_info(prompt, active_sessions[session_id])
+
+        # --- Also scan the AI response for fence type if not yet set ---
+        # (bot may mention fence type in its reply before customer does)
+        if not active_sessions[session_id].get("fence_type"):
+            fence_from_response = extract_fence_type(ai_response)
+            if fence_from_response:
+                active_sessions[session_id]["fence_type"] = fence_from_response
 
         # --- Callback alert logic ---
         callback_confirmed = any(phrase in ai_response.lower() for phrase in [
@@ -1370,6 +1327,7 @@ def get_chat_sessions():
             "soft_lead_name": sess.get("soft_lead_name", ""),
             "soft_lead_phone": sess.get("soft_lead_phone", ""),
             "soft_lead_email": sess.get("soft_lead_email", ""),
+            "fence_type": sess.get("fence_type", ""),
             "ip": sess.get("ip", ""),
             "preview": sess["messages"][-1]["message"][:120] if sess.get("messages") else ""
         })
@@ -1428,6 +1386,7 @@ def get_session_info(session_id: str):
         "city":       sess.get("soft_lead_city", ""),
         "state":      "TX",
         "zip":        sess.get("soft_lead_zip", ""),
+        "fence_type": sess.get("fence_type", ""),   # NEW: passed to Xero for project name
     })
 
 
