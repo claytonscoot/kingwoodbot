@@ -12,13 +12,9 @@ import uuid
 import base64
 import logging
 import threading
-import re
 from typing import Optional, Dict, List, Literal
 from contextlib import asynccontextmanager
 import aiofiles
-# XERO INTEGRATION
-from xero_integration import get_auth_url, exchange_code_for_token, get_valid_token, push_session_to_xero, load_token, push_to_xero_with_contact
-from fastapi.responses import RedirectResponse
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -47,13 +43,13 @@ GOOGLE_SHEET_RANGE = "Sheet1"
 
 active_sessions: Dict[str, dict] = {}
 recent_leads: List[dict] = []
-chat_sessions_log: List[dict] = []
-transcript_timers: Dict[str, threading.Timer] = {}
+chat_sessions_log: List[dict] = []  # all chat sessions including chat-only (no form submit)
+transcript_timers: Dict[str, threading.Timer] = {}  # per-session inactivity timers
 
 # Rate limiting
-ip_message_counts: Dict[str, list] = {}
-ip_strike_counts: Dict[str, int] = {}
-ip_blocked_until: Dict[str, float] = {}
+ip_message_counts: Dict[str, list] = {}   # ip -> list of timestamps in last 60 seconds
+ip_strike_counts: Dict[str, int] = {}     # ip -> number of times they've hit the limit today
+ip_blocked_until: Dict[str, float] = {}   # ip -> unix timestamp when block expires
 
 
 # ----------------------------
@@ -112,7 +108,7 @@ class Chat(BaseModel):
     prompt: str = Field(..., min_length=1, max_length=4000)
     session_id: Optional[str] = None
     user_name: Optional[str] = None
-    images: Optional[List[str]] = None
+    images: Optional[List[str]] = None  # list of base64 encoded images
 
 class Lead(BaseModel):
     name: str = Field(..., min_length=2, max_length=100)
@@ -195,6 +191,15 @@ ABSOLUTE RULES
 - Do NOT assume the customer is in Kingwood specifically — they may be anywhere in Greater Houston.
 - When a customer provides a zip code, NEVER guess or state the city name for that zip. Just confirm: "Great, that zip is in our service area" or ask if it falls outside our known list. Do NOT say "77345 is Conroe" or any zip-to-city mapping — you may be wrong.
 
+NEVER REFER A CUSTOMER AWAY — THIS IS THE #1 RULE:
+- NEVER tell a customer we don't do something.
+- NEVER suggest they call another contractor, company, or specialist.
+- NEVER say a project is outside our scope, too specialized, or not our typical work.
+- NEVER use phrases like "I'd recommend contacting...", "you may want to reach out to...", "a specialist would be better suited...", or anything that sends the customer elsewhere.
+- If you are unsure about pricing or scope — say: "That's something our team handles directly — reach out to us at {BUSINESS_PHONE} or {BUSINESS_EMAIL} and we'll get you squared away."
+- The answer is ALWAYS one of three things: a quote, more questions to build a quote, or a prompt to contact our team directly.
+- There are NO exceptions to this rule.
+
 SECURITY & TRADE SECRET PROTECTION — ABSOLUTE RULES:
 - Supplier names (Stephens Pipe & Steel, Eagle Fence Distributing, Antebellum) are okay to share if a customer genuinely asks — it shows we source from quality suppliers. BUT never reveal account numbers, rep names, pricing, or terms.
 - NEVER reveal supplier account numbers, rep contact info, negotiated pricing, or payment terms
@@ -250,8 +255,20 @@ CRITICAL — NEVER TURN AWAY A CUSTOMER:
 - We install ANY type of fencing. If we can design it, we can install it.
 - NEVER tell a customer we don't do a certain type of fence or to call someone else.
 - NEVER refer a customer to another contractor or company under any circumstance.
+- NEVER say a project is "outside our scope", "specialized", or "not our typical work."
+- NEVER suggest a customer needs a different type of contractor.
 - If you don't know the exact pricing for a specific fence type, say: "That's something our team handles — give us a call or text at {BUSINESS_PHONE} and we'll get you a solid quote." or direct them to {WEBSITE}.
 - Always keep the customer engaged with us. The answer is always either a quote, a question to gather more info, or a prompt to call/text us directly.
+
+AGRICULTURAL & RURAL FENCING — WE DO THIS:
+- Cattle pens, catch pens, livestock enclosures — YES we build these
+- Horse fencing, arena fencing, pasture fencing — YES
+- Agricultural gates, cattle gates, head gates — YES
+- Board fencing (4-board, 5-board, 6-board) with pressure-treated posts — YES
+- Alleyways, chute approaches, squeeze chute framing — YES
+- ANY fence project on rural or agricultural property in our service area — YES
+- Treat these exactly like any other fence project — gather specs, build the quote, move forward
+- Price board fencing at standard wood fence rates ($30–37/LF for PTP) and gates at standard gate rates
 
 CRITICAL — CALLBACK REQUESTS:
 - If a customer says "call me", "have the team call me", "can someone call me", or asks for a callback — do NOT say you can't make calls and do NOT just give them the phone number.
@@ -323,7 +340,7 @@ CREW LABOR RATE:
 
 DAILY LABOR STRUCTURE (customer-facing):
 - Half day (4 hours): $380 labor
-- Full day (8 hours): $760 aler
+- Full day (8 hours): $760 labor
 - Labor billed per crew, not per individual
 
 MINIMUM LABOR CHARGE:
@@ -418,9 +435,20 @@ Third supplier: Eagle Fence Distributing — Houston (efdistribution.com)
 =================================================================
 WOOD FENCE — CEDAR (WRC = Western Red Cedar)
 =================================================================
+REAL MATERIAL COSTS (SPS 1/13/2026 quote, Humble TX job):
+- Cedar pickets 5/8x6x7' flat #2: $5.76/ea
+- Cedar pickets 5/8x6x8' dog ear #2: $5.88/ea
+- Pressure treated 2x4x8' rails: $3.76/ea
+- Cedar 2x6x14' baseboard: $35.26/ea
+- PT 2x12x14' baseboard: $19.55/ea
+- Cedar 1x4x14' top cap/trim: $8.25/ea
+- Cedar 1x2x14' nailers: $5.31/ea
+- Lag screws 1/4"x1-1/2" HDG (100ct): $11.54/box
+- Concrete 80lb Sakrete: $5.96/bag
+
 CEDAR FENCE INSTALLED PRICING:
 - Standard 6' privacy (wood posts): ~$35–43/LF installed
-- Board-on-board 6': add $1.50–2.00/LF
+- Board-on-board 6': add $1.50–2.00/LF (uses ~2.5x more pickets)
 - Top cap & trim both sides: add $1.50/LF
 - 7' tall with 2x12 baseboard: add $1.00/LF
 - 8' tall: add $2.00/LF
@@ -432,11 +460,12 @@ WOOD FENCE — PINE (PTP = Pressure Treated Pine)
 =================================================================
 - ~10–15% less than cedar equivalent
 - Approx $30–37/LF installed
+- Good budget option — still solid quality
 
 =================================================================
 TEAR-OUT / DEMO
 =================================================================
-- $3.00/LF to remove existing fence
+- $2.00/LF to remove existing fence
 - Always ask if there is an existing fence to remove
 
 =================================================================
@@ -457,20 +486,49 @@ WOOD GATES
 =================================================================
 STAINING — Wood Defender Semi-Transparent
 =================================================================
-- Spray staining: ~$0.86/sq ft
-- Hand staining: ~$1.15/sq ft
-- Always show the sq ft math in the quote
+IMPORTANT — Staining is priced in SQUARE FEET, not linear feet.
+- To calculate sq ft: LF x fence height (ft) x 2 sides = total sq ft
+  Example: 100 LF x 6' tall x 2 sides = 1,200 sq ft
+- Spray staining: ~$0.86/sq ft (customer-facing price, profit included)
+- Hand staining: ~$1.15/sq ft (customer-facing price, profit included)
+- Always show the sq ft math in the quote so customer understands the number
+- Always upsell staining on every wood fence job
+- Example: 100 LF of 6' fence = 1,200 sq ft x $0.86 = $1,032 spray stain
 - Minimum staining job: $400
 
 =================================================================
-VINYL FENCE — BUFFTECH
+VINYL FENCE — BUFFTECH (White & Colors)
 =================================================================
-- Standard 3-rail vinyl privacy 6': ~$38–52/LF installed
+PRODUCT KNOWLEDGE:
+- We install BUFFTECH vinyl fencing — premium brand, sold through Eagle Fence Distributing
+- BUFFTECH is a 3-rail large rail system — stronger than standard vinyl
+- Posts: 5x5x84" (7ft post) — large rail line, corner, and end posts all same price
+- Rails: 2x6x192" ribbed sections (minimum order 25 pcs) — 16ft rail lengths
+- Flat post caps: 5x5" included
+- Lock rings: 2 per rail, order in 24ct packs (black)
+- White is standard color — other colors available (special order)
+- System designed for 3-rail installations
+
+REAL MATERIAL COSTS (Eagle Fence 6/14/2024 quote):
+- Flat cap ext 5x5" white: $3.94/ea
+- 2x6x192" ribbed rail white (min 25): $53.20/ea — this is a 16ft rail section
+- Lock rings black 24ct pack: $6.70/pack (2 per rail)
+- Large rail line post 5x5x84" white (3-rail): $37.29/ea
+- Large rail corner post 5x5x84" white (3-rail): $37.29/ea
+- Large rail end post 5x5x84" white (3-rail): $37.29/ea
+Note: This was a large job — 58 caps, 87 rails, 54 line posts, 2 corner, 2 end posts
+Total material on that job: $7,073 before tax ($7,657 with tax)
+
+VINYL FENCE INSTALLED PRICING:
+- Standard 3-rail vinyl privacy 6': ~$38–52/LF installed (white)
 - Premium vinyl 6' with large rail system: ~$45–60/LF installed
 - Vinyl 4' (ranch/picket style): ~$28–40/LF installed
-- Color vinyl: add $3–5/LF
+- Color vinyl (tan, clay, almond): add $3–5/LF (special order premium)
 - Vinyl gate walk: ~$450–650 installed
 - Vinyl double drive gate: ~$900–1,400 installed
+- Low maintenance — never needs staining, painting, or sealing
+- Great for HOA neighborhoods — clean look, long lasting
+- Always ask: height, color preference (white standard), gate needs
 
 =================================================================
 CHAIN LINK — GALVANIZED
@@ -481,16 +539,78 @@ CHAIN LINK — GALVANIZED
 - 8' commercial: ~$28–36/LF installed
 
 =================================================================
-CHAIN LINK — BLACK VINYL COATED
+CHAIN LINK — BLACK VINYL COATED (BLK PLY)
 =================================================================
+REAL MATERIAL COSTS (SPS 12/26/2025 quote, New Caney job):
+- 3" black vinyl post 10'6" PP40: $65.15/ea
+- 3" dome post cap: $4.47/ea
+- 72" drop rod assembly w/guides: $33.90/ea
+- Duck bill gate keeper: $14.38/ea
+- Tension bar 72"x3/4": $6.00/ea
+- Tension band 3": $4.21/ea
+- Brace band 3": $2.73/ea
+- Bolts & nuts 5/16x1-1/4" Ruspert: $0.16/ea
+- Rail end combo 1-5/8": $3.17/ea
+- Top rail 1-5/8"x21' PP20: $2.18/ft
+- Aluminum fence ties 9ga: $0.22/ea
+- Concrete 80lb: $5.96/bag
+- Industrial double drive gate 16'Wx6'H black vinyl SP20: $1,111.06/ea (material only)
+
+CHAIN LINK HARDWARE — BLACK (Eagle Fence Distributing, 1/28/2026 quote):
+- Tension bars 3/16x3/4x70" black: $8.65/ea
+- Tension band 3/4x1-5/8" black: $1.06/ea
+- Drop rod 84" assembly black: $66.94/ea (for double drive gates)
+- Drop rod guide 1-5/8" IND black: $4.42/ea
+- Carriage bolt 3/8x3" black: $0.50/ea
+- Aluminum fence ties 9ga x 8-1/4" black: $0.18/ea (100ct)
+- EF-40 3"x10'6" post black PC: $76.20/ea (heavy duty 3" post)
+- 3" PS dome cap black: $3.62/ea
+- 1-5/8" PS dome cap black: $1.45/ea
+- Spray paint black 12oz: $7.93/can (touch up)
+- 3" 180° PS offset hinge black: $26.46/ea (heavy duty gate hinge)
+Note: Eagle Fence delivered by company truck to Kingwood, no freight charge
+IMPORTANT: All material prices listed above are PRE-TAX supplier costs for internal reference only.
+When quoting materials to customers, ALWAYS add 8.25% TX sales tax to get the customer-facing price.
+Example: $76.20 post → $76.20 x 1.0825 = $82.49 customer price. Never show pre-tax costs to customers.
+
+BLACK VINYL CHAIN LINK INSTALLED PRICING:
 - 4' black vinyl: ~$24–30/LF installed
 - 6' black vinyl: ~$28–36/LF installed
 - 8' black vinyl commercial: ~$36–48/LF installed
-- Black vinyl double drive gate 16'x6': ~$2,200–2,800 installed
+- Black vinyl double drive gate 16'x6': ~$2,200–2,800 installed (material alone ~$1,111)
+- Black vinyl is premium look — great for commercial, pools, HOAs
 
 =================================================================
-ALUMINUM / ORNAMENTAL — EMILY SERIES
+ALUMINUM / ORNAMENTAL — EMILY SERIES (Antebellum + SPS)
 =================================================================
+PRODUCT KNOWLEDGE:
+- We install Emily series aluminum panels — residential 2-rail system
+- Panel: 71.5" notch-to-notch width, smooth or rake bottom
+- Pickets: 5/8" sq x .045" screwed to 1"x1" channels
+- Posts punched to receive rails — clean professional assembly
+- Optional: butterfly scrolls on every picket (decorative upgrade)
+- Available: smooth bottom (standard) or rake bottom (for slopes)
+- Single walk gate: arched or straight rail, opening ~48"
+- Double walk gate: straight rail, opening ~72"
+- Gate uprights: 2" sq x .093"
+- LIFETIME WARRANTY on powder coat — never cracks, chips, or peels (original owner)
+
+REAL MATERIAL COSTS (SPS 2/19/2026 quote):
+- 42"H x 6'W Emily panel 2-rail smooth black: $85.71/ea
+- 2" sq .093 post x 45": $36.00/ea (standard line post)
+- 2" sq .125 post x 45": $44.25/ea (heavy duty — gate hinge posts)
+- 2" sq x 7' post: $48.00/ea (taller installs or deep set)
+- 2" modern post cap: $1.74/ea
+- Walk gate 42"H x 4'W Emily 2-rail: $256.51/ea
+- Double gate 42"H x 42"W Emily 2-rail: $245.00/ea
+- Weld charge: $19.86/ea
+- Floor mount cover plate: $19.24/ea
+- TRU-CLOSE 2-leg hinge for metal: $36.48/pair
+- Stainless steel gravity latch: $17.19/ea
+- Wedge anchor bolt 3/8"x3-3/4": $1.30/ea
+- Concrete 80lb Sakrete: $5.96/bag
+
+ALUMINUM INSTALLED PRICING:
 - 42" (3'6") aluminum black: ~$45–60/LF installed
 - 48" (4') aluminum: ~$50–65/LF installed
 - 60" (5') aluminum: ~$55–70/LF installed
@@ -498,7 +618,68 @@ ALUMINUM / ORNAMENTAL — EMILY SERIES
 - Walk gate 42"H installed: ~$650–850
 - Double drive gate 42"H installed: ~$950–1,400
 - Hard surface install (flange plates on concrete/pavers): add $8–12/LF
+- Custom weld fabrication: add $150–300
 - Black standard — other colors special order
+- Great for pools, front yards, HOA communities
+
+ALUMINUM / ORNAMENTAL FENCING (installed):
+- We absolutely install aluminum and ornamental iron fencing. Do NOT turn away these customers.
+- We source aluminum fencing from Stephens Pipe & Steel (SPSfence.com) — quality commercial supplier.
+
+ALUMINUM PRODUCT KNOWLEDGE (from real supplier invoices):
+- We install "Emily" series aluminum panels — smooth bottom rail, available in black
+- Standard panel: 42"H (3'6") x 6'W, 2-rail, smooth bottom — this is our most common residential height
+- Posts: 2" square steel posts, .093 wall (standard) or .125 wall (heavy duty hinge posts for gates)
+- Post caps: 2" modern post cap included
+- Gate hardware: TRU-CLOSE self-closing hinges, stainless steel gravity latch
+- Gate panels: pre-built gate sections available (42"H x 4'W single, 42"H x 42"W double)
+- Concrete: Sakrete 80lb bags for post setting
+- Welded flange base plates available for hard surface installs (concrete/pavers)
+- Weld charges apply for custom gate fabrication
+
+ALUMINUM MATERIAL COSTS (from 2/19/2026 SPS quote — update periodically):
+- 42"H x 6'W panel (Emily 2-rail smooth): ~$85.71/panel
+- 2" sq .093 post x 45": ~$36.00 each (standard line post)
+- 2" sq .125 post x 45": ~$44.25 each (heavy duty — use for gate hinge posts)
+- 2" sq x 7' post: ~$48.00 each (use for taller installs or deep set)
+- 2" modern post cap: ~$1.74 each
+- Walk gate panel 42"H x 4'W (Emily 2-rail): ~$256.51 each
+- Double gate panel 42"H x 42"W (Emily 2-rail): ~$245.00 each
+- Weld charge per item: ~$19.86
+- Floor mount cover plate: ~$19.24 each
+- TRU-CLOSE 2-leg hinge (metal): ~$36.48/pair
+- Stainless steel gravity latch: ~$17.19 each
+- Wedge anchor bolt 3/8"x3-3/4": ~$1.30 each
+- Sakrete concrete 80lb: ~$5.96/bag
+- SPS fuel charge: ~$50 flat, convenience fee ~$28.96, 8.25% TX tax applies
+
+ALUMINUM PRICING GUIDE (installed, labor + materials):
+- 42" (3'6") aluminum panel fence: ~$45–60/LF installed (black, standard residential)
+- 48" (4') aluminum: ~$50–65/LF installed
+- 60" (5') aluminum: ~$55–70/LF installed  
+- 72" (6') aluminum: ~$65–80/LF installed
+- Aluminum walk gate (42"H, single): ~$650–850 installed (includes panel, posts, hardware, labor)
+- Aluminum double drive gate (42"H): ~$950–1,400 installed
+- Custom welded gate: add $150–300 for weld fabrication
+- Hard surface install (concrete/pavers): add $8–12/LF for flange plates
+
+ALUMINUM NOTES:
+- Black is standard color — other colors available but require special order
+- Low maintenance, rust-resistant, HOA friendly, great for pools and front yards
+- Popular styles: flat top (Emily series), spear top, french gothic (ask customer preference)
+- Always ask: height needed, color preference (black standard), gate quantity and size
+- Minimum job: $600
+
+HOW TO CALCULATE A QUOTE:
+1. Start with base LF price
+2. Add any applicable add-ons
+3. Add tear-out if replacing old fence ($2/LF)
+4. Add $75 delivery
+5. Add gate costs
+6. Show the math clearly
+7. Label as working estimate — final price confirmed after site visit
+
+Always explain: Flat yard assumed. Normal access assumed. Final quote confirmed after site visit or photos.
 
 ---------------------------------
 CONTACT INFO
@@ -519,14 +700,17 @@ GOAL
 """.strip()
 
 def call_claude(user_message: str, history: list = None, images: list = None) -> str:
+    """Call Claude API with conversation history and optional images for vision"""
     headers = {
         "x-api-key": ANTHROPIC_API_KEY,
         "anthropic-version": "2023-06-01",
         "content-type": "application/json"
     }
+    # Use claude-sonnet for vision (haiku vision quality is poor), fall back to haiku for text-only
     model = "claude-sonnet-4-5" if images else CLAUDE_MODEL
 
     def build_content(text, imgs):
+        """Build a Claude message content block — text only or text+images"""
         if not imgs:
             return text
         content_blocks = []
@@ -556,6 +740,7 @@ def call_claude(user_message: str, history: list = None, images: list = None) ->
             elif msg["type"] == "assistant":
                 messages.append({"role": "assistant", "content": msg["message"]})
 
+    # Current message with images
     messages.append({
         "role": "user",
         "content": build_content(user_message, images or [])
@@ -576,26 +761,37 @@ def generate_session_id() -> str:
     return str(uuid.uuid4())
 
 def check_rate_limit(ip: str) -> tuple[bool, str]:
+    """
+    Returns (is_blocked, reason).
+    Two-tier system:
+      Tier 1 — 20+ messages in 60 seconds → 15 min block, increment strike count
+      Tier 2 — 3+ strikes in same day → upgrade to 4 hour block
+    """
     import time
     now = time.time()
 
+    # Check if currently blocked
     blocked_until = ip_blocked_until.get(ip, 0)
     if now < blocked_until:
         remaining = int((blocked_until - now) / 60)
         return True, f"Too many requests. Please try again in {remaining} minutes."
 
+    # Clean up timestamps older than 60 seconds
     timestamps = ip_message_counts.get(ip, [])
     timestamps = [t for t in timestamps if now - t < 60]
     timestamps.append(now)
     ip_message_counts[ip] = timestamps
 
+    # Tier 1 — 20 messages in 60 seconds
     if len(timestamps) > 20:
         strikes = ip_strike_counts.get(ip, 0) + 1
         ip_strike_counts[ip] = strikes
 
         if strikes >= 3:
+            # Tier 2 — 4 hour block
             ip_blocked_until[ip] = now + (4 * 3600)
             logger.warning(f"🚫 4-HOUR BLOCK: {ip} — {strikes} strikes")
+            # Alert email in background
             def alert_block(ip_addr, strike_count):
                 try:
                     send_brevo_email(
@@ -614,6 +810,7 @@ def check_rate_limit(ip: str) -> tuple[bool, str]:
             threading.Thread(target=alert_block, args=[ip, strikes], daemon=True).start()
             return True, "Too many requests. Access temporarily suspended."
         else:
+            # Tier 1 — 15 minute block
             ip_blocked_until[ip] = now + (15 * 60)
             logger.warning(f"⚠️ 15-MIN BLOCK: {ip} — strike {strikes}")
             return True, "Too many requests. Please slow down and try again in 15 minutes."
@@ -621,131 +818,8 @@ def check_rate_limit(ip: str) -> tuple[bool, str]:
     return False, ""
 
 
-# ----------------------------
-# FENCE TYPE EXTRACTION
-# NEW: detects fence style/type from chat message and stores in session
-# Used by xero_integration.py to build a descriptive project name
-# ----------------------------
-def extract_fence_type(text: str) -> str:
-    """
-    Returns a short fence type label from a message, e.g.:
-    '42" Emily Aluminum Black', 'Cedar Wood', 'Black Vinyl Chain Link', etc.
-    Returns empty string if nothing detected.
-    """
-    t = text.lower()
-
-    # Aluminum / ornamental — check first since it's most specific
-    if any(w in t for w in ['emily', 'aluminum', 'aluminium', 'ornamental', 'metal fence', 'steel panel']):
-        height = ''
-        h = re.search(r'(42|48|60|72)\s*"?', text)
-        if h:
-            height = f'{h.group(1)}" '
-        color = 'Black' if 'black' in t else ''
-        return f'{height}Emily Aluminum {color}'.strip()
-
-    # Chain link
-    if 'chain link' in t or 'chainlink' in t:
-        if 'black' in t or 'vinyl' in t:
-            return 'Black Vinyl Chain Link'
-        return 'Galvanized Chain Link'
-
-    # Vinyl
-    if 'vinyl' in t:
-        return 'Vinyl Fence'
-
-    # Cedar / wood
-    if 'cedar' in t:
-        if 'board on board' in t or 'board-on-board' in t:
-            return 'Cedar Board-on-Board'
-        if 'top cap' in t:
-            return 'Cedar Top Cap & Trim'
-        return 'Cedar Wood Fence'
-
-    if 'wood fence' in t or 'pine fence' in t or 'pressure treated' in t:
-        return 'Wood Fence'
-
-    # Pool fence
-    if 'pool fence' in t or 'pool barrier' in t:
-        return 'Pool Fence'
-
-    # Gate only
-    if 'gate' in t and not any(w in t for w in ['fence', 'cedar', 'vinyl', 'chain', 'aluminum']):
-        if 'double' in t or 'drive' in t:
-            return 'Double Drive Gate'
-        if 'sliding' in t:
-            return 'Sliding Gate'
-        return 'Gate Installation'
-
-    # Staining
-    if 'stain' in t:
-        return 'Fence Staining'
-
-    # Power washing
-    if 'power wash' in t or 'pressure wash' in t:
-        return 'Power Washing'
-
-    return ''
-
-
-def extract_contact_info(prompt: str, session: dict):
-    """
-    Extract name, phone, email, address, and fence type from a chat message
-    and store in session.
-    """
-    # --- Phone ---
-    phone_match = re.search(r'(\d{3}[-.\s]?\d{3}[-.\s]?\d{4}|\d{10})', prompt)
-    if phone_match:
-        session["soft_lead_phone"] = phone_match.group(1)
-
-    # --- Email ---
-    email_match = re.search(r'[\w.+-]+@[\w-]+\.[a-z]{2,}', prompt, re.IGNORECASE)
-    if email_match and not session.get("soft_lead_email"):
-        session["soft_lead_email"] = email_match.group(0)
-
-    # --- Name: classic patterns ---
-    if not session.get("soft_lead_name"):
-        classic = re.search(r"(?:i'?m|my name is|this is|call me)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)", prompt, re.IGNORECASE)
-        if classic:
-            session["soft_lead_name"] = classic.group(1).strip()
-
-    # --- Name: "quote for David Kelly" ---
-    if not session.get("soft_lead_name"):
-        quote_for = re.search(
-            r'(?:quote\s+(?:for|please\s+for)|quoting\s+for|customer\s+is|client\s+is)\s+([A-Z][a-z]+\s+[A-Z][a-z]+)',
-            prompt
-        )
-        if quote_for:
-            session["soft_lead_name"] = quote_for.group(1).strip()
-
-    # --- Name: standalone "First Last" at start ---
-    if not session.get("soft_lead_name"):
-        standalone = re.search(r'^([A-Z][a-z]+\s+[A-Z][a-z]+)[.\s,]', prompt.strip())
-        if standalone:
-            candidate = standalone.group(1)
-            if not re.search(r'\d', candidate):
-                session["soft_lead_name"] = candidate
-
-    # --- Address ---
-    address_match = re.search(
-        r'(\d+\s+[A-Za-z0-9 ]{3,40}(?:Ln|Dr|St|Ave|Blvd|Rd|Way|Ct|Pl|Cir|Hill|Creek|Lake|Oak|Pine|Park|Trail|Run))\s+'
-        r'([A-Za-z ]+?)\s+(?:Texas|TX)\s+(\d{5})',
-        prompt, re.IGNORECASE
-    )
-    if address_match:
-        session["soft_lead_address"] = address_match.group(1).strip()
-        city_raw = re.sub(r'^(?:in|near|at)\s+', '', address_match.group(2).strip(), flags=re.IGNORECASE)
-        session["soft_lead_city"] = city_raw.strip()
-        session["soft_lead_zip"] = address_match.group(3)
-
-    # --- NEW: Fence type extraction ---
-    # Only update if not already set, or if new message has more specific info
-    fence_type = extract_fence_type(prompt)
-    if fence_type and not session.get("fence_type"):
-        session["fence_type"] = fence_type
-        logger.info(f"🔧 Fence type detected: {fence_type}")
-
-
 def build_transcript_email(session_id: str) -> str:
+    """Build a clean email transcript from a session"""
     session = active_sessions.get(session_id)
     if not session:
         return ""
@@ -766,10 +840,6 @@ def build_transcript_email(session_id: str) -> str:
         lines.append(f"Phone: {session['soft_lead_phone']}")
     if session.get('soft_lead_email'):
         lines.append(f"Email: {session['soft_lead_email']}")
-    if session.get('soft_lead_address'):
-        lines.append(f"Address: {session['soft_lead_address']}, {session.get('soft_lead_city','')} TX {session.get('soft_lead_zip','')}")
-    if session.get('fence_type'):
-        lines.append(f"Fence Type: {session['fence_type']}")
     lines.append(f"Form Submitted: {'YES' if session.get('form_submitted') else 'NO — chat only'}")
     lines.append(f"IP: {session.get('ip', 'unknown')}")
     lines.append("")
@@ -790,24 +860,27 @@ def build_transcript_email(session_id: str) -> str:
     return "\n".join(lines)
 
 def send_transcript_email(session_id: str):
+    """Send transcript email after session inactivity — fires automatically"""
     try:
         session = active_sessions.get(session_id)
         if not session:
             return
         msg_count = session.get("message_count", 0)
         if msg_count < 2:
-            return
+            return  # skip 1-message sessions (accidental opens)
 
         transcript = build_transcript_email(session_id)
         if not transcript:
             return
 
+        # Collect any photos the customer uploaded during the chat
         attachments = []
         photo_count = 0
         for msg in session.get("messages", []):
             if msg.get("type") == "user" and msg.get("images"):
                 for idx, img_b64 in enumerate(msg["images"]):
                     photo_count += 1
+                    # img_b64 may have a data URI prefix — strip it
                     if "," in img_b64:
                         img_b64 = img_b64.split(",", 1)[1]
                     attachments.append({
@@ -815,6 +888,7 @@ def send_transcript_email(session_id: str):
                         "name": f"customer_photo_{photo_count}.jpg"
                     })
 
+        # Build subject with key info
         name = session.get('soft_lead_name', '')
         form_status = "✅ FORM SUBMITTED" if session.get('form_submitted') else "💬 CHAT ONLY — no form"
         photo_note = f" 📷 {photo_count} photo(s)" if photo_count > 0 else ""
@@ -827,6 +901,7 @@ def send_transcript_email(session_id: str):
         )
         logger.info(f"📧 Transcript sent for session {session_id[:8]} ({msg_count} messages, {photo_count} photos)")
 
+        # Save to chat sessions log
         chat_sessions_log.append({
             "session_id": session_id[:8],
             "timestamp": session.get("created"),
@@ -838,29 +913,20 @@ def send_transcript_email(session_id: str):
         if len(chat_sessions_log) > 100:
             chat_sessions_log.pop(0)
 
-        # XERO — Auto-push qualified sessions
-        if msg_count >= 3:
-            try:
-                xero_result = push_session_to_xero(session_id, session)
-                if xero_result.get("success"):
-                    logger.info(f"📊 Xero: quote={xero_result.get('quote_number')}, project={xero_result.get('project_name')}")
-                else:
-                    logger.warning(f"⚠️ Xero auto-push failed: {xero_result.get('error')}")
-            except Exception as xe:
-                logger.error(f"Xero push error: {xe}")
-
     except Exception as e:
         logger.error(f"Transcript email error: {e}")
 
 def reset_transcript_timer(session_id: str):
+    """Reset the inactivity timer for a session — sends transcript after 8 min of silence"""
     if session_id in transcript_timers:
         transcript_timers[session_id].cancel()
-    t = threading.Timer(480, send_transcript_email, args=[session_id])
+    t = threading.Timer(480, send_transcript_email, args=[session_id])  # 8 minutes
     t.daemon = True
     t.start()
     transcript_timers[session_id] = t
 
 def send_session_start_notification(session_id: str, ip: str):
+    """Fire a notification email the moment someone starts chatting"""
     try:
         subject = f"👀 Someone is chatting on your website RIGHT NOW"
         body = (
@@ -877,6 +943,7 @@ def send_session_start_notification(session_id: str, ip: str):
         logger.error(f"Session start notification error: {e}")
 
 def send_brevo_email(subject: str, text_content: str, attachments: list = None, notify_email: str = None):
+    """Shared Brevo email sender"""
     brevo_api_key = os.getenv("BREVO_API_KEY")
     if not brevo_api_key:
         logger.warning("BREVO_API_KEY not set — skipping email notification.")
@@ -936,6 +1003,7 @@ def chat(req: Chat, request: Request):
     prompt = req.prompt.strip()
     session_id = req.session_id or generate_session_id()
 
+    # Rate limit check
     client_ip = request.client.host if request.client else "unknown"
     is_blocked, block_reason = check_rate_limit(client_ip)
     if is_blocked:
@@ -957,11 +1025,8 @@ def chat(req: Chat, request: Request):
             "soft_lead_name": "",
             "soft_lead_phone": "",
             "soft_lead_email": "",
-            "soft_lead_address": "",
-            "soft_lead_city": "",
-            "soft_lead_zip": "",
-            "fence_type": "",      # NEW: fence type for Xero project name
         }
+        # Fire session start notification in background
         ip = request.client.host if request.client else "unknown"
         t = threading.Thread(target=send_session_start_notification, args=[session_id, ip], daemon=True)
         t.start()
@@ -972,9 +1037,10 @@ def chat(req: Chat, request: Request):
         "timestamp": datetime.now().isoformat(),
         "type": "user",
         "message": prompt,
-        "images": req.images or []
+        "images": req.images or []  # store images with message for history replay
     })
 
+    # Reset inactivity transcript timer every message
     reset_transcript_timer(session_id)
 
     if not prompt:
@@ -1003,17 +1069,28 @@ def chat(req: Chat, request: Request):
             "message": ai_response
         })
 
-        # --- Extract all contact info + fence type from this message ---
-        extract_contact_info(prompt, active_sessions[session_id])
+        # Detect if customer shared contact info in chat (soft lead capture)
+        import re
+        phone_match = re.search(r'(\d{3}[-.\s]?\d{3}[-.\s]?\d{4})', prompt)
+        email_match = re.search(r'[\w.+-]+@[\w-]+\.[a-z]{2,}', prompt, re.IGNORECASE)
+        if phone_match and not active_sessions[session_id].get("soft_lead_phone"):
+            active_sessions[session_id]["soft_lead_phone"] = phone_match.group(1)
+        if email_match and not active_sessions[session_id].get("soft_lead_email"):
+            active_sessions[session_id]["soft_lead_email"] = email_match.group(0)
 
-        # --- Also scan the AI response for fence type if not yet set ---
-        # (bot may mention fence type in its reply before customer does)
-        if not active_sessions[session_id].get("fence_type"):
-            fence_from_response = extract_fence_type(ai_response)
-            if fence_from_response:
-                active_sessions[session_id]["fence_type"] = fence_from_response
+        # Detect name from common patterns like "I'm John" or "my name is Sarah"
+        name_match = re.search(r"(?:i'?m|my name is|this is|call me)\s+([A-Z][a-z]+)", prompt, re.IGNORECASE)
+        if name_match and not active_sessions[session_id].get("soft_lead_name"):
+            active_sessions[session_id]["soft_lead_name"] = name_match.group(1)
 
-        # --- Callback alert logic ---
+        # Detect callback confirmation — bot just confirmed callback AND we have name + phone
+        # Fire alert only when the AI response confirms "sent your info to the team" or similar
+        # meaning the bot has already collected all required contact info
+        phone_in_prompt = re.search(r'(\d{3}[-.\s]?\d{3}[-.\s]?\d{4}|\d{10})', prompt)
+        if phone_in_prompt:
+            active_sessions[session_id]["soft_lead_phone"] = phone_in_prompt.group(1)
+
+        # Check if the AI response just confirmed a callback (meaning it collected info)
         callback_confirmed = any(phrase in ai_response.lower() for phrase in [
             "sent your info to the team",
             "passed your info",
@@ -1029,8 +1106,9 @@ def chat(req: Chat, request: Request):
         if callback_confirmed and has_name and has_phone and not active_sessions[session_id].get("callback_alert_sent"):
             active_sessions[session_id]["callback_alert_sent"] = True
 
+            # Build full context from conversation
             all_user_msgs = [m["message"] for m in active_sessions[session_id]["messages"] if m["type"] == "user"]
-            conversation_context = "\n".join(all_user_msgs[-6:])
+            conversation_context = "\n".join(all_user_msgs[-6:])  # last 6 user messages
             name = active_sessions[session_id].get("soft_lead_name", "Unknown")
             phone = active_sessions[session_id].get("soft_lead_phone", "Unknown")
             email = active_sessions[session_id].get("soft_lead_email", "Not provided")
@@ -1061,6 +1139,7 @@ def chat(req: Chat, request: Request):
                 except Exception as e:
                     logger.error(f"Callback alert error: {e}")
 
+            # Collect photos from session for callback alert
             callback_photos = []
             photo_num = 0
             for msg in active_sessions[session_id].get("messages", []):
@@ -1081,6 +1160,8 @@ def chat(req: Chat, request: Request):
             )
             t.start()
 
+        # Determine if bot should ask for contact info (soft lead prompt)
+        # Trigger after 3+ messages if no contact info captured yet and no form submitted
         msg_count = active_sessions[session_id]["message_count"]
         has_contact = (active_sessions[session_id].get("soft_lead_phone") or
                       active_sessions[session_id].get("soft_lead_email"))
@@ -1095,7 +1176,7 @@ def chat(req: Chat, request: Request):
             "session_id": session_id,
             "message_count": msg_count,
             "business": BUSINESS_NAME,
-            "show_soft_capture": show_soft_capture
+            "show_soft_capture": show_soft_capture  # frontend uses this to show contact prompt
         }
 
     except requests.exceptions.Timeout:
@@ -1190,11 +1271,13 @@ async def submit_lead_with_photos(
     photo_3: UploadFile = File(default=None),
     photo_4: UploadFile = File(default=None),
 ):
+    """Handle lead form submissions with optional photo attachments"""
     try:
         ip = request.client.host if request.client else ""
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         lead_id = str(uuid.uuid4())[:8]
 
+        # Collect uploaded photos and encode as base64 for Brevo
         photos = []
         for photo in [photo_0, photo_1, photo_2, photo_3, photo_4]:
             if photo and photo.filename:
@@ -1313,6 +1396,7 @@ def get_recent_leads():
 
 @app.get("/admin/sessions")
 def get_chat_sessions():
+    """Return all chat sessions including chat-only (no form submitted)"""
     sessions = []
     for sid, sess in active_sessions.items():
         msg_count = sess.get("message_count", 0)
@@ -1327,7 +1411,6 @@ def get_chat_sessions():
             "soft_lead_name": sess.get("soft_lead_name", ""),
             "soft_lead_phone": sess.get("soft_lead_phone", ""),
             "soft_lead_email": sess.get("soft_lead_email", ""),
-            "fence_type": sess.get("fence_type", ""),
             "ip": sess.get("ip", ""),
             "preview": sess["messages"][-1]["message"][:120] if sess.get("messages") else ""
         })
@@ -1341,6 +1424,8 @@ def get_chat_sessions():
 
 @app.get("/admin/transcript/{session_id}")
 def get_transcript(session_id: str):
+    """Get full transcript for a session"""
+    # Find by short ID
     full_sid = None
     for sid in active_sessions:
         if sid.startswith(session_id) or sid[:8] == session_id:
@@ -1359,123 +1444,6 @@ def get_contact_info():
         "website": WEBSITE, "service_area": SERVICE_AREA,
         "quick_help": BUSINESS_EMAIL
     })
-
-
-# ----------------------------
-# SESSION INFO — for pre-filling the Xero quote modal
-# ----------------------------
-@app.get("/session-info/{session_id}")
-def get_session_info(session_id: str):
-    """Return captured contact info so the frontend can pre-fill the quote modal."""
-    full_sid = None
-    for sid in active_sessions:
-        if sid.startswith(session_id) or sid[:8] == session_id:
-            full_sid = sid
-            break
-    if not full_sid:
-        return JSONResponse({})
-    sess = active_sessions[full_sid]
-    name = sess.get("soft_lead_name", "")
-    name_parts = name.split(" ", 1) if name else ["", ""]
-    return JSONResponse({
-        "first_name": name_parts[0] if name_parts[0] else "",
-        "last_name":  name_parts[1] if len(name_parts) > 1 else "",
-        "email":      sess.get("soft_lead_email", ""),
-        "phone":      sess.get("soft_lead_phone", ""),
-        "address":    sess.get("soft_lead_address", ""),
-        "city":       sess.get("soft_lead_city", ""),
-        "state":      "TX",
-        "zip":        sess.get("soft_lead_zip", ""),
-        "fence_type": sess.get("fence_type", ""),   # NEW: passed to Xero for project name
-    })
-
-
-# ----------------------------
-# XERO ROUTES
-# ----------------------------
-@app.get("/xero/auth")
-def xero_auth():
-    return RedirectResponse(url=get_auth_url())
-
-@app.get("/xero/callback")
-def xero_callback(code: str = None, error: str = None, state: str = None):
-    if error:
-        return JSONResponse({"error": error}, status_code=400)
-    if not code:
-        return JSONResponse({"error": "No code received"}, status_code=400)
-    token = exchange_code_for_token(code)
-    if not token:
-        return JSONResponse({"error": "Token exchange failed"}, status_code=500)
-    return JSONResponse({
-        "success": True,
-        "message": "✅ Xero connected! Bot will now auto-create contacts, projects, and quotes.",
-        "next_step": "Check your Render logs for the XERO_TOKEN_DATA value and paste it into your environment variables."
-    })
-
-@app.get("/xero/status")
-def xero_status():
-    token = load_token()
-    if not token:
-        return JSONResponse({"connected": False, "connect_url": "/xero/auth"})
-    return JSONResponse({"connected": True, "token_saved_at": token.get("saved_at")})
-
-@app.post("/xero/capture-and-push")
-async def xero_capture_and_push(request: Request):
-    """
-    Receives full contact info from the chat popup form.
-    Creates Contact → Project → Quote in Xero in correct order.
-    """
-    try:
-        body = await request.json()
-        session_id = body.get("session_id", "")
-        contact_info = {
-            "first_name": body.get("first_name", "").strip(),
-            "last_name":  body.get("last_name", "").strip(),
-            "email":      body.get("email", "").strip(),
-            "phone":      body.get("phone", "").strip(),
-            "address":    body.get("address", "").strip(),
-            "city":       body.get("city", "").strip(),
-            "state":      body.get("state", "TX").strip(),
-            "zip":        body.get("zip", "").strip(),
-        }
-
-        # Find the session for transcript parsing
-        full_sid = None
-        for sid in active_sessions:
-            if sid.startswith(session_id) or sid[:8] == session_id:
-                full_sid = sid
-                break
-
-        session_data = active_sessions.get(full_sid, {"messages": []})
-        result = push_to_xero_with_contact(contact_info, session_data)
-
-        # Update session with confirmed contact info
-        if full_sid and full_sid in active_sessions:
-            name = f"{contact_info['first_name']} {contact_info['last_name']}".strip()
-            active_sessions[full_sid]["soft_lead_name"] = name
-            active_sessions[full_sid]["soft_lead_email"] = contact_info["email"]
-            active_sessions[full_sid]["soft_lead_phone"] = contact_info["phone"]
-            active_sessions[full_sid]["soft_lead_address"] = contact_info["address"]
-            active_sessions[full_sid]["soft_lead_city"] = contact_info["city"]
-            active_sessions[full_sid]["soft_lead_zip"] = contact_info["zip"]
-
-        return JSONResponse(result)
-    except Exception as e:
-        logger.error(f"Xero capture-and-push error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.post("/xero/push-session/{session_id}")
-def xero_push_session(session_id: str):
-    full_sid = None
-    for sid in active_sessions:
-        if sid.startswith(session_id) or sid[:8] == session_id:
-            full_sid = sid
-            break
-    if not full_sid:
-        raise HTTPException(status_code=404, detail="Session not found")
-    result = push_session_to_xero(full_sid, active_sessions[full_sid])
-    return JSONResponse(result)
-
 
 if __name__ == "__main__":
     import uvicorn
