@@ -465,7 +465,7 @@ WOOD FENCE — PINE (PTP = Pressure Treated Pine)
 =================================================================
 TEAR-OUT / DEMO
 =================================================================
-- $2.00/LF to remove existing fence
+- $4.00/LF to remove existing fence
 - Always ask if there is an existing fence to remove
 
 =================================================================
@@ -673,7 +673,7 @@ ALUMINUM NOTES:
 HOW TO CALCULATE A QUOTE:
 1. Start with base LF price
 2. Add any applicable add-ons
-3. Add tear-out if replacing old fence ($2/LF)
+3. Add tear-out if replacing old fence ($4/LF)
 4. Add $75 delivery
 5. Add gate costs
 6. Show the math clearly
