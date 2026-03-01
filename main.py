@@ -840,6 +840,11 @@ def build_transcript_email(session_id: str) -> str:
         lines.append(f"Phone: {session['soft_lead_phone']}")
     if session.get('soft_lead_email'):
         lines.append(f"Email: {session['soft_lead_email']}")
+    if session.get('soft_lead_address') or session.get('soft_lead_city') or session.get('soft_lead_zip'):
+        addr_parts = [p for p in [session.get('soft_lead_address',''), session.get('soft_lead_city',''), session.get('soft_lead_zip','')] if p]
+        lines.append(f"Address: {', '.join(addr_parts)}")
+    if session.get('fence_type'):
+        lines.append(f"Fence Type: {session['fence_type']}")
     lines.append(f"Form Submitted: {'YES' if session.get('form_submitted') else 'NO — chat only'}")
     lines.append(f"IP: {session.get('ip', 'unknown')}")
     lines.append("")
@@ -1025,6 +1030,10 @@ def chat(req: Chat, request: Request):
             "soft_lead_name": "",
             "soft_lead_phone": "",
             "soft_lead_email": "",
+            "soft_lead_address": "",
+            "soft_lead_city": "",
+            "soft_lead_zip": "",
+            "fence_type": "",
         }
         # Fire session start notification in background
         ip = request.client.host if request.client else "unknown"
@@ -1078,10 +1087,47 @@ def chat(req: Chat, request: Request):
         if email_match and not active_sessions[session_id].get("soft_lead_email"):
             active_sessions[session_id]["soft_lead_email"] = email_match.group(0)
 
-        # Detect name from common patterns like "I'm John" or "my name is Sarah"
-        name_match = re.search(r"(?:i'?m|my name is|this is|call me)\s+([A-Z][a-z]+)", prompt, re.IGNORECASE)
-        if name_match and not active_sessions[session_id].get("soft_lead_name"):
-            active_sessions[session_id]["soft_lead_name"] = name_match.group(1)
+        # Detect name — "I'm John Smith", "my name is Sarah", "this is Mark Juckett", or "Name: John Smith"
+        name_match = re.search(r"(?:i'?m|my name is|this is|call me|name[:\s]+)\s*([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)", prompt, re.IGNORECASE)
+        # Also catch "Customer: John Smith" or names given upfront in a message
+        name_match2 = re.search(r"^([A-Z][a-z]+\s+[A-Z][a-z]+)(?:\s*[,.]|\s+here|\s+at|\s*$)", prompt.strip())
+        detected_name = None
+        if name_match:
+            detected_name = name_match.group(1).strip()
+        elif name_match2:
+            detected_name = name_match2.group(1).strip()
+        if detected_name and not active_sessions[session_id].get("soft_lead_name"):
+            active_sessions[session_id]["soft_lead_name"] = detected_name
+
+        # Detect address (street number + street name)
+        addr_match = re.search(r"\b(\d{3,5}\s+[A-Za-z][\w\s]{3,40}(?:road|rd|street|st|drive|dr|lane|ln|blvd|boulevard|way|court|ct|ave|avenue|circle|cir))", prompt, re.IGNORECASE)
+        if addr_match and not active_sessions[session_id].get("soft_lead_address"):
+            active_sessions[session_id]["soft_lead_address"] = addr_match.group(1).strip()
+
+        # Detect city (Kingwood, Humble, etc.)
+        city_match = re.search(r"\b(Kingwood|Humble|Houston|The Woodlands|Conroe|Tomball|Cypress|Spring|Katy|Sugar Land|Magnolia|Atascocita|New Caney|Huffman|Crosby)\b", prompt, re.IGNORECASE)
+        if city_match and not active_sessions[session_id].get("soft_lead_city"):
+            active_sessions[session_id]["soft_lead_city"] = city_match.group(1)
+
+        # Detect zip code
+        zip_match = re.search(r"\b(7[0-9]{4})\b", prompt)
+        if zip_match and not active_sessions[session_id].get("soft_lead_zip"):
+            active_sessions[session_id]["soft_lead_zip"] = zip_match.group(1)
+
+        # Detect fence type from conversation
+        fence_type_map = [
+            (r"emily|antebellum|aluminum|ornamental|decorative metal", "Emily Aluminum"),
+            (r"black vinyl chain link|black chain link|vinyl chain link", "Black Vinyl Chain Link"),
+            (r"chain link|chain-link", "Chain Link"),
+            (r"vinyl fence|vinyl privacy|bufftech", "Vinyl"),
+            (r"cedar|board.on.board|wood fence|wood privacy", "Cedar Wood"),
+            (r"pressure treated|pine fence|PTP", "Pressure Treated Pine"),
+        ]
+        if not active_sessions[session_id].get("fence_type"):
+            for pattern, label in fence_type_map:
+                if re.search(pattern, prompt, re.IGNORECASE):
+                    active_sessions[session_id]["fence_type"] = label
+                    break
 
         # Detect callback confirmation — bot just confirmed callback AND we have name + phone
         # Fire alert only when the AI response confirms "sent your info to the team" or similar
@@ -1436,6 +1482,31 @@ def get_transcript(session_id: str):
     transcript = build_transcript_email(full_sid)
     return JSONResponse({"transcript": transcript, "session_id": session_id})
 
+@app.get("/session-info/{session_id}")
+def get_session_info(session_id: str):
+    """Return captured contact info for a session — used by frontend to prefill forms"""
+    # Find by full or short ID
+    full_sid = None
+    for sid in active_sessions:
+        if sid == session_id or sid.startswith(session_id) or sid[:8] == session_id:
+            full_sid = sid
+            break
+    if not full_sid:
+        return JSONResponse({})
+    sess = active_sessions[full_sid]
+    name = sess.get("soft_lead_name", "")
+    name_parts = name.split(" ", 1) if name else ["", ""]
+    return JSONResponse({
+        "first_name": name_parts[0],
+        "last_name": name_parts[1] if len(name_parts) > 1 else "",
+        "phone": sess.get("soft_lead_phone", ""),
+        "email": sess.get("soft_lead_email", ""),
+        "address": sess.get("soft_lead_address", ""),
+        "city": sess.get("soft_lead_city", ""),
+        "zip": sess.get("soft_lead_zip", ""),
+        "fence_type": sess.get("fence_type", ""),
+    })
+
 @app.get("/contact-info")
 def get_contact_info():
     return JSONResponse({
@@ -1444,6 +1515,88 @@ def get_contact_info():
         "website": WEBSITE, "service_area": SERVICE_AREA,
         "quick_help": BUSINESS_EMAIL
     })
+
+# ----------------------------
+# XERO ROUTES
+# ----------------------------
+try:
+    from xero_integration import get_auth_url, exchange_code_for_token, get_valid_token, push_session_to_xero, load_token, push_to_xero_with_contact
+    XERO_ENABLED = True
+    logger.info("✅ Xero integration loaded")
+except ImportError:
+    XERO_ENABLED = False
+    logger.warning("⚠️ xero_integration.py not found — Xero routes disabled")
+
+if XERO_ENABLED:
+    @app.get("/xero/auth")
+    def xero_auth():
+        from fastapi.responses import RedirectResponse
+        url = get_auth_url()
+        return RedirectResponse(url)
+
+    @app.get("/xero/callback")
+    def xero_callback(code: str = None, state: str = None, error: str = None):
+        if error or not code:
+            return JSONResponse({"error": error or "No code received"}, status_code=400)
+        token = exchange_code_for_token(code)
+        if not token:
+            return JSONResponse({"error": "Token exchange failed"}, status_code=500)
+        return JSONResponse({
+            "success": True,
+            "message": "✅ Xero connected! Bot will now auto-create contacts, projects, and quotes.",
+            "next_step": "Check your Render logs for the XERO_TOKEN_DATA value and paste it into your environment variables."
+        })
+
+    @app.get("/xero/status")
+    def xero_status():
+        token = get_valid_token()
+        if not token:
+            return JSONResponse({"connected": False, "message": "Not connected — visit /xero/auth"})
+        import time
+        saved_at = token.get("acquired_at")
+        return JSONResponse({
+            "connected": True,
+            "token_saved_at": datetime.fromtimestamp(saved_at).isoformat() if saved_at else None
+        })
+
+    @app.post("/xero/push-session/{session_id}")
+    def xero_push_session(session_id: str):
+        full_sid = None
+        for sid in active_sessions:
+            if sid.startswith(session_id) or sid[:8] == session_id:
+                full_sid = sid
+                break
+        if not full_sid:
+            raise HTTPException(status_code=404, detail="Session not found")
+        result = push_session_to_xero(full_sid, active_sessions[full_sid])
+        return JSONResponse(result)
+
+    @app.post("/xero/capture-and-push")
+    async def xero_capture_and_push(request: Request):
+        try:
+            body = await request.json()
+            session_id = body.get("session_id", "")
+            contact_info = {
+                "first_name": body.get("first_name", ""),
+                "last_name": body.get("last_name", ""),
+                "email": body.get("email", ""),
+                "phone": body.get("phone", ""),
+                "address": body.get("address", ""),
+                "city": body.get("city", ""),
+                "state": body.get("state", "TX"),
+                "zip": body.get("zip", ""),
+            }
+            # Find session data for fence type and messages
+            session_data = {}
+            for sid in active_sessions:
+                if sid == session_id or sid.startswith(session_id) or sid[:8] == session_id:
+                    session_data = active_sessions[sid]
+                    break
+            result = push_to_xero_with_contact(contact_info, session_data)
+            return JSONResponse(result)
+        except Exception as e:
+            logger.error(f"Xero capture-and-push error: {e}")
+            return JSONResponse({"success": False, "error": str(e)}, status_code=500)
 
 if __name__ == "__main__":
     import uvicorn
