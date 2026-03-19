@@ -124,6 +124,13 @@ class LiveQuoteRequest(BaseModel):
     phone: str = Field(..., min_length=10, max_length=20)
     service_needed: str = Field(..., min_length=1, max_length=200)
 
+class ContactGate(BaseModel):
+    first_name: str = Field(..., min_length=1, max_length=100)
+    last_name: str = Field(..., min_length=1, max_length=100)
+    address: str = Field(..., min_length=3, max_length=300)
+    email: str = Field(..., min_length=5, max_length=200)
+    session_id: str
+
 
 # ----------------------------
 # STARTUP/SHUTDOWN
@@ -1034,6 +1041,8 @@ def chat(req: Chat, request: Request):
             "soft_lead_city": "",
             "soft_lead_zip": "",
             "fence_type": "",
+            "gate_passed": False,
+            "held_response": "",
         }
         # Fire session start notification in background
         ip = request.client.host if request.client else "unknown"
@@ -1206,23 +1215,27 @@ def chat(req: Chat, request: Request):
             )
             t.start()
 
-        # Determine if bot should ask for contact info (soft lead prompt)
-        # Trigger after 3+ messages if no contact info captured yet and no form submitted
+        # Response gate: after message 1, require contact info before delivering more answers
         msg_count = active_sessions[session_id]["message_count"]
-        has_contact = (active_sessions[session_id].get("soft_lead_phone") or
-                      active_sessions[session_id].get("soft_lead_email"))
-        show_soft_capture = (
-            msg_count == 4 and
-            not has_contact and
-            not active_sessions[session_id].get("form_submitted")
-        )
+        gate_passed = bool(active_sessions[session_id].get("gate_passed"))
+
+        if msg_count >= 2 and not gate_passed:
+            # Hold the AI response server-side
+            active_sessions[session_id]["held_response"] = ai_response
+            return {
+                "response": "",
+                "session_id": session_id,
+                "message_count": msg_count,
+                "business": BUSINESS_NAME,
+                "gate": True
+            }
 
         return {
             "response": ai_response,
             "session_id": session_id,
             "message_count": msg_count,
             "business": BUSINESS_NAME,
-            "show_soft_capture": show_soft_capture  # frontend uses this to show contact prompt
+            "gate": False
         }
 
     except requests.exceptions.Timeout:
@@ -1393,6 +1406,81 @@ async def submit_lead_with_photos(
     except Exception as e:
         logger.error(f"Lead with photos submission error: {e}")
         raise HTTPException(status_code=500, detail="Failed to submit lead request")
+
+
+@app.post("/submit-contact-info")
+def submit_contact_info(req: ContactGate, request: Request):
+    session_id = req.session_id
+
+    # Find session
+    full_sid = None
+    for sid in active_sessions:
+        if sid == session_id or sid.startswith(session_id) or sid[:8] == session_id:
+            full_sid = sid
+            break
+
+    if not full_sid:
+        return JSONResponse(status_code=404, content={"error": "Session not found"})
+
+    sess = active_sessions[full_sid]
+
+    # Store contact info in session
+    full_name = f"{req.first_name} {req.last_name}".strip()
+    sess["soft_lead_name"] = full_name
+    sess["user_name"] = full_name
+    sess["soft_lead_email"] = req.email
+    sess["soft_lead_address"] = req.address
+    sess["gate_passed"] = True
+
+    # Save to Google Sheets as a lead
+    try:
+        ip = request.client.host if request.client else "unknown"
+        all_user_msgs = [m["content"] for m in sess.get("messages", []) if m.get("role") == "user"]
+        project_context = " | ".join(all_user_msgs[-4:]) if all_user_msgs else "Chat inquiry"
+
+        append_lead_to_sheets([
+            datetime.now().isoformat(),
+            ip,
+            full_name,
+            "",
+            req.email,
+            req.address,
+            "Chat",
+            f"[Chat Gate Lead] {project_context}",
+            full_sid,
+            "new"
+        ])
+        logger.info(f"Gate contact info saved for session {full_sid[:8]}: {full_name}")
+    except Exception as e:
+        logger.error(f"Failed to save gate contact to sheets: {e}")
+
+    # Send notification email
+    try:
+        all_user_msgs = [m["content"] for m in sess.get("messages", []) if m.get("role") == "user"]
+        conversation_context = "\n".join(all_user_msgs[-6:])
+        t = threading.Thread(
+            target=send_callback_alert,
+            args=["", full_name, req.email, f"Address: {req.address}\n\n{conversation_context}", full_sid, []],
+            daemon=True
+        )
+        t.start()
+    except Exception as e:
+        logger.error(f"Failed to send gate notification: {e}")
+
+    # Release the held response
+    held = sess.get("held_response", "")
+    sess["held_response"] = ""
+
+    if not held:
+        held = "Thanks! I've got your info. Now, let me help you with your project. What were you asking about?"
+
+    return {
+        "response": held,
+        "session_id": full_sid,
+        "message_count": sess["message_count"],
+        "business": BUSINESS_NAME,
+        "gate": False
+    }
 
 
 @app.post("/live-quote")
