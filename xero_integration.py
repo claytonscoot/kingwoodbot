@@ -40,13 +40,73 @@ CONNECTIONS_URL = "https://api.xero.com/connections"
 def save_token(token_data: dict):
     token_data["acquired_at"] = time.time()
     encoded = json.dumps(token_data)
+
+    # 1. Save to local file (works until next deploy)
     try:
         with open(XERO_TOKEN_FILE, "w") as f:
             f.write(encoded)
     except Exception as e:
         logger.warning(f"Local token file save failed: {e}")
+
+    # 2. Auto-update Render env var so it survives redeploys
+    _update_render_env_var("XERO_TOKEN_DATA", encoded)
+
     logger.info("Xero token saved")
     logger.info(f"COPY THIS INTO RENDER ENV VAR 'XERO_TOKEN_DATA' -> {encoded}")
+
+
+def _update_render_env_var(key: str, value: str):
+    """Automatically update a Render environment variable via Render API"""
+    try:
+        render_api_key = os.getenv("RENDER_API_KEY", "").strip()
+        render_service_id = os.getenv("RENDER_SERVICE_ID", "").strip()
+        if not render_api_key or not render_service_id:
+            logger.warning("RENDER_API_KEY or RENDER_SERVICE_ID not set — skipping auto env update")
+            return
+
+        # Get current env vars
+        resp = requests.get(
+            f"https://api.render.com/v1/services/{render_service_id}/env-vars",
+            headers={"Authorization": f"Bearer {render_api_key}", "Accept": "application/json"},
+            timeout=10
+        )
+        if not resp.ok:
+            logger.warning(f"Render API get env vars failed: {resp.status_code}")
+            return
+
+        env_vars = resp.json()
+
+        # Build updated list — replace the target key, keep everything else
+        updated = []
+        found = False
+        for item in env_vars:
+            ev = item.get("envVar", item)
+            k = ev.get("key", "")
+            if k == key:
+                updated.append({"key": key, "value": value})
+                found = True
+            else:
+                updated.append({"key": k, "value": ev.get("value", "")})
+        if not found:
+            updated.append({"key": key, "value": value})
+
+        # PUT updated env vars back
+        put_resp = requests.put(
+            f"https://api.render.com/v1/services/{render_service_id}/env-vars",
+            headers={
+                "Authorization": f"Bearer {render_api_key}",
+                "Accept": "application/json",
+                "Content-Type": "application/json"
+            },
+            json=updated,
+            timeout=10
+        )
+        if put_resp.ok:
+            logger.info("✅ Render XERO_TOKEN_DATA env var updated automatically")
+        else:
+            logger.warning(f"Render env var update failed: {put_resp.status_code} {put_resp.text[:200]}")
+    except Exception as e:
+        logger.warning(f"Render env var auto-update error: {e}")
 
 
 def load_token() -> Optional[dict]:
