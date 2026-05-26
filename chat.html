@@ -8,20 +8,17 @@
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Segoe UI', sans-serif; background: #1a1a1a; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; padding: 20px; gap: 20px; flex-wrap: wrap; }
 
-  /* ---- CHAT PANEL ---- */
   .chat-panel { background: #1e1e1e; border-radius: 16px; width: 100%; max-width: 520px; display: flex; flex-direction: column; height: 850px; overflow: hidden; box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
   .chat-header { background: #e87722; color: white; padding: 18px 20px; }
   .chat-header h2 { font-size: 18px; font-weight: 700; }
   .chat-header p { font-size: 13px; opacity: 0.9; margin-top: 3px; }
 
-  /* Gallery bar */
   .gallery-bar { background: #2a2a2a; padding: 10px 12px; border-bottom: 1px solid #333; }
   .gallery-bar p { color: #aaa; font-size: 11px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
   .style-buttons { display: flex; gap: 6px; flex-wrap: wrap; }
   .style-btn { background: #333; color: #ddd; border: 1px solid #444; border-radius: 20px; padding: 5px 12px; font-size: 12px; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
   .style-btn:hover, .style-btn.active { background: #e87722; color: white; border-color: #e87722; }
 
-  /* Photo modal */
   .photo-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; justify-content: center; align-items: center; padding: 20px; }
   .photo-modal.open { display: flex; }
   .modal-content { background: #1e1e1e; border-radius: 16px; max-width: 680px; width: 100%; padding: 20px; position: relative; }
@@ -37,7 +34,6 @@
   .modal-ask-btn { display: block; width: 100%; margin-top: 12px; background: #e87722; color: white; border: none; border-radius: 10px; padding: 12px; font-size: 14px; font-weight: 600; cursor: pointer; }
   .modal-ask-btn:hover { background: #cf6a1a; }
 
-  /* Chat messages */
   .chat-messages { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
   .msg { max-width: 85%; padding: 12px 15px; border-radius: 14px; font-size: 14px; line-height: 1.5; }
   .msg.bot { background: #2a2a2a; color: #e8e8e8; align-self: flex-start; border-bottom-left-radius: 4px; }
@@ -45,129 +41,43 @@
   .msg.loading { color: #888; font-style: italic; }
   .msg strong { font-weight: 700; }
 
-  /* Quick replies */
   .quick-replies { padding: 8px 12px; display: flex; gap: 6px; flex-wrap: wrap; border-top: 1px solid #2a2a2a; }
   .qr-btn { background: #2a2a2a; color: #ccc; border: 1px solid #3a3a3a; border-radius: 16px; padding: 6px 14px; font-size: 12px; cursor: pointer; transition: all 0.2s; }
   .qr-btn:hover { background: #e87722; color: white; border-color: #e87722; }
 
-  /* Input area */
   .chat-input-area { padding: 12px 16px; border-top: 1px solid #2a2a2a; display: flex; gap: 10px; align-items: flex-end; }
   .chat-input-area textarea { flex: 1; background: #2a2a2a; color: white; border: 2px solid #e87722; border-radius: 12px; padding: 12px 14px; font-size: 15px; resize: none; outline: none; font-family: inherit; max-height: 120px; min-height: 60px; line-height: 1.5; }
   .chat-input-area textarea::placeholder { color: #888; font-size: 13px; }
   .send-btn { background: #e87722; color: white; border: none; border-radius: 12px; padding: 10px 22px; font-size: 15px; font-weight: 700; cursor: pointer; white-space: nowrap; height: 60px; }
   .send-btn:hover { background: #cf6a1a; }
 
-  /* Paste indicator */
-  .paste-hint {
-    font-size: 11px;
-    color: #555;
-    text-align: center;
-    padding: 2px 0 0;
-  }
+  .paste-hint { font-size: 11px; color: #555; text-align: center; padding: 2px 0 0; }
 
-  /* Chat input photo attach */
   .chat-input-wrap { flex: 1; display: flex; flex-direction: column; gap: 6px; }
   .chat-input-btns { display: flex; flex-direction: column; gap: 6px; align-items: stretch; justify-content: flex-end; }
-  .attach-btn {
-    background: #2a2a2a;
-    border: 1px solid #3a3a3a;
-    color: #aaa;
-    border-radius: 10px;
-    font-size: 18px;
-    cursor: pointer;
-    height: 40px;
-    width: 44px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s;
-    flex-shrink: 0;
-  }
+  .attach-btn { background: #2a2a2a; border: 1px solid #3a3a3a; color: #aaa; border-radius: 10px; font-size: 18px; cursor: pointer; height: 40px; width: 44px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; flex-shrink: 0; }
   .attach-btn:hover { border-color: #e87722; color: #e87722; background: rgba(232,119,34,0.08); }
   .chat-upload-bar { display: flex; flex-wrap: wrap; gap: 6px; }
-  .chat-thumb {
-    position: relative;
-    width: 52px;
-    height: 52px;
-    border-radius: 8px;
-    overflow: hidden;
-    border: 1px solid #3a3a3a;
-    flex-shrink: 0;
-  }
+  .chat-thumb { position: relative; width: 52px; height: 52px; border-radius: 8px; overflow: hidden; border: 1px solid #3a3a3a; flex-shrink: 0; }
   .chat-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
-  .chat-thumb .remove-chat-thumb {
-    position: absolute;
-    top: 1px; right: 1px;
-    background: rgba(0,0,0,0.75);
-    color: white;
-    border: none;
-    border-radius: 50%;
-    width: 16px; height: 16px;
-    font-size: 10px;
-    cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-  }
-  .chat-photo-msg {
-    display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px;
-  }
-  .chat-photo-msg img {
-    width: 80px; height: 80px;
-    object-fit: cover;
-    border-radius: 8px;
-    border: 1px solid #444;
-  }
+  .chat-thumb .remove-chat-thumb { position: absolute; top: 1px; right: 1px; background: rgba(0,0,0,0.75); color: white; border: none; border-radius: 50%; width: 16px; height: 16px; font-size: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  .chat-photo-msg { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .chat-photo-msg img { width: 80px; height: 80px; object-fit: cover; border-radius: 8px; border: 1px solid #444; }
 
-  /* Chat panel expands when input is focused */
-  .chat-panel.input-focused .chat-messages {
-    height: 420px;
-    transition: height 0.3s ease;
-  }
-  .chat-messages {
-    transition: height 0.3s ease;
-  }
-  .chat-input-area textarea.expanded {
-    min-height: 80px;
-    transition: min-height 0.3s ease;
-  }
-  /* On mobile, expanded state */
-  @media (max-width: 768px) {
-    .chat-panel.input-focused .chat-messages {
-      height: 320px;
-    }
-    .chat-panel.input-focused {
-      height: auto;
-    }
-  }
+  .chat-panel.input-focused .chat-messages { height: 420px; transition: height 0.3s ease; }
+  .chat-messages { transition: height 0.3s ease; }
+  .chat-input-area textarea.expanded { min-height: 80px; transition: min-height 0.3s ease; }
 
-  /* Quote CTA button inside chat bubble */
-  .quote-cta {
-    display: block;
-    margin-top: 12px;
-    background: #e87722;
-    color: white;
-    border: none;
-    border-radius: 10px;
-    padding: 10px 18px;
-    font-size: 13px;
-    font-weight: 700;
-    cursor: pointer;
-    width: 100%;
-    text-align: center;
-    animation: ctaPulse 2s ease-in-out infinite;
-  }
+  .quote-cta { display: block; margin-top: 12px; background: #e87722; color: white; border: none; border-radius: 10px; padding: 10px 18px; font-size: 13px; font-weight: 700; cursor: pointer; width: 100%; text-align: center; animation: ctaPulse 2s ease-in-out infinite; }
   .quote-cta:hover { background: #cf6a1a; animation: none; }
-  @keyframes ctaPulse {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(232,119,34,0.5); }
-    50% { box-shadow: 0 0 0 7px rgba(232,119,34,0); }
-  }
+  @keyframes ctaPulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(232,119,34,0.5); } 50% { box-shadow: 0 0 0 7px rgba(232,119,34,0); } }
 
-  /* ---- VIEW TABS ---- */
   .view-tabs { display: flex; border-bottom: 1px solid #333; }
   .view-tab { flex: 1; padding: 10px; background: #2a2a2a; color: #888; border: none; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
   .view-tab.active { background: #1e1e1e; color: #e87722; border-bottom: 2px solid #e87722; }
   .view-tab:not(.active):hover { background: #333; color: #ccc; }
 
-  /* ---- RESPONSE GATE ---- */
+  /* Gate card — kept in CSS but disabled in JS */
   .gate-card { background: #2a2a2a; border: 1px solid #e87722; border-radius: 12px; padding: 16px; margin: 8px 0; }
   .gate-card h3 { color: #e87722; font-size: 14px; margin-bottom: 8px; }
   .gate-card p { color: #aaa; font-size: 12px; margin-bottom: 12px; line-height: 1.4; }
@@ -179,7 +89,6 @@
   .gate-card .gate-submit:disabled { background: #555; cursor: not-allowed; }
   .gate-error { color: #ff6b6b; font-size: 11px; margin-top: 4px; display: none; }
 
-  /* ---- LEAD/QUOTE FORM (used in Quote tab) ---- */
   .lead-form { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
   .lead-form p.hint { color: #888; font-size: 12px; line-height: 1.5; }
   .lead-form input, .lead-form select, .lead-form textarea { width: 100%; background: #2a2a2a; color: white; border: 1px solid #3a3a3a; border-radius: 10px; padding: 10px 14px; font-size: 13px; outline: none; font-family: inherit; }
@@ -193,147 +102,66 @@
   .lead-footer { padding: 12px 16px; text-align: center; color: #555; font-size: 11px; border-top: 1px solid #2a2a2a; }
   .success-msg { display: none; background: #1a3a1a; border: 1px solid #2d6a2d; border-radius: 10px; padding: 16px; color: #7fca7f; font-size: 13px; text-align: center; line-height: 1.6; }
 
-  /* Image upload */
-  .upload-area {
-    border: 2px dashed #3a3a3a;
-    border-radius: 12px;
-    padding: 16px 12px;
-    text-align: center;
-    cursor: pointer;
-    transition: all 0.2s;
-    background: #222;
-  }
+  .upload-area { border: 2px dashed #3a3a3a; border-radius: 12px; padding: 16px 12px; text-align: center; cursor: pointer; transition: all 0.2s; background: #222; }
   .upload-area:hover, .upload-area.dragover { border-color: #e87722; background: rgba(232,119,34,0.06); }
   .upload-icon { font-size: 26px; margin-bottom: 6px; }
   .upload-label { font-size: 13px; font-weight: 600; color: #ddd; }
   .upload-sub { font-weight: 400; color: #888; }
-  .upload-hint { font-size: 11px; color: #666; margin-top: 3px; }
   .upload-previews { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 2px; }
-  .upload-thumb {
-    position: relative;
-    width: 72px;
-    height: 72px;
-    border-radius: 8px;
-    overflow: hidden;
-    border: 1px solid #3a3a3a;
-  }
+  .upload-thumb { position: relative; width: 72px; height: 72px; border-radius: 8px; overflow: hidden; border: 1px solid #3a3a3a; }
   .upload-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
-  .upload-thumb .remove-thumb {
-    position: absolute;
-    top: 2px; right: 2px;
-    background: rgba(0,0,0,0.7);
-    color: white;
-    border: none;
-    border-radius: 50%;
-    width: 18px; height: 18px;
-    font-size: 11px;
-    cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    line-height: 1;
-  }
+  .upload-thumb .remove-thumb { position: absolute; top: 2px; right: 2px; background: rgba(0,0,0,0.7); color: white; border: none; border-radius: 50%; width: 18px; height: 18px; font-size: 11px; cursor: pointer; display: flex; align-items: center; justify-content: center; line-height: 1; }
 
-  /* ---- MOBILE STYLES ---- */
+  /* Xero modal */
+  .xero-modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:2000; justify-content:center; align-items:center; padding:20px; }
+  .xero-modal-overlay.open { display:flex; }
+  .xero-modal { background:#1e1e1e; border-radius:16px; width:100%; max-width:480px; overflow:hidden; }
+  .xero-modal-header { background:#e87722; padding:16px 20px; display:flex; justify-content:space-between; align-items:center; }
+  .xero-modal-header h3 { color:white; font-size:16px; font-weight:700; margin:0; }
+  .xero-modal-header p { color:rgba(255,255,255,0.85); font-size:12px; margin:2px 0 0; }
+  .xero-modal-close { background:rgba(255,255,255,0.2); border:none; color:white; width:28px; height:28px; border-radius:50%; font-size:16px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+  .xero-modal-body { padding:20px; display:flex; flex-direction:column; gap:10px; }
+  .xero-modal-body input { width:100%; background:#2a2a2a; color:white; border:1px solid #3a3a3a; border-radius:10px; padding:11px 14px; font-size:13px; outline:none; font-family:inherit; }
+  .xero-modal-body input:focus { border-color:#e87722; }
+  .xero-modal-body input::placeholder { color:#666; }
+  .xero-row2 { display:flex; gap:8px; }
+  .xero-row2 input { flex:1; }
+  .xero-submit-btn { width:100%; background:#e87722; color:white; border:none; border-radius:10px; padding:13px; font-size:14px; font-weight:700; cursor:pointer; }
+  .xero-submit-btn:hover { background:#cf6a1a; }
+  .xero-submit-btn:disabled { background:#555; cursor:not-allowed; }
+  .xero-success { display:none; background:#1a3a1a; border:1px solid #2d6a2d; border-radius:10px; padding:16px; color:#7fca7f; font-size:13px; text-align:center; line-height:1.6; }
+  .xero-error-msg { color:#ff6b6b; font-size:12px; text-align:center; display:none; }
+
   @media (max-width: 768px) {
     body { padding: 12px 0 0; gap: 0; flex-direction: column; align-items: center; background: #111; }
-
-    /* Chat panel */
-    .chat-panel {
-      max-width: 100%;
-      width: 100%;
-      height: auto;
-      border-radius: 0;
-      overflow: hidden;
-      transition: none;
-      box-shadow: none;
-    }
-
-    /* Collapsed state: hide everything but the header */
-    .chat-panel.collapsed .gallery-bar,
-    .chat-panel.collapsed .chat-messages,
-    .chat-panel.collapsed .quick-replies,
-    .chat-panel.collapsed .chat-input-area,
-    .chat-panel.collapsed .chat-disclaimer {
-      display: none;
-    }
-
-    /* Header is the tap target */
-    .chat-header {
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      user-select: none;
-      -webkit-tap-highlight-color: transparent;
-      padding: 13px 16px;
-    }
-
+    .chat-panel { max-width: 100%; width: 100%; height: auto; border-radius: 0; overflow: hidden; box-shadow: none; }
+    .chat-panel.collapsed .gallery-bar, .chat-panel.collapsed .chat-messages, .chat-panel.collapsed .quick-replies, .chat-panel.collapsed .chat-input-area, .chat-panel.collapsed .chat-disclaimer { display: none; }
+    .chat-header { cursor: pointer; display: flex; align-items: center; justify-content: space-between; user-select: none; -webkit-tap-highlight-color: transparent; padding: 13px 16px; }
     .chat-header h2 { font-size: 14px; }
     .chat-header p { font-size: 11px; }
     .chat-header-text { flex: 1; }
-
-    .chat-toggle-icon {
-      font-size: 18px;
-      margin-left: 10px;
-      transition: transform 0.3s ease;
-      flex-shrink: 0;
-    }
-
+    .chat-toggle-icon { font-size: 18px; margin-left: 10px; transition: transform 0.3s ease; flex-shrink: 0; }
     .chat-panel.collapsed .chat-toggle-icon { transform: rotate(0deg); }
     .chat-panel:not(.collapsed) .chat-toggle-icon { transform: rotate(180deg); }
-
-    /* Gallery: single horizontal scrollable row, no wrapping */
     .gallery-bar { padding: 6px 10px; }
     .gallery-bar p { display: none; }
-    .style-buttons {
-      flex-wrap: nowrap;
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
-      scrollbar-width: none;
-      padding-bottom: 2px;
-      gap: 5px;
-    }
+    .style-buttons { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; padding-bottom: 2px; gap: 5px; }
     .style-buttons::-webkit-scrollbar { display: none; }
     .style-btn { font-size: 11px; padding: 4px 10px; flex-shrink: 0; }
-    .gallery-bar > a { font-size: 11px; margin-top: 4px; display: inline-block; }
-
-    /* Chat panel gets margin so it floats as its own card */
-    .chat-panel:not(.collapsed) {
-      margin: 0 12px;
-      width: calc(100% - 24px);
-      border-radius: 16px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
-    }
-    .chat-panel.collapsed {
-      margin: 12px 12px 0;
-      width: calc(100% - 24px);
-      border-radius: 16px;
-    }
-
-    /* Messages: fixed height, enough room to read */
-    .chat-messages {
-      height: 280px;
-      flex: none;
-      padding: 10px 12px;
-      gap: 8px;
-    }
-
-    /* Hide quick replies — save vertical space */
+    .chat-panel:not(.collapsed) { margin: 0 12px; width: calc(100% - 24px); border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
+    .chat-panel.collapsed { margin: 12px 12px 0; width: calc(100% - 24px); border-radius: 16px; }
+    .chat-messages { height: 280px; flex: none; padding: 10px 12px; gap: 8px; }
     .quick-replies { display: none; }
-
-    /* Compact input area */
     .chat-input-area { padding: 8px 10px; gap: 8px; }
     .chat-input-area textarea { min-height: 44px; max-height: 80px; font-size: 14px; padding: 10px 12px; }
     .send-btn { height: 44px; padding: 8px 16px; font-size: 14px; }
-
-    /* Chat panel quote tab */
     #quoteView .lead-form { padding: 12px; }
-
     .photo-grid { grid-template-columns: 1fr; }
-    /* Tab and quote view mobile */
     .view-tabs { font-size: 12px; }
     .view-tab { padding: 8px; }
-    #quoteView { padding: 0 12px; }
     .gate-card { margin: 6px 0; padding: 12px; }
+    .chat-panel.input-focused .chat-messages { height: 320px; }
+    .chat-panel.input-focused { height: auto; }
   }
 </style>
 </head>
@@ -351,6 +179,37 @@
   </div>
 </div>
 
+<!-- XERO QUOTE MODAL -->
+<div class="xero-modal-overlay" id="xeroModal" onclick="closeXeroModal(event)">
+  <div class="xero-modal">
+    <div class="xero-modal-header">
+      <div>
+        <h3>📋 Get Your Formal Quote</h3>
+        <p>Fill in any missing details — we'll reach out shortly</p>
+      </div>
+      <button class="xero-modal-close" onclick="document.getElementById('xeroModal').classList.remove('open')">×</button>
+    </div>
+    <div class="xero-modal-body">
+      <div id="xeroForm">
+        <div class="xero-row2">
+          <input type="text" id="xeroFirst" placeholder="First name *" />
+          <input type="text" id="xeroLast" placeholder="Last name *" />
+        </div>
+        <input type="tel" id="xeroPhone" placeholder="Phone number *" />
+        <input type="email" id="xeroEmail" placeholder="Email address *" />
+        <input type="text" id="xeroAddress" placeholder="Property address *" />
+        <div class="xero-row2">
+          <input type="text" id="xeroCity" placeholder="City" />
+          <input type="text" id="xeroZip" placeholder="Zip code *" />
+        </div>
+        <div class="xero-error-msg" id="xeroError"></div>
+        <button class="xero-submit-btn" id="xeroSubmitBtn" onclick="submitXeroContact()">Submit & Create Quote →</button>
+      </div>
+      <div class="xero-success" id="xeroSuccess"></div>
+    </div>
+  </div>
+</div>
+
 <!-- CHAT PANEL -->
 <div class="chat-panel" id="chatPanel">
   <div class="chat-header" id="chatHeaderToggle">
@@ -361,72 +220,70 @@
     <span class="chat-toggle-icon">▼</span>
   </div>
 
-  
-  <!-- VIEW TABS -->
   <div class="view-tabs">
     <button class="view-tab active" id="tabChat" onclick="switchTab('chat')">💬 Chat</button>
     <button class="view-tab" id="tabQuote" onclick="switchTab('quote')">📋 Request a Quote</button>
   </div>
 
   <div id="chatView" style="display:flex; flex-direction:column; flex:1; overflow:hidden;">
-  <div class="gallery-bar">
-    <p>Browse our work</p>
-    <div class="style-buttons">
-      <button class="style-btn" onclick="showGallery('wood')">🌲 Cedar/Wood</button>
-      <button class="style-btn" onclick="showGallery('metal')">⚙️ Metal/Steel</button>
-      <button class="style-btn" onclick="showGallery('chainlink')">🔗 Chain Link</button>
-      <button class="style-btn" onclick="showGallery('vinyl')">🤍 Vinyl</button>
-      <button class="style-btn" onclick="showGallery('gate')">🚪 Gates</button>
-      <button class="style-btn" onclick="showGallery('staining')">🖌️ Staining</button>
-      <button class="style-btn" onclick="showGallery('powerwashing')">💧 Power Washing</button>
-      <button class="style-btn" onclick="showGallery('lighting')">🎄 Christmas Lights</button>
-      <button class="style-btn" onclick="showGallery('firewood')">🪵 Firewood</button>
-      <button class="style-btn" onclick="showGallery('deck')">🪵 Deck</button>
+    <div class="gallery-bar">
+      <p>Browse our work</p>
+      <div class="style-buttons">
+        <button class="style-btn" onclick="showGallery('wood')">🌲 Cedar/Wood</button>
+        <button class="style-btn" onclick="showGallery('metal')">⚙️ Metal/Steel</button>
+        <button class="style-btn" onclick="showGallery('chainlink')">🔗 Chain Link</button>
+        <button class="style-btn" onclick="showGallery('vinyl')">🤍 Vinyl</button>
+        <button class="style-btn" onclick="showGallery('gate')">🚪 Gates</button>
+        <button class="style-btn" onclick="showGallery('staining')">🖌️ Staining</button>
+        <button class="style-btn" onclick="showGallery('powerwashing')">💧 Power Washing</button>
+        <button class="style-btn" onclick="showGallery('lighting')">🎄 Christmas Lights</button>
+        <button class="style-btn" onclick="showGallery('firewood')">🪵 Firewood</button>
+        <button class="style-btn" onclick="showGallery('deck')">🪵 Deck</button>
+      </div>
+      <a href="https://astrooutdoordesigns.com/our-work/" target="_blank" style="display:inline-block; margin-top:8px; color:#e87722; font-size:12px; text-decoration:none; font-weight:600;">📷 View Our Full Photo Gallery →</a>
     </div>
-    <a href="https://astrooutdoordesigns.com/our-work/" target="_blank" style="display:inline-block; margin-top:8px; color:#e87722; font-size:12px; text-decoration:none; font-weight:600;">📷 View Our Full Photo Gallery →</a>
+
+    <div class="chat-messages" id="chatMessages">
+      <div class="msg bot">
+        Hi — we can help with a quote.<br>
+        To dial this in quick, tell us:
+        <br>• Approx length (feet)
+        <br>• Height (6/7/8ft)
+        <br>• Style (standard / board-on-board / top cap)
+        <br>• Steel posts or wood posts
+        <br>• Any gates (walk / double / sliding)
+      </div>
+    </div>
+
+    <div class="quick-replies">
+      <button class="qr-btn" onclick="quickSend('Cedar fence quote')">Cedar fence quote</button>
+      <button class="qr-btn" onclick="quickSend('Steel posts')">Steel posts</button>
+      <button class="qr-btn" onclick="quickSend('Gate help')">Gate help</button>
+      <button class="qr-btn" onclick="quickSend('Gate repair')">Gate repair</button>
+      <button class="qr-btn" onclick="quickSend('Staining')">Staining</button>
+    </div>
+
+    <div class="chat-input-area">
+      <div class="chat-input-wrap">
+        <textarea id="userInput" placeholder="Type your question here... (e.g. I need a 150ft cedar fence with steel posts)" rows="2" onkeydown="handleKey(event)" oninput="autoResize(this)" onfocus="expandChat()" onblur="collapseChat()"></textarea>
+        <div class="chat-upload-bar" id="chatUploadBar"></div>
+      </div>
+      <div class="chat-input-btns">
+        <button class="attach-btn" onclick="document.getElementById('chatPhotoUpload').click()" title="Attach photos">📷</button>
+        <input type="file" id="chatPhotoUpload" accept="image/*,application/pdf" multiple style="display:none" onchange="handleChatFiles(this.files)" />
+        <button class="send-btn" onclick="sendMessage()">Send</button>
+      </div>
+    </div>
+    <div class="paste-hint">You can also paste images with Ctrl+V / ⌘+V</div>
+    <div class="chat-disclaimer" style="padding: 4px 16px 10px; text-align: center; color: #555; font-size: 11px; line-height: 1.4;">
+      ⚠️ This assistant is AI-powered and provides estimates only. All pricing is approximate — contact us directly for an official quote.
+    </div>
   </div>
 
-  <div class="chat-messages" id="chatMessages">
-    <div class="msg bot">
-      Hi — we can help with a quote.<br>
-      To dial this in quick, tell us:
-      <br>• Approx length (feet)
-      <br>• Height (6/7/8ft)
-      <br>• Style (standard / board-on-board / top cap)
-      <br>• Steel posts or wood posts
-      <br>• Any gates (walk / double / sliding)
-    </div>
-  </div>
-
-  <div class="quick-replies">
-    <button class="qr-btn" onclick="quickSend('Cedar fence quote')">Cedar fence quote</button>
-    <button class="qr-btn" onclick="quickSend('Steel posts')">Steel posts</button>
-    <button class="qr-btn" onclick="quickSend('Gate help')">Gate help</button>
-    <button class="qr-btn" onclick="quickSend('Gate repair')">Gate repair</button>
-    <button class="qr-btn" onclick="quickSend('Staining')">Staining</button>
-  </div>
-
-  <div class="chat-input-area">
-    <div class="chat-input-wrap">
-      <textarea id="userInput" placeholder="Type your question here... (e.g. I need a 150ft cedar fence with steel posts)" rows="2" onkeydown="handleKey(event)" oninput="autoResize(this)" onfocus="expandChat()" onblur="collapseChat()"></textarea>
-      <div class="chat-upload-bar" id="chatUploadBar"></div>
-    </div>
-    <div class="chat-input-btns">
-      <button class="attach-btn" onclick="document.getElementById('chatPhotoUpload').click()" title="Attach photos">📷</button>
-      <input type="file" id="chatPhotoUpload" accept="image/*,application/pdf" multiple style="display:none" onchange="handleChatFiles(this.files)" />
-      <button class="send-btn" onclick="sendMessage()">Send</button>
-    </div>
-  </div>
-  <div class="paste-hint">You can also paste images with Ctrl+V / ⌘+V</div>
-  <div class="chat-disclaimer" style="padding: 4px 16px 10px; text-align: center; color: #555; font-size: 11px; line-height: 1.4;">
-    ⚠️ This assistant is AI-powered and provides estimates only. All pricing is approximate — contact us directly for an official quote.
-  </div>
-  </div>
-
-  <!-- QUOTE VIEW (hidden by default) -->
+  <!-- QUOTE VIEW -->
   <div id="quoteView" style="display:none; flex-direction:column; flex:1; overflow-y:auto;">
     <div class="lead-form" id="quoteForm">
-      <p class="hint">Want a real quote? Drop your details below. It saves to our inbox and we'll reach out.</p>
+      <p class="hint">Fill in your details below — we'll reach out shortly. Your info goes straight to our team.</p>
       <input type="text" id="leadName" placeholder="Name *" />
       <div class="row2">
         <input type="tel" id="leadPhone" placeholder="Phone (recommended)" />
@@ -458,26 +315,28 @@
       <textarea id="leadDetails" placeholder="Project details * (approx feet, height 6/7/8ft, style, gates, timing)"></textarea>
       <div class="upload-area" id="uploadArea" onclick="document.getElementById('photoUpload').click()" ondragover="handleDragOver(event)" ondrop="handleDrop(event)" ondragleave="this.classList.remove('dragover')">
         <div class="upload-icon">📷</div>
-        <div class="upload-label">Tap to add photos <span>(optional)</span></div>
+        <div class="upload-label">Tap to add photos <span class="upload-sub">(optional)</span></div>
         <div class="upload-sub">Fence style you like, or your current fence</div>
         <input type="file" id="photoUpload" accept="image/*" multiple style="display:none" onchange="handleFiles(this.files)" />
       </div>
       <div class="upload-previews" id="uploadPreviews"></div>
-      <button class="submit-btn" onclick="submitLead()">Request a Quote</button>
+      <button class="submit-btn" onclick="submitLeadAndXero()">Submit Quote Request →</button>
       <div class="success-msg" id="successMsg"></div>
     </div>
     <div class="lead-footer">Astro Outdoor Designs • Built for real quotes, not fluff.</div>
   </div>
-
 </div>
-
 
 <script>
   let sessionId = null;
   let currentStyle = null;
-  let conversationLog = []; // tracks messages for form prefill
+  let conversationLog = [];
   let gateCompleted = false;
 
+  // ---- GATE: disabled — set to true to re-enable ----
+  const GATE_ENABLED = false;
+
+  // ---- Tab switching with auto-prefill ----
   function switchTab(tab) {
     const chatView = document.getElementById('chatView');
     const quoteView = document.getElementById('quoteView');
@@ -493,122 +352,73 @@
       quoteView.style.display = 'flex';
       tabChat.classList.remove('active');
       tabQuote.classList.add('active');
+      prefillQuoteForm();
     }
   }
 
+  // Auto-prefill quote form from session data
+  async function prefillQuoteForm() {
+    if (!sessionId) return;
+    try {
+      const res = await fetch('https://astro-fence-assistant.onrender.com/session-info/' + sessionId);
+      const info = await res.json();
+      const nameField = document.getElementById('leadName');
+      const phoneField = document.getElementById('leadPhone');
+      const emailField = document.getElementById('leadEmail');
+      const zipField = document.getElementById('leadZip');
+      const fullName = [info.first_name, info.last_name].filter(Boolean).join(' ');
+      if (fullName && !nameField.value) nameField.value = fullName;
+      if (info.phone && !phoneField.value) phoneField.value = info.phone;
+      if (info.email && !emailField.value) emailField.value = info.email;
+      if ((info.zip || info.city) && !zipField.value) zipField.value = info.zip || info.city;
+      // Auto-select project type
+      if (info.fence_type) {
+        const sel = document.getElementById('leadProject');
+        const ft = info.fence_type.toLowerCase();
+        if (ft.includes('chain')) sel.value = 'New chain link';
+        else if (ft.includes('vinyl')) sel.value = 'New vinyl fence';
+        else if (ft.includes('aluminum') || ft.includes('metal')) sel.value = 'New metal fence';
+        else if (ft.includes('cedar') || ft.includes('wood') || ft.includes('pine') || ft.includes('pressure')) sel.value = 'New wood fence';
+      }
+      // Also prefill project details from conversation
+      const detailsField = document.getElementById('leadDetails');
+      if (!detailsField.value && conversationLog.length > 0) {
+        const userMsgs = conversationLog.filter(m => m.role === 'user').map(m => m.text);
+        if (userMsgs.length > 0) detailsField.value = userMsgs.slice(-3).join(' | ');
+      }
+    } catch(e) {}
+  }
 
-  // ---- Mobile collapsible chat ----
+  // ---- Mobile collapsible ----
   const chatPanel = document.getElementById('chatPanel');
   const chatHeaderToggle = document.getElementById('chatHeaderToggle');
 
-  function isMobile() {
-    return window.innerWidth <= 768;
-  }
+  function isMobile() { return window.innerWidth <= 768; }
 
   chatHeaderToggle.addEventListener('click', function() {
     if (!isMobile()) return;
     chatPanel.classList.toggle('collapsed');
-    // Scroll into view when expanding
     if (!chatPanel.classList.contains('collapsed')) {
       setTimeout(() => chatPanel.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
     }
   });
 
-  // On resize to desktop, always remove collapsed state from both panels
   window.addEventListener('resize', function() {
-    if (!isMobile()) {
-      chatPanel.classList.remove('collapsed');
-    }
+    if (!isMobile()) chatPanel.classList.remove('collapsed');
   });
 
-
+  // ---- Gallery ----
   const FENCE_STYLES = {
-    wood: {
-      title: "Cedar & Wood Fence",
-      subtitle: "Our most popular style — natural, private, and customizable.",
-      link: "https://astrooutdoordesigns.com/wood-fence-installation/",
-      photos: [
-        "https://astrooutdoordesigns.com/wp-content/uploads/2021/05/6.8-Cedar-Pickets.-2x6-baseboard.-Cedar-top-cap-and-trim-png.webp",
-        "https://astrooutdoordesigns.com/wp-content/uploads/2021/05/fincing-1024x784.png",
-        "https://astrooutdoordesigns.com/wp-content/uploads/2021/10/astrooutdoor-Residential-Fencing-1-300x179.jpg",
-        "https://astrooutdoordesigns.com/wp-content/uploads/2021/06/Attachment_1622724541-7.jpeg"
-      ]
-    },
-    metal: {
-      title: "Metal & Steel Fence",
-      subtitle: "Strong, elegant, and low-maintenance. Great for pools and front yards.",
-      link: "https://astrooutdoordesigns.com/metal-fence-installation-houston/",
-      photos: [
-        "https://astrooutdoordesigns.com/wp-content/uploads/2021/05/METAL-FENCE-ON-A-SLOPE-png.webp",
-        "https://astrooutdoordesigns.com/wp-content/uploads/2021/05/Metal-Frame-Gate2.webp"
-      ]
-    },
-    chainlink: {
-      title: "Chain Link Fence",
-      subtitle: "Affordable, durable, and great for larger properties.",
-      link: "https://astrooutdoordesigns.com/chain-link-fence-installation/",
-      photos: [
-        "https://astrooutdoordesigns.com/wp-content/uploads/2019/01/Chain-Link-Fencing.jpg"
-      ]
-    },
-    vinyl: {
-      title: "Vinyl Fence",
-      subtitle: "Low maintenance, clean look, never needs staining or painting.",
-      link: "https://astrooutdoordesigns.com/vinyl-fence-installation/",
-      photos: [
-        "https://astrooutdoordesigns.com/wp-content/uploads/2021/05/Attachment_1622001073-2-scaled.jpeg"
-      ]
-    },
-    gate: {
-      title: "Gate Installation",
-      subtitle: "Walk gates, double drive gates, and custom designs.",
-      link: "https://astrooutdoordesigns.com/gate-installation/",
-      photos: [
-        "https://astrooutdoordesigns.com/wp-content/uploads/2019/01/astro-outdoors-design-gates.jpg",
-        "https://astrooutdoordesigns.com/wp-content/uploads/2021/05/Metal-Frame-Gate2.webp"
-      ]
-    },
-    staining: {
-      title: "Fence Staining",
-      subtitle: "We use Wood Defender semi-transparent stain. Protects your fence from Houston humidity.",
-      link: "https://astrooutdoordesigns.com/houston-fence-staining/",
-      photos: [
-        "https://astrooutdoordesigns.com/wp-content/uploads/2021/12/astrooutdoordesigns-2-scaled.jpg",
-        "https://astrooutdoordesigns.com/wp-content/uploads/2024/03/quanah-martin-stain-picture-with-trailer.jpg"
-      ]
-    },
-    powerwashing: {
-      title: "Power Washing",
-      subtitle: "Professional power washing for fences, decks, driveways, and more.",
-      link: "https://astrooutdoordesigns.com/power-washing/",
-      photos: [
-        "https://astrooutdoordesigns.com/wp-content/uploads/2024/09/power-washing-image.jpg"
-      ]
-    },
-    lighting: {
-      title: "Christmas & Outdoor Lighting",
-      subtitle: "Award-winning holiday light installs. Professional installation and takedown.",
-      link: "https://astrooutdoordesigns.com/holiday-lighting/",
-      photos: [
-        "https://astrooutdoordesigns.com/wp-content/uploads/2025/04/01961410-ab25-7ccb-90e9-00383fa2ab8c.webp"
-      ]
-    },
-    firewood: {
-      title: "Firewood Delivery",
-      subtitle: "Seasoned firewood delivered to your door in the Kingwood / Houston area.",
-      link: "https://astrooutdoordesigns.com/astro-firewood/",
-      photos: [
-        "https://astrooutdoordesigns.com/wp-content/uploads/2024/12/fireood-picture.webp"
-      ]
-    },
-    deck: {
-      title: "Deck Installation",
-      subtitle: "Custom wood and Trex composite decks built to last in the Houston climate.",
-      link: "https://astrooutdoordesigns.com/deck-installation/",
-      photos: [
-        "https://astrooutdoordesigns.com/wp-content/uploads/2021/06/Attachment_1622724541-13.jpeg"
-      ]
-    }
+    wood: { title: "Cedar & Wood Fence", subtitle: "Our most popular style — natural, private, and customizable.", link: "https://astrooutdoordesigns.com/wood-fence-installation/", photos: ["https://astrooutdoordesigns.com/wp-content/uploads/2021/05/6.8-Cedar-Pickets.-2x6-baseboard.-Cedar-top-cap-and-trim-png.webp","https://astrooutdoordesigns.com/wp-content/uploads/2021/05/fincing-1024x784.png","https://astrooutdoordesigns.com/wp-content/uploads/2021/10/astrooutdoor-Residential-Fencing-1-300x179.jpg","https://astrooutdoordesigns.com/wp-content/uploads/2021/06/Attachment_1622724541-7.jpeg"] },
+    metal: { title: "Metal & Steel Fence", subtitle: "Strong, elegant, and low-maintenance. Great for pools and front yards.", link: "https://astrooutdoordesigns.com/metal-fence-installation-houston/", photos: ["https://astrooutdoordesigns.com/wp-content/uploads/2021/05/METAL-FENCE-ON-A-SLOPE-png.webp","https://astrooutdoordesigns.com/wp-content/uploads/2021/05/Metal-Frame-Gate2.webp"] },
+    chainlink: { title: "Chain Link Fence", subtitle: "Affordable, durable, and great for larger properties.", link: "https://astrooutdoordesigns.com/chain-link-fence-installation/", photos: ["https://astrooutdoordesigns.com/wp-content/uploads/2019/01/Chain-Link-Fencing.jpg"] },
+    vinyl: { title: "Vinyl Fence", subtitle: "Low maintenance, clean look, never needs staining or painting.", link: "https://astrooutdoordesigns.com/vinyl-fence-installation/", photos: ["https://astrooutdoordesigns.com/wp-content/uploads/2021/05/Attachment_1622001073-2-scaled.jpeg"] },
+    gate: { title: "Gate Installation", subtitle: "Walk gates, double drive gates, and custom designs.", link: "https://astrooutdoordesigns.com/gate-installation/", photos: ["https://astrooutdoordesigns.com/wp-content/uploads/2019/01/astro-outdoors-design-gates.jpg","https://astrooutdoordesigns.com/wp-content/uploads/2021/05/Metal-Frame-Gate2.webp"] },
+    staining: { title: "Fence Staining", subtitle: "We use Wood Defender semi-transparent stain.", link: "https://astrooutdoordesigns.com/houston-fence-staining/", photos: ["https://astrooutdoordesigns.com/wp-content/uploads/2021/12/astrooutdoordesigns-2-scaled.jpg","https://astrooutdoordesigns.com/wp-content/uploads/2024/03/quanah-martin-stain-picture-with-trailer.jpg"] },
+    powerwashing: { title: "Power Washing", subtitle: "Professional power washing for fences, decks, driveways, and more.", link: "https://astrooutdoordesigns.com/power-washing/", photos: ["https://astrooutdoordesigns.com/wp-content/uploads/2024/09/power-washing-image.jpg"] },
+    lighting: { title: "Christmas & Outdoor Lighting", subtitle: "Professional installation and takedown.", link: "https://astrooutdoordesigns.com/holiday-lighting/", photos: ["https://astrooutdoordesigns.com/wp-content/uploads/2025/04/01961410-ab25-7ccb-90e9-00383fa2ab8c.webp"] },
+    firewood: { title: "Firewood Delivery", subtitle: "Seasoned firewood delivered to your door.", link: "https://astrooutdoordesigns.com/astro-firewood/", photos: ["https://astrooutdoordesigns.com/wp-content/uploads/2024/12/fireood-picture.webp"] },
+    deck: { title: "Deck Installation", subtitle: "Custom wood and Trex composite decks.", link: "https://astrooutdoordesigns.com/deck-installation/", photos: ["https://astrooutdoordesigns.com/wp-content/uploads/2021/06/Attachment_1622724541-13.jpeg"] }
   };
 
   function showGallery(style) {
@@ -618,22 +428,17 @@
     document.getElementById('modalSubtitle').textContent = data.subtitle;
     document.getElementById('modalLink').href = data.link;
     const grid = document.getElementById('modalPhotos');
-    grid.innerHTML = data.photos.map(url =>
-      `<img src="${url}" alt="${data.title}" onerror="this.style.display='none'">`
-    ).join('');
+    grid.innerHTML = data.photos.map(url => `<img src="${url}" alt="${data.title}" onerror="this.style.display='none'">`).join('');
     document.getElementById('photoModal').classList.add('open');
     document.querySelectorAll('.style-btn').forEach(b => b.classList.remove('active'));
     event.target.classList.add('active');
   }
 
-  function closeModal() {
-    document.getElementById('photoModal').classList.remove('open');
-  }
+  function closeModal() { document.getElementById('photoModal').classList.remove('open'); }
 
   function askAboutStyle() {
     closeModal();
     const data = FENCE_STYLES[currentStyle];
-    // On mobile, expand chat first
     if (isMobile() && chatPanel.classList.contains('collapsed')) {
       chatPanel.classList.remove('collapsed');
       setTimeout(() => chatPanel.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
@@ -641,14 +446,11 @@
     quickSend(`I'm interested in ${data.title}. Can you give me a quote?`);
   }
 
-  document.getElementById('photoModal').addEventListener('click', function(e) {
-    if (e.target === this) closeModal();
-  });
+  document.getElementById('photoModal').addEventListener('click', function(e) { if (e.target === this) closeModal(); });
 
+  // ---- Chat ----
   function formatMessage(text) {
-    return text
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      .replace(/\n/g, '<br>');
+    return text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
   }
 
   function addMessage(text, type) {
@@ -668,13 +470,11 @@
     input.value = '';
     input.style.height = 'auto';
 
-    // Track conversation for prefill
     const photosToSend = [...chatPhotos];
     chatPhotos = [];
     renderChatThumbs();
     conversationLog.push({ role: 'user', text });
 
-    // Show user message with any attached photos/PDFs
     const userMsgDiv = addMessage(text, 'user');
     if (photosToSend.length > 0) {
       const photoRow = document.createElement('div');
@@ -695,18 +495,14 @@
     }
 
     const loading = addMessage('...', 'bot loading');
-
-    // Split files FIRST before referencing them
     const imageFiles = photosToSend.filter(f => f.type.startsWith('image/'));
     const pdfFiles = photosToSend.filter(f => f.type === 'application/pdf');
 
-    // Build prompt — include file note so AI knows what was shared
     let fileNote = '';
     if (imageFiles.length > 0) fileNote += `[Customer attached ${imageFiles.length} photo(s) of their project]`;
     if (pdfFiles.length > 0) fileNote += `${fileNote ? ' ' : ''}[Customer attached ${pdfFiles.length} PDF document(s): ${pdfFiles.map(f => f.name).join(', ')}]`;
     const promptWithPhotoNote = fileNote ? `${text}\n\n${fileNote}` : text;
 
-    // Convert images to base64 for vision API
     let imageBase64List = [];
     if (imageFiles.length > 0) {
       imageBase64List = await Promise.all(imageFiles.map(file => new Promise((resolve, reject) => {
@@ -718,10 +514,7 @@
     }
 
     try {
-      const chatPayload = {
-        prompt: promptWithPhotoNote,
-        session_id: sessionId
-      };
+      const chatPayload = { prompt: promptWithPhotoNote, session_id: sessionId };
       if (imageBase64List.length > 0) chatPayload.images = imageBase64List;
 
       const res = await fetch('https://astro-fence-assistant.onrender.com/chat', {
@@ -731,35 +524,32 @@
       });
       const data = await res.json();
       sessionId = data.session_id;
-      
-      // Response gate check
-      if (data.gate) {
+
+      // Gate check — disabled (set GATE_ENABLED = true at top to re-enable)
+      if (GATE_ENABLED && data.gate) {
         loading.remove();
         showGateForm();
         return;
       }
 
       loading.remove();
-
       conversationLog.push({ role: 'bot', text: data.response });
-
       const msgDiv = addMessage(data.response, 'bot');
 
-      // Detect if AI has given a real quote or hit a wall — show appropriate CTA
       const ctaType = shouldShowQuoteCTA(data.response);
       if (ctaType === 'quote') {
+        // Show a button in the chat
         const btn = document.createElement('button');
         btn.className = 'quote-cta';
-        btn.textContent = '📋 Ready to move forward? Fill out your info →';
-        btn.onclick = () => switchTab('quote');
+        btn.textContent = '📋 Tap here to submit your quote →';
+        btn.onclick = () => openXeroModal();
         msgDiv.appendChild(btn);
+        // Auto-open the Xero modal after 2 seconds so mobile users don't have to tap
+        setTimeout(() => openXeroModal(), 2000);
       } else if (ctaType === 'stuck') {
         const btn = document.createElement('button');
         btn.className = 'quote-cta';
-        btn.style.background = '#333';
-        btn.style.border = '1px solid #e87722';
-        btn.style.color = '#e87722';
-        btn.style.animation = 'none';
+        btn.style.cssText = 'background:#333;border:1px solid #e87722;color:#e87722;animation:none;';
         btn.textContent = '📞 Reach out to our team directly →';
         btn.onclick = () => switchTab('quote');
         msgDiv.appendChild(btn);
@@ -771,23 +561,44 @@
     }
   }
 
-  // Returns 'quote', 'stuck', or false.
-  // 'quote' = AI produced a real priced estimate with enough conversation depth.
-  // 'stuck' = AI is punting to humans — show a soft reach-out button.
-  // false = keep chatting, don't interrupt yet.
-  function showGateForm() {
+  function shouldShowQuoteCTA(text) {
+    const botMessages = conversationLog.filter(m => m.role === 'bot');
+    if (botMessages.length < 3) return false;
+    const isStuck = /call (us|or text)|text us at|reach out|contact us directly|email us|832-280-5783|for an official quote|site visit (required|needed)/i.test(text);
+    if (isStuck) return 'stuck';
+    const hasFootage = /\d{2,4}\s*(lf|linear feet|ft|feet)/i.test(text);
+    const hasDollar = /\$[\d,]{3,}/.test(text);
+    const hasEstimateLabel = /working estimate|total.*estimate|installed.*price|range:/i.test(text);
+    if (hasDollar && (hasFootage || hasEstimateLabel)) return 'quote';
+    return false;
+  }
+
+  // ---- Gate form (kept but disabled via GATE_ENABLED flag) ----
+  async function showGateForm() {
+    // Prefill from session before showing
+    let prefill = { first: '', last: '', address: '', email: '' };
+    if (sessionId) {
+      try {
+        const res = await fetch('https://astro-fence-assistant.onrender.com/session-info/' + sessionId);
+        const info = await res.json();
+        prefill.first = info.first_name || '';
+        prefill.last = info.last_name || '';
+        prefill.address = info.address || '';
+        prefill.email = info.email || '';
+      } catch(e) {}
+    }
     const msgs = document.getElementById('chatMessages');
     const gateDiv = document.createElement('div');
     gateDiv.id = 'gateCard';
     gateDiv.className = 'gate-card';
-    gateDiv.innerHTML = '<h3>\u{1F512} One quick step to continue</h3>' +
-      '<p>To keep chatting, we just need a few details. This helps us give you accurate pricing for your area.</p>' +
-      '<input type=\"text\" id=\"gateFirstName\" placeholder=\"First name *\" />' +
-      '<input type=\"text\" id=\"gateLastName\" placeholder=\"Last name *\" />' +
-      '<input type=\"text\" id=\"gateAddress\" placeholder=\"Property address *\" />' +
-      '<input type=\"email\" id=\"gateEmail\" placeholder=\"Email address *\" />' +
-      '<button class=\"gate-submit\" id=\"gateSubmitBtn\" onclick=\"submitGate()\">Continue Chatting \u2192</button>' +
-      '<div class=\"gate-error\" id=\"gateError\"></div>';
+    gateDiv.innerHTML = '<h3>🔒 One quick step to continue</h3>' +
+      '<p>To keep chatting, we just need a few details.</p>' +
+      `<input type="text" id="gateFirstName" placeholder="First name *" value="${prefill.first}" />` +
+      `<input type="text" id="gateLastName" placeholder="Last name *" value="${prefill.last}" />` +
+      `<input type="text" id="gateAddress" placeholder="Property address *" value="${prefill.address}" />` +
+      `<input type="email" id="gateEmail" placeholder="Email address *" value="${prefill.email}" />` +
+      '<button class="gate-submit" id="gateSubmitBtn" onclick="submitGate()">Continue Chatting →</button>' +
+      '<div class="gate-error" id="gateError"></div>';
     msgs.appendChild(gateDiv);
     msgs.scrollTop = msgs.scrollHeight;
     document.getElementById('userInput').disabled = true;
@@ -802,16 +613,8 @@
     const errorDiv = document.getElementById('gateError');
     const submitBtn = document.getElementById('gateSubmitBtn');
 
-    if (!firstName || !lastName || !address || !email) {
-      errorDiv.textContent = 'Please fill in all fields.';
-      errorDiv.style.display = 'block';
-      return;
-    }
-    if (!email.includes('@') || !email.includes('.')) {
-      errorDiv.textContent = 'Please enter a valid email address.';
-      errorDiv.style.display = 'block';
-      return;
-    }
+    if (!firstName || !lastName || !address || !email) { errorDiv.textContent = 'Please fill in all fields.'; errorDiv.style.display = 'block'; return; }
+    if (!email.includes('@') || !email.includes('.')) { errorDiv.textContent = 'Please enter a valid email.'; errorDiv.style.display = 'block'; return; }
 
     submitBtn.disabled = true;
     submitBtn.textContent = 'Submitting...';
@@ -821,133 +624,150 @@
       const res = await fetch('https://astro-fence-assistant.onrender.com/submit-contact-info', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          first_name: firstName,
-          last_name: lastName,
-          address: address,
-          email: email,
-          session_id: sessionId
-        })
+        body: JSON.stringify({ first_name: firstName, last_name: lastName, address, email, session_id: sessionId })
       });
       const data = await res.json();
-
       document.getElementById('gateCard').remove();
-
       gateCompleted = true;
       const input = document.getElementById('userInput');
       input.disabled = false;
-      input.placeholder = 'Type your question here... (e.g. I need a 150ft cedar fence with steel posts)';
+      input.placeholder = 'Type your question here...';
       input.focus();
-
       if (data.session_id) sessionId = data.session_id;
-
-      if (data.response) {
-        addMessage(data.response, 'bot');
-        conversationLog.push({ role: 'bot', text: data.response });
-      }
+      if (data.response) { addMessage(data.response, 'bot'); conversationLog.push({ role: 'bot', text: data.response }); }
     } catch (err) {
       submitBtn.disabled = false;
-      submitBtn.textContent = 'Continue Chatting \u2192';
+      submitBtn.textContent = 'Continue Chatting →';
       errorDiv.textContent = 'Something went wrong. Please try again.';
       errorDiv.style.display = 'block';
     }
   }
 
-    function shouldShowQuoteCTA(text) {
-    const botMessages = conversationLog.filter(m => m.role === 'bot');
-
-    // Never fire in the first 2 bot turns — let conversation develop
-    if (botMessages.length < 3) return false;
-
-    // "Stuck" mode: AI is clearly deferring to humans
-    const isStuck = /call (us|or text)|text us at|reach out|contact us directly|email us|832-280-5783|for an official quote|site visit (required|needed)/i.test(text);
-    if (isStuck) return 'stuck';
-
-    // Full quote mode: needs a dollar amount AND footage or an explicit estimate label
-    const hasFootage = /\d{2,4}\s*(lf|linear feet|ft|feet)/i.test(text);
-    const hasDollar = /\$[\d,]{3,}/.test(text); // $100+ so we don't fire on "$6/LF" alone
-    const hasEstimateLabel = /working estimate|total.*estimate|installed.*price|range:/i.test(text);
-
-    if (hasDollar && (hasFootage || hasEstimateLabel)) return 'quote';
-
-    return false;
+  // ---- Xero Modal ----
+  async function openXeroModal() {
+    const modal = document.getElementById('xeroModal');
+    modal.classList.add('open');
+    if (sessionId) {
+      try {
+        const res = await fetch('https://astro-fence-assistant.onrender.com/session-info/' + sessionId);
+        const info = await res.json();
+        if (info.first_name) document.getElementById('xeroFirst').value = info.first_name;
+        if (info.last_name) document.getElementById('xeroLast').value = info.last_name;
+        if (info.phone) document.getElementById('xeroPhone').value = info.phone;
+        if (info.email) document.getElementById('xeroEmail').value = info.email;
+        if (info.address) document.getElementById('xeroAddress').value = info.address;
+        if (info.city) document.getElementById('xeroCity').value = info.city;
+        if (info.zip) document.getElementById('xeroZip').value = info.zip;
+      } catch(e) {}
+    }
   }
 
-  // Build a clean summary from conversation and prefill the lead form
+  function closeXeroModal(e) {
+    if (e.target === document.getElementById('xeroModal')) document.getElementById('xeroModal').classList.remove('open');
+  }
 
+  async function submitXeroContact() {
+    const first = document.getElementById('xeroFirst').value.trim();
+    const last = document.getElementById('xeroLast').value.trim();
+    const phone = document.getElementById('xeroPhone').value.trim();
+    const email = document.getElementById('xeroEmail').value.trim();
+    const errorDiv = document.getElementById('xeroError');
+    const btn = document.getElementById('xeroSubmitBtn');
+
+    const address = document.getElementById('xeroAddress').value.trim();
+    const zip = document.getElementById('xeroZip').value.trim();
+    if (!first || !last) { errorDiv.textContent = 'Please enter your first and last name.'; errorDiv.style.display='block'; return; }
+    if (!phone) { errorDiv.textContent = 'Please enter your phone number.'; errorDiv.style.display='block'; return; }
+    if (!email || !email.includes('@')) { errorDiv.textContent = 'Please enter a valid email address.'; errorDiv.style.display='block'; return; }
+    if (!address) { errorDiv.textContent = 'Please enter your property address.'; errorDiv.style.display='block'; return; }
+    if (!zip) { errorDiv.textContent = 'Please enter your zip code.'; errorDiv.style.display='block'; return; }
+
+    errorDiv.style.display = 'none';
+    btn.disabled = true;
+    btn.textContent = 'Creating quote...';
+
+    try {
+      const res = await fetch('https://astro-fence-assistant.onrender.com/xero/capture-and-push', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          session_id: sessionId || '',
+          first_name: first, last_name: last, phone, email,
+          address: document.getElementById('xeroAddress').value.trim(),
+          city: document.getElementById('xeroCity').value.trim(),
+          zip: document.getElementById('xeroZip').value.trim(),
+          state: 'TX'
+        })
+      });
+      const data = await res.json();
+      document.getElementById('xeroForm').style.display = 'none';
+      const successDiv = document.getElementById('xeroSuccess');
+      successDiv.style.display = 'block';
+      if (data.success) {
+        successDiv.innerHTML = `✅ You're all set, ${first}!<br>Your quote has been created and our team will reach out shortly.${data.quote_number ? '<br><strong>Quote #: ' + data.quote_number + '</strong>' : ''}`;
+      } else {
+        successDiv.innerHTML = `✅ Got it, ${first}! Your info has been sent to our team and we'll be in touch shortly.<br>Call or text us at <strong>832-280-5783</strong> if you need us right away.`;
+      }
+      setTimeout(() => {
+        document.getElementById('xeroModal').classList.remove('open');
+        document.getElementById('xeroForm').style.display = 'block';
+        successDiv.style.display = 'none';
+        btn.disabled = false;
+        btn.textContent = 'Submit & Create Quote →';
+      }, 4000);
+    } catch(e) {
+      btn.disabled = false;
+      btn.textContent = 'Submit & Create Quote →';
+      errorDiv.textContent = 'Something went wrong. Please call us at 832-280-5783.';
+      errorDiv.style.display = 'block';
+    }
+  }
+
+  // ---- Paste handler ----
   function handlePasteEvent(e) {
     const items = (e.clipboardData || window.clipboardData) && (e.clipboardData || window.clipboardData).items;
     if (!items) return;
     let foundImage = false;
     Array.from(items).forEach(item => {
-      // Accept any image type including screenshots (image/png from snipping tool)
       if (item.kind === 'file' && item.type.startsWith('image/')) {
         const file = item.getAsFile();
         if (!file) return;
         foundImage = true;
         if (chatPhotos.length >= 4) { alert('Max 4 photos per message.'); return; }
-        // Create a proper named file from the clipboard blob
         const namedFile = new File([file], `screenshot-${Date.now()}.png`, { type: file.type });
         chatPhotos.push(namedFile);
       }
     });
     if (foundImage) {
-      e.preventDefault(); // prevent pasting image data as text
+      e.preventDefault();
       renderChatThumbs();
-      // Flash orange border so user sees it worked
       const bar = document.getElementById('chatUploadBar');
       bar.style.outline = '2px solid #e87722';
       bar.style.borderRadius = '6px';
       setTimeout(() => { bar.style.outline = ''; bar.style.borderRadius = ''; }, 700);
-      // Also focus the textarea so they can type a message
       document.getElementById('userInput').focus();
     }
   }
 
-  // Listen on both document AND the textarea to catch all paste scenarios
   document.addEventListener('paste', handlePasteEvent);
   document.getElementById('userInput').addEventListener('paste', handlePasteEvent);
 
   function expandChat() {
     document.getElementById('chatPanel').classList.add('input-focused');
     document.getElementById('userInput').classList.add('expanded');
-    // Scroll messages to bottom so latest is visible
-    setTimeout(() => {
-      const msgs = document.getElementById('chatMessages');
-      msgs.scrollTop = msgs.scrollHeight;
-    }, 320);
+    setTimeout(() => { const msgs = document.getElementById('chatMessages'); msgs.scrollTop = msgs.scrollHeight; }, 320);
   }
 
   function collapseChat() {
-    // Small delay so tapping Send doesn't collapse before it fires
     setTimeout(() => {
       document.getElementById('chatPanel').classList.remove('input-focused');
       document.getElementById('userInput').classList.remove('expanded');
     }, 200);
   }
 
-  function quickSend(text) {
-    document.getElementById('userInput').value = text;
-    sendMessage();
-  }
-
-  function handleKey(e) {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
-    }
-  }
-
-  function autoResize(el) {
-    el.style.height = 'auto';
-    el.style.height = Math.min(el.scrollHeight, 100) + 'px';
-  }
-
-  function setTab(tab) {
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    event.target.classList.add('active');
-    document.getElementById('leadContact').value = tab;
-  }
+  function quickSend(text) { document.getElementById('userInput').value = text; sendMessage(); }
+  function handleKey(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }
+  function autoResize(el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 100) + 'px'; }
 
   // ---- Chat photo upload ----
   let chatPhotos = [];
@@ -958,20 +778,15 @@
       const isPDF = file.type === 'application/pdf';
       if (!isImage && !isPDF) return;
       if (chatPhotos.length >= 4) { alert('Max 4 files per message.'); return; }
-      // Deduplicate — prevent same file being added twice
       const isDupe = chatPhotos.some(f => f.name === file.name && f.size === file.size);
       if (!isDupe) chatPhotos.push(file);
     });
-    // Clear the file input so selecting the same file again triggers onchange
     const input = document.getElementById('chatPhotoUpload');
     if (input) input.value = '';
     renderChatThumbs();
   }
 
-  function removeChatThumb(index) {
-    chatPhotos.splice(index, 1);
-    renderChatThumbs();
-  }
+  function removeChatThumb(index) { chatPhotos.splice(index, 1); renderChatThumbs(); }
 
   function renderChatThumbs() {
     const bar = document.getElementById('chatUploadBar');
@@ -989,7 +804,7 @@
     });
   }
 
-  // ---- Image upload handling ----
+  // ---- Lead form photo upload ----
   let uploadedFiles = [];
 
   function handleFiles(files) {
@@ -1001,21 +816,9 @@
     });
   }
 
-  function handleDragOver(e) {
-    e.preventDefault();
-    document.getElementById('uploadArea').classList.add('dragover');
-  }
-
-  function handleDrop(e) {
-    e.preventDefault();
-    document.getElementById('uploadArea').classList.remove('dragover');
-    handleFiles(e.dataTransfer.files);
-  }
-
-  function removeThumb(index) {
-    uploadedFiles.splice(index, 1);
-    renderThumbs();
-  }
+  function handleDragOver(e) { e.preventDefault(); document.getElementById('uploadArea').classList.add('dragover'); }
+  function handleDrop(e) { e.preventDefault(); document.getElementById('uploadArea').classList.remove('dragover'); handleFiles(e.dataTransfer.files); }
+  function removeThumb(index) { uploadedFiles.splice(index, 1); renderThumbs(); }
 
   function renderThumbs() {
     const container = document.getElementById('uploadPreviews');
@@ -1027,7 +830,6 @@
       div.innerHTML = `<img src="${url}"><button class="remove-thumb" onclick="removeThumb(${i})">×</button>`;
       container.appendChild(div);
     });
-    // Update upload area label
     const label = document.querySelector('.upload-label');
     if (uploadedFiles.length > 0) {
       label.innerHTML = `${uploadedFiles.length} photo${uploadedFiles.length > 1 ? 's' : ''} added <span class="upload-sub">— tap to add more</span>`;
@@ -1036,18 +838,51 @@
     }
   }
 
+  async function submitLeadAndXero() {
+    // Submit to both leads endpoint AND Xero
+    const name = document.getElementById('leadName').value.trim();
+    const phone = document.getElementById('leadPhone').value.trim();
+    const email = document.getElementById('leadEmail').value.trim();
+    const zip = document.getElementById('leadZip').value.trim();
+    const details = document.getElementById('leadDetails').value.trim();
+    const project = document.getElementById('leadProject').value;
+
+    if (!name) { alert('Please enter your name.'); return; }
+
+    // If we have enough info, push to Xero too
+    if (name && (phone || email)) {
+      const nameParts = name.split(' ');
+      try {
+        await fetch('https://astro-fence-assistant.onrender.com/xero/capture-and-push', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            session_id: sessionId || '',
+            first_name: nameParts[0] || '',
+            last_name: nameParts.slice(1).join(' ') || '',
+            phone: phone,
+            email: email,
+            zip: zip,
+            state: 'TX'
+          })
+        });
+      } catch(e) {} // Silent — lead submission is primary
+    }
+    // Always submit lead form
+    await submitLead();
+  }
+
   async function submitLead() {
     const name = document.getElementById('leadName').value.trim();
     const details = document.getElementById('leadDetails').value.trim();
     const project = document.getElementById('leadProject').value;
 
     if (!name) { alert('Please enter your name.'); return; }
-    if (!details && !project) { alert('Please describe your project.'); return; }
+    if (!details && project === 'Project type (optional)') { alert('Please describe your project.'); return; }
 
-    const fullDetails = project ? `[${project}] ${details}` : details;
+    const fullDetails = project !== 'Project type (optional)' ? `[${project}] ${details}` : details;
     if (fullDetails.length < 10) { alert('Please add a bit more detail about your project.'); return; }
 
-    // Use FormData so we can attach photos
     const formData = new FormData();
     formData.append('name', name);
     formData.append('phone', document.getElementById('leadPhone').value.trim());
@@ -1062,30 +897,18 @@
     submitBtn.disabled = true;
 
     try {
-      // Try multipart endpoint first, fall back to JSON if not supported
       let res, data;
       try {
-        res = await fetch('https://astro-fence-assistant.onrender.com/lead-with-photos', {
-          method: 'POST',
-          body: formData
-        });
+        res = await fetch('https://astro-fence-assistant.onrender.com/lead-with-photos', { method: 'POST', body: formData });
         data = await res.json();
       } catch (e) {
-        // Fallback: send without photos via JSON
         res = await fetch('https://astro-fence-assistant.onrender.com/lead', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            name, phone: formData.get('phone'), email: formData.get('email'),
-            address_or_zip: formData.get('address_or_zip'),
-            preferred_contact: formData.get('preferred_contact'),
-            project_details: fullDetails + (uploadedFiles.length > 0 ? `
-[${uploadedFiles.length} photo(s) attached — send to 832-280-5783]` : '')
-          })
+          body: JSON.stringify({ name, phone: formData.get('phone'), email: formData.get('email'), address_or_zip: formData.get('address_or_zip'), preferred_contact: formData.get('preferred_contact'), project_details: fullDetails })
         });
         data = await res.json();
       }
-
       if (data.ok) {
         const msg = document.getElementById('successMsg');
         msg.style.display = 'block';
