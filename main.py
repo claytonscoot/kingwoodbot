@@ -755,7 +755,7 @@ def call_claude(user_message: str, history: list = None, images: list = None) ->
 
     payload = {
         "model": model,
-        "max_tokens": 600,
+        "max_tokens": 2000,
         "system": get_system_prompt(),
         "messages": messages
     }
