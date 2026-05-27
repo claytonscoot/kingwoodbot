@@ -714,7 +714,7 @@ def call_claude(user_message: str, history: list = None, images: list = None) ->
         "content-type": "application/json"
     }
     # Use claude-sonnet for vision (haiku vision quality is poor), fall back to haiku for text-only
-    model = "claude-sonnet-4-5" if images else CLAUDE_MODEL
+    model = "claude-sonnet-4-6" if images else CLAUDE_MODEL
 
     def build_content(text, imgs):
         """Build a Claude message content block — text only or text+images"""
