@@ -1220,7 +1220,7 @@ def chat(req: Chat, request: Request):
         msg_count = active_sessions[session_id]["message_count"]
         gate_passed = bool(active_sessions[session_id].get("gate_passed"))
 
-        if msg_count >= 2 and not gate_passed:
+        if GATE_ENABLED and msg_count >= 2 and not gate_passed:
             # Hold the AI response server-side
             active_sessions[session_id]["held_response"] = ai_response
             return {
