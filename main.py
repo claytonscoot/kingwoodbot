@@ -40,6 +40,7 @@ ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages"
 
 GOOGLE_SHEET_ID = "1RodpbvL75F8AZxutqKcTY_vrbxZvylSBv1SggglPGlM"
 GOOGLE_SHEET_RANGE = "Sheet1"
+GATE_ENABLED = False
 
 active_sessions: Dict[str, dict] = {}
 recent_leads: List[dict] = []
