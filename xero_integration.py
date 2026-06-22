@@ -6,11 +6,17 @@ from chat session data.
 FIXES APPLIED:
 1. Phone number splits area code into PhoneAreaCode field correctly
 2. Address goes to POBOX (billing) instead of STREET (delivery)
-3. Quote is linked to the project via ProjectID so it appears inside the project
-4. Total parser improved — handles comma-formatted numbers like $3,000
-5. Fallback single line item created if no line items parsed from conversational message
-6. Project name now includes fence type from session data
-7. FIX: Removed ProjectID from quote payload (not valid in Xero Quotes API — causes 500)
+3. Total parser improved — handles comma-formatted numbers like $3,000
+4. Fallback single line item created if no line items parsed from conversational message
+5. Project name now includes fence type from session data
+6. ProjectID is NOT placed on the quote payload (not a valid Xero Quotes API field — causes 500).
+   The project and the quote are both created under the same contact.
+7. HONEST SUCCESS: success is only True when the work that was supposed to happen
+   actually happened. The real error string is surfaced instead of being swallowed.
+8. Sales account code is now configurable via env var XERO_SALES_ACCOUNT_CODE
+   (default "200"). If Xero rejects the quote with an account-code error, change
+   the env var — no code edit needed.
+9. SECURITY: the full token is no longer written to the logs.
 """
 
 import os
@@ -32,10 +38,16 @@ XERO_CLIENT_SECRET = os.getenv("XERO_CLIENT_SECRET", "").strip()
 XERO_REDIRECT_URI = os.getenv("XERO_REDIRECT_URI", "https://astro-fence-assistant.onrender.com/xero/callback").strip()
 XERO_SCOPES = "openid profile email accounting.contacts accounting.transactions projects offline_access"
 
+# Sales account code used on quote line items. "200" is the Xero default Sales account
+# in the standard chart of accounts, but if YOUR chart uses a different code Xero will
+# reject the quote. Override with the XERO_SALES_ACCOUNT_CODE env var if needed.
+XERO_SALES_ACCOUNT_CODE = os.getenv("XERO_SALES_ACCOUNT_CODE", "200").strip()
+
 XERO_TOKEN_FILE = "xero_token.json"
 
 TOKEN_URL = "https://identity.xero.com/connect/token"
 CONNECTIONS_URL = "https://api.xero.com/connections"
+
 
 def save_token(token_data: dict):
     token_data["acquired_at"] = time.time()
@@ -52,7 +64,9 @@ def save_token(token_data: dict):
     _update_render_env_var("XERO_TOKEN_DATA", encoded)
 
     logger.info("Xero token saved")
-    logger.info(f"COPY THIS INTO RENDER ENV VAR 'XERO_TOKEN_DATA' -> {encoded}")
+    # SECURITY: do NOT log the token contents (it contains a long-lived refresh_token).
+    # If you ever need the value for a manual env paste, read it from the Render
+    # environment directly rather than from logs.
 
 
 def _update_render_env_var(key: str, value: str):
@@ -325,6 +339,8 @@ def find_or_create_contact(token_data: dict, tenant_id: str, contact_info: dict)
             token_data,
             json={"Contacts": [contact_payload]}
         )
+        if not resp.ok:
+            logger.error(f"Contact create failed {resp.status_code}: {resp.text[:400]}")
         resp.raise_for_status()
         contact_id = resp.json()["Contacts"][0]["ContactID"]
         logger.info(f"Created Xero contact: {full_name} ({contact_id})")
@@ -369,6 +385,8 @@ def create_xero_project(
             token_data,
             json=project_payload
         )
+        if not resp.ok:
+            logger.error(f"Project create failed {resp.status_code}: {resp.text[:400]}")
         resp.raise_for_status()
         project = resp.json()
         logger.info(f"Created Xero project: {project_name}")
@@ -385,12 +403,13 @@ def create_xero_quote(
     quote_title: str,
     line_items: list,
     summary: str,
-    project_id: Optional[str] = None  # kept for signature compat but not sent to API
+    project_id: Optional[str] = None  # kept for signature compat but NOT sent to the API
 ) -> Optional[dict]:
     """
     Create a Draft Quote in Xero linked to the contact.
-    NOTE: ProjectID is NOT a valid field in the Quotes API — removed to fix 500 error.
-    The quote appears in the contact's quotes tab. The project is separate.
+    NOTE: ProjectID is NOT a valid field in the Quotes API — it is intentionally
+    omitted (including it causes a 500). The quote appears in the contact's Quotes
+    tab. The project is created separately under the same contact.
     """
     headers = xero_headers(token_data, tenant_id)
     quote_number = f"AOD-{datetime.now().strftime('%y%m%d-%H%M')}"
@@ -398,11 +417,11 @@ def create_xero_quote(
     xero_lines = []
     for item in line_items:
         xero_lines.append({
-            "Description": item.get("description", ""),
+            "Description": (item.get("description", "") or "")[:4000] or "Fence work",
             "Quantity": item.get("quantity", 1),
             "UnitAmount": round(item.get("unitAmount", 0), 2),
             "LineAmount": round(item.get("lineAmount", 0), 2),
-            "AccountCode": "200"
+            "AccountCode": XERO_SALES_ACCOUNT_CODE
         })
 
     quote_payload = {
@@ -416,7 +435,6 @@ def create_xero_quote(
         "Summary": summary[:500] if summary else "Fence installation quote from chat session",
         "Terms": "Quote valid for 30 days. Final price confirmed after site visit. Includes materials, labor, and delivery.",
         "LineAmountTypes": "EXCLUSIVE"
-        # ProjectID removed — not a valid Xero Quotes API field, causes 500
     }
 
     try:
@@ -428,7 +446,9 @@ def create_xero_quote(
             json={"Quotes": [quote_payload]}
         )
         if not resp.ok:
-            logger.error(f"Quote create failed {resp.status_code}: {resp.text}")
+            # This is the line that will tell you EXACTLY why a quote was rejected
+            # (e.g. bad AccountCode). Read it in the Render logs.
+            logger.error(f"Quote create failed {resp.status_code}: {resp.text[:600]}")
         resp.raise_for_status()
         quote = resp.json()["Quotes"][0]
         logger.info(f"Created Xero quote: {quote_number}")
@@ -514,6 +534,8 @@ def parse_quote_from_transcript(messages: list) -> dict:
         except ValueError:
             continue
 
+    # FALLBACK: if we found a total but no clean line items, create one line item
+    # so a quote can always be generated when the bot quoted a real number.
     if not result["line_items"] and result["total"] > 0:
         summary_short = result["project_summary"][:300] if result["project_summary"] else "Fence installation"
         result["line_items"] = [{
@@ -528,16 +550,35 @@ def parse_quote_from_transcript(messages: list) -> dict:
 
 
 def push_to_xero_with_contact(contact_info: dict, session_data: dict) -> dict:
-    result = {"success": False, "quote_number": None, "project_name": None, "error": None}
+    """
+    Full pipeline: contact -> project (under contact) -> draft quote (under contact).
+
+    HONEST SUCCESS RULES:
+      - If the contact can't be created -> success False, with the reason.
+      - If a quote was expected (we parsed a price) but Xero rejected it -> success False.
+      - If no price was ever quoted in the chat -> contact (and project) still created,
+        success True, but quote_created False and the reason stated.
+      - Only when the quote actually lands is success True with a quote number.
+    """
+    result = {
+        "success": False,
+        "quote_number": None,
+        "project_name": None,
+        "contact_created": False,
+        "quote_created": False,
+        "error": None,
+    }
 
     token = get_valid_token()
     if not token:
-        result["error"] = "Xero not connected"
+        result["error"] = "Xero not connected — visit /xero/auth to reconnect"
+        logger.error("Xero push aborted: no valid token")
         return result
 
     tenant_id = get_tenant_id(token)
     if not tenant_id:
         result["error"] = "Could not get Xero tenant ID"
+        logger.error("Xero push aborted: no tenant id")
         return result
 
     messages = session_data.get("messages", [])
@@ -549,46 +590,70 @@ def push_to_xero_with_contact(contact_info: dict, session_data: dict) -> dict:
     if not full_name:
         full_name = "Chat Lead"
 
-    fence_type = session_data.get("fence_type", "").strip()
+    fence_type = (session_data.get("fence_type", "") or "").strip()
 
+    # --- Contact ---
     contact_id = find_or_create_contact(token, tenant_id, contact_info)
     if not contact_id:
-        result["error"] = "Failed to create Xero contact"
+        result["error"] = "Failed to create Xero contact (see Render log line 'Contact create failed')"
+        logger.error(f"Xero push failed at contact stage for {full_name}")
         return result
+    result["contact_created"] = True
+    result["contact_name"] = full_name
 
     total = parsed["total"] or sum(i["lineAmount"] for i in parsed["line_items"]) or 0
+    result["total_estimate"] = total
+    result["fence_type"] = fence_type
 
-    project_name = build_project_name(full_name, fence_type)
-    quote_title = f"Fence Project - {full_name}"
-
+    # --- Project (non-fatal: log but don't fail the whole push if it errors) ---
     project_id = None
+    project_name = build_project_name(full_name, fence_type)
     project = create_xero_project(token, tenant_id, contact_id, project_name, total)
     if project:
         result["project_name"] = project.get("name")
         project_id = project.get("projectId")
         result["project_id"] = project_id
+    else:
+        logger.warning(f"Project not created for {full_name} (continuing to quote)")
 
-    if parsed["line_items"]:
-        quote = create_xero_quote(
-            token, tenant_id, contact_id,
-            quote_title,
-            parsed["line_items"],
-            parsed["project_summary"],
-            project_id=project_id
+    # --- Quote ---
+    if not parsed["line_items"]:
+        # Contact (and maybe project) created, but there was no priced estimate to quote.
+        result["success"] = True
+        result["quote_created"] = False
+        result["error"] = "Contact created, but no quote — no priced estimate was found in the conversation"
+        logger.warning(
+            f"Xero: contact created for {full_name} but NO quote "
+            f"(no parseable $ total in transcript)"
         )
-        if quote:
-            result["quote_number"] = quote.get("QuoteNumber")
-            result["quote_id"] = quote.get("QuoteID")
+        return result
 
-    result["success"] = bool(contact_id)
-    result["contact_name"] = full_name
-    result["total_estimate"] = total
-    result["fence_type"] = fence_type
+    quote_title = f"Fence Project - {full_name}"
+    quote = create_xero_quote(
+        token, tenant_id, contact_id,
+        quote_title,
+        parsed["line_items"],
+        parsed["project_summary"],
+        project_id=project_id
+    )
+
+    if not quote:
+        # The contact exists, but the quote failed. DO NOT report full success.
+        result["success"] = False
+        result["quote_created"] = False
+        result["error"] = "Contact created, but Xero rejected the quote (see Render log line 'Quote create failed')"
+        logger.error(f"Xero: quote creation FAILED for {full_name}")
+        return result
+
+    result["quote_number"] = quote.get("QuoteNumber")
+    result["quote_id"] = quote.get("QuoteID")
+    result["quote_created"] = True
+    result["success"] = True
 
     logger.info(
-        f"Xero pipeline complete for {full_name}: "
+        f"✅ Xero pipeline complete for {full_name}: "
         f"fence={fence_type}, project={result.get('project_name')}, "
-        f"quote={result.get('quote_number')}"
+        f"quote={result.get('quote_number')}, total=${total}"
     )
     return result
 
