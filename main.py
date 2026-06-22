@@ -1682,7 +1682,8 @@ if XERO_ENABLED:
                     session_data = active_sessions[sid]
                     break
             result = push_to_xero_with_contact(contact_info, session_data)
-            return JSONResponse(result)
+            status = 200 if result.get("success") else 502
+            return JSONResponse(result, status_code=status)
         except Exception as e:
             logger.error(f"Xero capture-and-push error: {e}")
             return JSONResponse({"success": False, "error": str(e)}, status_code=500)
