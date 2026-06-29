@@ -708,51 +708,69 @@ GOAL
 """.strip()
 
 def call_claude(user_message: str, history: list = None, images: list = None) -> str:
-    """Call Claude API with conversation history and optional images for vision"""
+    """Call Claude API with conversation history and optional images for vision."""
     headers = {
         "x-api-key": ANTHROPIC_API_KEY,
         "anthropic-version": "2023-06-01",
         "content-type": "application/json"
     }
-    # Use claude-sonnet for vision (haiku vision quality is poor), fall back to haiku for text-only
-    model = "claude-sonnet-4-6" if images else CLAUDE_MODEL
 
-    def build_content(text, imgs):
-        """Build a Claude message content block — text only or text+images"""
-        if not imgs:
-            return text
-        content_blocks = []
-        for img_b64 in imgs:
-            media_type = "image/jpeg"
-            if img_b64.startswith("data:"):
-                header, img_b64 = img_b64.split(",", 1)
-                if "png" in header: media_type = "image/png"
-                elif "webp" in header: media_type = "image/webp"
-                elif "gif" in header: media_type = "image/gif"
-            content_blocks.append({
-                "type": "image",
-                "source": {"type": "base64", "media_type": media_type, "data": img_b64}
-            })
-        content_blocks.append({"type": "text", "text": text})
-        return content_blocks
+    # ~5MB is Anthropic's per-image cap; stay safely under it
+    MAX_IMG_BYTES = 4_500_000
 
+    def sanitize_images(imgs):
+        """Validate and clean base64 images. Drop anything malformed or oversized
+        so one bad photo can't 400 the entire chat session."""
+        cleaned = []
+        for img in (imgs or []):
+            try:
+                media_type = "image/jpeg"
+                data = img
+                if isinstance(data, str) and data.startswith("data:"):
+                    header, data = data.split(",", 1)
+                    if "png" in header: media_type = "image/png"
+                    elif "webp" in header: media_type = "image/webp"
+                    elif "gif" in header: media_type = "image/gif"
+                data = "".join(str(data).split())  # strip whitespace/newlines
+                approx_bytes = (len(data) * 3) // 4
+                if approx_bytes > MAX_IMG_BYTES:
+                    logger.warning(f"⚠️ Skipping oversized image (~{approx_bytes // 1000}KB, limit ~4500KB)")
+                    continue
+                base64.b64decode(data, validate=True)  # confirms it's real, complete base64
+                cleaned.append({
+                    "type": "image",
+                    "source": {"type": "base64", "media_type": media_type, "data": data}
+                })
+            except Exception as e:
+                logger.warning(f"⚠️ Skipping bad/corrupt image: {e}")
+        return cleaned
+
+    # Build conversation history — TEXT ONLY. We do not re-send old photos on every
+    # turn (that bloats the payload and is a common cause of freezes / 400s).
     messages = []
     if history:
         for msg in history[:-1]:
             if msg["type"] == "user":
-                msg_images = msg.get("images", [])
-                messages.append({
-                    "role": "user",
-                    "content": build_content(msg["message"], msg_images)
-                })
+                note = " [customer attached a photo]" if msg.get("images") else ""
+                text = (msg.get("message", "") + note).strip()
+                messages.append({"role": "user", "content": text or "[photo]"})
             elif msg["type"] == "assistant":
-                messages.append({"role": "assistant", "content": msg["message"]})
+                # Skip empty assistant turns — the API rejects empty content blocks
+                if msg.get("message", "").strip():
+                    messages.append({"role": "assistant", "content": msg["message"]})
 
-    # Current message with images
-    messages.append({
-        "role": "user",
-        "content": build_content(user_message, images or [])
-    })
+    # Current message — this is the only turn that carries images
+    current_images = sanitize_images(images)
+    if current_images:
+        messages.append({
+            "role": "user",
+            "content": current_images + [{"type": "text", "text": user_message}]
+        })
+    else:
+        messages.append({"role": "user", "content": user_message})
+
+    # Vision needs Sonnet; if no valid image survived, stay on the cheaper text model
+    model = "claude-sonnet-4-6" if current_images else CLAUDE_MODEL
 
     payload = {
         "model": model,
@@ -761,9 +779,24 @@ def call_claude(user_message: str, history: list = None, images: list = None) ->
         "messages": messages
     }
     response = requests.post(ANTHROPIC_API_URL, headers=headers, json=payload, timeout=30)
-    response.raise_for_status()
+
+    # LOUD error surfacing — log the API's full explanation on any non-2xx
+    if response.status_code >= 400:
+        try:
+            err_body = response.json()
+        except Exception:
+            err_body = {"raw": response.text[:1000]}
+        logger.error(
+            f"❌ Anthropic API {response.status_code} | model={model} | "
+            f"turns={len(messages)} | images={len(current_images)} | "
+            f"body={json.dumps(err_body)}"
+        )
+        response.raise_for_status()
+
     data = response.json()
-    return data["content"][0]["text"].strip()
+    blocks = data.get("content", [])
+    text_blocks = [b.get("text", "") for b in blocks if b.get("type") == "text"]
+    return ("".join(text_blocks)).strip()
 
 def generate_session_id() -> str:
     return str(uuid.uuid4())
