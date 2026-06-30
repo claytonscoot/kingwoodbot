@@ -508,7 +508,7 @@ def parse_quote_from_transcript(messages: list) -> dict:
             result["total"] = max(parsed_amounts)
 
     line_pattern = re.findall(
-        r'[-•*]?\s*([A-Za-z][^:$\n]{3,60}):\s*\$?([\d,]+(?:\.\d{2})?)',
+        r'[-•*]?\s*([A-Za-z][^:$\n]{3,120}):\s*\$?([\d,]+(?:\.\d{2})?)',
         last_quote_msg
     )
     seen = set()
