@@ -1692,7 +1692,8 @@ if XERO_ENABLED:
             raise HTTPException(status_code=404, detail="Session not found")
         result = push_session_to_xero(full_sid, active_sessions[full_sid])
         return JSONResponse(result)
-        @app.get("/xero/test-push/{session_id}")
+        
+    @app.get("/xero/test-push/{session_id}")
     def xero_test_push(session_id: str):
         """Browser-friendly trigger to test the full Xero pipeline on a live session.
         Get the 8-character session_id from /admin/sessions first."""
