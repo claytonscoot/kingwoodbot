@@ -1692,6 +1692,22 @@ if XERO_ENABLED:
             raise HTTPException(status_code=404, detail="Session not found")
         result = push_session_to_xero(full_sid, active_sessions[full_sid])
         return JSONResponse(result)
+        @app.get("/xero/test-push/{session_id}")
+    def xero_test_push(session_id: str):
+        """Browser-friendly trigger to test the full Xero pipeline on a live session.
+        Get the 8-character session_id from /admin/sessions first."""
+        full_sid = None
+        for sid in active_sessions:
+            if sid.startswith(session_id) or sid[:8] == session_id:
+                full_sid = sid
+                break
+        if not full_sid:
+            return JSONResponse(status_code=404, content={
+                "error": "Session not found. It may have been wiped by a redeploy. "
+                         "Check /admin/sessions for current live session IDs."
+            })
+        result = push_session_to_xero(full_sid, active_sessions[full_sid])
+        return JSONResponse(result)
 
     @app.post("/xero/capture-and-push")
     async def xero_capture_and_push(request: Request):
