@@ -1,9 +1,10 @@
-<!DOCTYPE html>
+PK         <ók€Ô  €Ô  
+   index.html<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Astro Outdoor Designs – Fence Assistant</title>
+<title>Astro Outdoor Designs â€“ Fence Assistant</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Segoe UI', sans-serif; background: #1a1a1a; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; padding: 20px; gap: 20px; flex-wrap: wrap; }
@@ -77,7 +78,6 @@
   .view-tab.active { background: #1e1e1e; color: #e87722; border-bottom: 2px solid #e87722; }
   .view-tab:not(.active):hover { background: #333; color: #ccc; }
 
-  /* Gate card — kept in CSS but disabled in JS */
   .gate-card { background: #2a2a2a; border: 1px solid #e87722; border-radius: 12px; padding: 16px; margin: 8px 0; }
   .gate-card h3 { color: #e87722; font-size: 14px; margin-bottom: 8px; }
   .gate-card p { color: #aaa; font-size: 12px; margin-bottom: 12px; line-height: 1.4; }
@@ -112,7 +112,6 @@
   .upload-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .upload-thumb .remove-thumb { position: absolute; top: 2px; right: 2px; background: rgba(0,0,0,0.7); color: white; border: none; border-radius: 50%; width: 18px; height: 18px; font-size: 11px; cursor: pointer; display: flex; align-items: center; justify-content: center; line-height: 1; }
 
-  /* Xero modal */
   .xero-modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:2000; justify-content:center; align-items:center; padding:20px; }
   .xero-modal-overlay.open { display:flex; }
   .xero-modal { background:#1e1e1e; border-radius:16px; width:100%; max-width:480px; overflow:hidden; }
@@ -170,11 +169,11 @@
 <!-- PHOTO MODAL -->
 <div class="photo-modal" id="photoModal">
   <div class="modal-content">
-    <span class="modal-close" onclick="closeModal()">×</span>
+    <span class="modal-close" onclick="closeModal()">&times;</span>
     <div class="modal-title" id="modalTitle"></div>
     <div class="modal-subtitle" id="modalSubtitle"></div>
     <div class="photo-grid" id="modalPhotos"></div>
-    <a class="modal-link" id="modalLink" href="#" target="_blank">View full gallery on our website →</a>
+    <a class="modal-link" id="modalLink" href="#" target="_blank" rel="noopener noreferrer">View full gallery on our website &rarr;</a>
     <button class="modal-ask-btn" onclick="askAboutStyle()">Get a quote for this style</button>
   </div>
 </div>
@@ -184,10 +183,10 @@
   <div class="xero-modal">
     <div class="xero-modal-header">
       <div>
-        <h3>📋 Get Your Formal Quote</h3>
-        <p>Fill in any missing details — we'll reach out shortly</p>
+        <h3>&#128203; Get Your Formal Quote</h3>
+        <p>Confirm your details below &mdash; we'll reach out shortly</p>
       </div>
-      <button class="xero-modal-close" onclick="document.getElementById('xeroModal').classList.remove('open')">×</button>
+      <button class="xero-modal-close" onclick="document.getElementById('xeroModal').classList.remove('open')">&times;</button>
     </div>
     <div class="xero-modal-body">
       <div id="xeroForm">
@@ -203,7 +202,7 @@
           <input type="text" id="xeroZip" placeholder="Zip code *" />
         </div>
         <div class="xero-error-msg" id="xeroError"></div>
-        <button class="xero-submit-btn" id="xeroSubmitBtn" onclick="submitXeroContact()">Submit & Create Quote →</button>
+        <button class="xero-submit-btn" id="xeroSubmitBtn" onclick="submitXeroContact()">Submit &amp; Create Quote &rarr;</button>
       </div>
       <div class="xero-success" id="xeroSuccess"></div>
     </div>
@@ -214,44 +213,44 @@
 <div class="chat-panel" id="chatPanel">
   <div class="chat-header" id="chatHeaderToggle">
     <div class="chat-header-text">
-      <h2>💬 Astro Outdoor Designs – Fence Assistant</h2>
-      <p>🤖 AI-powered chat — get instant quotes, pricing & answers 24/7</p>
+      <h2>&#128172; Astro Outdoor Designs &ndash; Fence Assistant</h2>
+      <p>Get instant quotes, pricing &amp; answers 24/7</p>
     </div>
-    <span class="chat-toggle-icon">▼</span>
+    <span class="chat-toggle-icon">&#9660;</span>
   </div>
 
   <div class="view-tabs">
-    <button class="view-tab active" id="tabChat" onclick="switchTab('chat')">💬 Chat</button>
-    <button class="view-tab" id="tabQuote" onclick="switchTab('quote')">📋 Request a Quote</button>
+    <button class="view-tab active" id="tabChat" onclick="switchTab('chat')">&#128172; Chat</button>
+    <button class="view-tab" id="tabQuote" onclick="switchTab('quote')">&#128203; Request a Quote</button>
   </div>
 
   <div id="chatView" style="display:flex; flex-direction:column; flex:1; overflow:hidden;">
     <div class="gallery-bar">
       <p>Browse our work</p>
       <div class="style-buttons">
-        <button class="style-btn" onclick="showGallery('wood')">🌲 Cedar/Wood</button>
-        <button class="style-btn" onclick="showGallery('metal')">⚙️ Metal/Steel</button>
-        <button class="style-btn" onclick="showGallery('chainlink')">🔗 Chain Link</button>
-        <button class="style-btn" onclick="showGallery('vinyl')">🤍 Vinyl</button>
-        <button class="style-btn" onclick="showGallery('gate')">🚪 Gates</button>
-        <button class="style-btn" onclick="showGallery('staining')">🖌️ Staining</button>
-        <button class="style-btn" onclick="showGallery('powerwashing')">💧 Power Washing</button>
-        <button class="style-btn" onclick="showGallery('lighting')">🎄 Christmas Lights</button>
-        <button class="style-btn" onclick="showGallery('firewood')">🪵 Firewood</button>
-        <button class="style-btn" onclick="showGallery('deck')">🪵 Deck</button>
+        <button class="style-btn" onclick="showGallery('wood')">&#127794; Cedar/Wood</button>
+        <button class="style-btn" onclick="showGallery('metal')">&#9881;&#65039; Metal/Steel</button>
+        <button class="style-btn" onclick="showGallery('chainlink')">&#128279; Chain Link</button>
+        <button class="style-btn" onclick="showGallery('vinyl')">&#129003; Vinyl</button>
+        <button class="style-btn" onclick="showGallery('gate')">&#128682; Gates</button>
+        <button class="style-btn" onclick="showGallery('staining')">&#128396;&#65039; Staining</button>
+        <button class="style-btn" onclick="showGallery('powerwashing')">&#128167; Power Washing</button>
+        <button class="style-btn" onclick="showGallery('lighting')">&#127876; Christmas Lights</button>
+        <button class="style-btn" onclick="showGallery('firewood')">&#129717; Firewood</button>
+        <button class="style-btn" onclick="showGallery('deck')">&#129717; Deck</button>
       </div>
-      <a href="https://astrooutdoordesigns.com/our-work/" target="_blank" style="display:inline-block; margin-top:8px; color:#e87722; font-size:12px; text-decoration:none; font-weight:600;">📷 View Our Full Photo Gallery →</a>
+      <a href="https://astrooutdoordesigns.com/our-work/" target="_blank" rel="noopener noreferrer" style="display:inline-block; margin-top:8px; color:#e87722; font-size:12px; text-decoration:none; font-weight:600;">&#128247; View Our Full Photo Gallery &rarr;</a>
     </div>
 
     <div class="chat-messages" id="chatMessages">
       <div class="msg bot">
-        Hi — we can help with a quote.<br>
+        Hi &mdash; we can help with a quote.<br>
         To dial this in quick, tell us:
-        <br>• Approx length (feet)
-        <br>• Height (6/7/8ft)
-        <br>• Style (standard / board-on-board / top cap)
-        <br>• Steel posts or wood posts
-        <br>• Any gates (walk / double / sliding)
+        <br>&bull; Approx length (feet)
+        <br>&bull; Height (6/7/8ft)
+        <br>&bull; Style (standard / board-on-board / top cap)
+        <br>&bull; Steel posts or wood posts
+        <br>&bull; Any gates (walk / double / sliding)
       </div>
     </div>
 
@@ -265,25 +264,25 @@
 
     <div class="chat-input-area">
       <div class="chat-input-wrap">
-        <textarea id="userInput" placeholder="Type your question here... (e.g. I need a 150ft cedar fence with steel posts)" rows="2" onkeydown="handleKey(event)" oninput="autoResize(this)" onfocus="expandChat()" onblur="collapseChat()"></textarea>
+        <textarea id="userInput" placeholder="Type your question, or just attach a photo and hit Send" rows="2" onkeydown="handleKey(event)" oninput="autoResize(this)" onfocus="expandChat()" onblur="collapseChat()"></textarea>
         <div class="chat-upload-bar" id="chatUploadBar"></div>
       </div>
       <div class="chat-input-btns">
-        <button class="attach-btn" onclick="document.getElementById('chatPhotoUpload').click()" title="Attach photos">📷</button>
+        <button class="attach-btn" onclick="document.getElementById('chatPhotoUpload').click()" title="Attach photos">&#128247;</button>
         <input type="file" id="chatPhotoUpload" accept="image/*,application/pdf" multiple style="display:none" onchange="handleChatFiles(this.files)" />
         <button class="send-btn" onclick="sendMessage()">Send</button>
       </div>
     </div>
-    <div class="paste-hint">You can also paste images with Ctrl+V / ⌘+V</div>
+    <div class="paste-hint">You can also paste images with Ctrl+V / &#8984;+V</div>
     <div class="chat-disclaimer" style="padding: 4px 16px 10px; text-align: center; color: #555; font-size: 11px; line-height: 1.4;">
-      ⚠️ This assistant is AI-powered and provides estimates only. All pricing is approximate — contact us directly for an official quote.
+      &#9888;&#65039; This assistant provides estimates only. All pricing is approximate &mdash; contact us directly for an official quote.
     </div>
   </div>
 
   <!-- QUOTE VIEW -->
   <div id="quoteView" style="display:none; flex-direction:column; flex:1; overflow-y:auto;">
     <div class="lead-form" id="quoteForm">
-      <p class="hint">Fill in your details below — we'll reach out shortly. Your info goes straight to our team.</p>
+      <p class="hint">Fill in your details below &mdash; we'll reach out shortly. Your info goes straight to our team.</p>
       <input type="text" id="leadName" placeholder="Name *" />
       <div class="row2">
         <input type="tel" id="leadPhone" placeholder="Phone (recommended)" />
@@ -314,16 +313,16 @@
       </div>
       <textarea id="leadDetails" placeholder="Project details * (approx feet, height 6/7/8ft, style, gates, timing)"></textarea>
       <div class="upload-area" id="uploadArea" onclick="document.getElementById('photoUpload').click()" ondragover="handleDragOver(event)" ondrop="handleDrop(event)" ondragleave="this.classList.remove('dragover')">
-        <div class="upload-icon">📷</div>
+        <div class="upload-icon">&#128247;</div>
         <div class="upload-label">Tap to add photos <span class="upload-sub">(optional)</span></div>
         <div class="upload-sub">Fence style you like, or your current fence</div>
         <input type="file" id="photoUpload" accept="image/*" multiple style="display:none" onchange="handleFiles(this.files)" />
       </div>
       <div class="upload-previews" id="uploadPreviews"></div>
-      <button class="submit-btn" onclick="submitLeadAndXero()">Submit Quote Request →</button>
+      <button class="submit-btn" onclick="submitLeadAndXero()">Submit Quote Request &rarr;</button>
       <div class="success-msg" id="successMsg"></div>
     </div>
-    <div class="lead-footer">Astro Outdoor Designs • Built for real quotes, not fluff.</div>
+    <div class="lead-footer">Astro Outdoor Designs &bull; Built for real quotes, not fluff.</div>
   </div>
 </div>
 
@@ -333,10 +332,8 @@
   let conversationLog = [];
   let gateCompleted = false;
 
-  // ---- GATE: disabled — set to true to re-enable ----
   const GATE_ENABLED = false;
 
-  // ---- Tab switching with auto-prefill ----
   function switchTab(tab) {
     const chatView = document.getElementById('chatView');
     const quoteView = document.getElementById('quoteView');
@@ -356,11 +353,11 @@
     }
   }
 
-  // Auto-prefill quote form from session data
   async function prefillQuoteForm() {
     if (!sessionId) return;
     try {
       const res = await fetch('https://astro-fence-assistant.onrender.com/session-info/' + sessionId);
+      if (!res.ok) throw new Error('Request failed with status ' + res.status);
       const info = await res.json();
       const nameField = document.getElementById('leadName');
       const phoneField = document.getElementById('leadPhone');
@@ -371,7 +368,6 @@
       if (info.phone && !phoneField.value) phoneField.value = info.phone;
       if (info.email && !emailField.value) emailField.value = info.email;
       if ((info.zip || info.city) && !zipField.value) zipField.value = info.zip || info.city;
-      // Auto-select project type
       if (info.fence_type) {
         const sel = document.getElementById('leadProject');
         const ft = info.fence_type.toLowerCase();
@@ -380,7 +376,6 @@
         else if (ft.includes('aluminum') || ft.includes('metal')) sel.value = 'New metal fence';
         else if (ft.includes('cedar') || ft.includes('wood') || ft.includes('pine') || ft.includes('pressure')) sel.value = 'New wood fence';
       }
-      // Also prefill project details from conversation
       const detailsField = document.getElementById('leadDetails');
       if (!detailsField.value && conversationLog.length > 0) {
         const userMsgs = conversationLog.filter(m => m.role === 'user').map(m => m.text);
@@ -389,7 +384,6 @@
     } catch(e) {}
   }
 
-  // ---- Mobile collapsible ----
   const chatPanel = document.getElementById('chatPanel');
   const chatHeaderToggle = document.getElementById('chatHeaderToggle');
 
@@ -407,14 +401,13 @@
     if (!isMobile()) chatPanel.classList.remove('collapsed');
   });
 
-  // ---- Gallery ----
   const FENCE_STYLES = {
-    wood: { title: "Cedar & Wood Fence", subtitle: "Our most popular style — natural, private, and customizable.", link: "https://astrooutdoordesigns.com/wood-fence-installation/", photos: ["https://astrooutdoordesigns.com/wp-content/uploads/2021/05/6.8-Cedar-Pickets.-2x6-baseboard.-Cedar-top-cap-and-trim-png.webp","https://astrooutdoordesigns.com/wp-content/uploads/2021/05/fincing-1024x784.png","https://astrooutdoordesigns.com/wp-content/uploads/2021/10/astrooutdoor-Residential-Fencing-1-300x179.jpg","https://astrooutdoordesigns.com/wp-content/uploads/2021/06/Attachment_1622724541-7.jpeg"] },
+    wood: { title: "Cedar & Wood Fence", subtitle: "Our most popular style â€” natural, private, and customizable.", link: "https://astrooutdoordesigns.com/wood-fence-installation/", photos: ["https://astrooutdoordesigns.com/wp-content/uploads/2021/05/6.8-Cedar-Pickets.-2x6-baseboard.-Cedar-top-cap-and-trim-png.webp","https://astrooutdoordesigns.com/wp-content/uploads/2021/05/fincing-1024x784.png"] },
     metal: { title: "Metal & Steel Fence", subtitle: "Strong, elegant, and low-maintenance. Great for pools and front yards.", link: "https://astrooutdoordesigns.com/metal-fence-installation-houston/", photos: ["https://astrooutdoordesigns.com/wp-content/uploads/2021/05/METAL-FENCE-ON-A-SLOPE-png.webp","https://astrooutdoordesigns.com/wp-content/uploads/2021/05/Metal-Frame-Gate2.webp"] },
     chainlink: { title: "Chain Link Fence", subtitle: "Affordable, durable, and great for larger properties.", link: "https://astrooutdoordesigns.com/chain-link-fence-installation/", photos: ["https://astrooutdoordesigns.com/wp-content/uploads/2019/01/Chain-Link-Fencing.jpg"] },
     vinyl: { title: "Vinyl Fence", subtitle: "Low maintenance, clean look, never needs staining or painting.", link: "https://astrooutdoordesigns.com/vinyl-fence-installation/", photos: ["https://astrooutdoordesigns.com/wp-content/uploads/2021/05/Attachment_1622001073-2-scaled.jpeg"] },
     gate: { title: "Gate Installation", subtitle: "Walk gates, double drive gates, and custom designs.", link: "https://astrooutdoordesigns.com/gate-installation/", photos: ["https://astrooutdoordesigns.com/wp-content/uploads/2019/01/astro-outdoors-design-gates.jpg","https://astrooutdoordesigns.com/wp-content/uploads/2021/05/Metal-Frame-Gate2.webp"] },
-    staining: { title: "Fence Staining", subtitle: "We use Wood Defender semi-transparent stain.", link: "https://astrooutdoordesigns.com/houston-fence-staining/", photos: ["https://astrooutdoordesigns.com/wp-content/uploads/2021/12/astrooutdoordesigns-2-scaled.jpg","https://astrooutdoordesigns.com/wp-content/uploads/2024/03/quanah-martin-stain-picture-with-trailer.jpg"] },
+    staining: { title: "Fence Staining", subtitle: "We use Wood Defender semi-transparent stain.", link: "https://astrooutdoordesigns.com/houston-fence-staining/", photos: ["https://astrooutdoordesigns.com/wp-content/uploads/2021/12/astrooutdoordesigns-2-scaled.jpg"] },
     powerwashing: { title: "Power Washing", subtitle: "Professional power washing for fences, decks, driveways, and more.", link: "https://astrooutdoordesigns.com/power-washing/", photos: ["https://astrooutdoordesigns.com/wp-content/uploads/2024/09/power-washing-image.jpg"] },
     lighting: { title: "Christmas & Outdoor Lighting", subtitle: "Professional installation and takedown.", link: "https://astrooutdoordesigns.com/holiday-lighting/", photos: ["https://astrooutdoordesigns.com/wp-content/uploads/2025/04/01961410-ab25-7ccb-90e9-00383fa2ab8c.webp"] },
     firewood: { title: "Firewood Delivery", subtitle: "Seasoned firewood delivered to your door.", link: "https://astrooutdoordesigns.com/astro-firewood/", photos: ["https://astrooutdoordesigns.com/wp-content/uploads/2024/12/fireood-picture.webp"] },
@@ -428,7 +421,7 @@
     document.getElementById('modalSubtitle').textContent = data.subtitle;
     document.getElementById('modalLink').href = data.link;
     const grid = document.getElementById('modalPhotos');
-    grid.innerHTML = data.photos.map(url => `<img src="${url}" alt="${data.title}" onerror="this.style.display='none'">`).join('');
+    grid.innerHTML = data.photos.map(url => '<img src="' + url + '" alt="' + data.title + '" onerror="this.style.display=\'none\'">').join('');
     document.getElementById('photoModal').classList.add('open');
     document.querySelectorAll('.style-btn').forEach(b => b.classList.remove('active'));
     event.target.classList.add('active');
@@ -443,20 +436,25 @@
       chatPanel.classList.remove('collapsed');
       setTimeout(() => chatPanel.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
     }
-    quickSend(`I'm interested in ${data.title}. Can you give me a quote?`);
+    quickSend("I'm interested in " + data.title + ". Can you give me a quote?");
   }
 
   document.getElementById('photoModal').addEventListener('click', function(e) { if (e.target === this) closeModal(); });
 
-  // ---- Chat ----
+  function escapeHTML(value) {
+    return String(value).replace(/[&<>"']/g, function(char) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char];
+    });
+  }
+
   function formatMessage(text) {
-    return text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
+    return escapeHTML(text).replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
   }
 
   function addMessage(text, type) {
     const msgs = document.getElementById('chatMessages');
     const div = document.createElement('div');
-    div.className = `msg ${type}`;
+    div.className = 'msg ' + type;
     div.innerHTML = formatMessage(text);
     msgs.appendChild(div);
     msgs.scrollTop = msgs.scrollHeight;
@@ -465,8 +463,12 @@
 
   async function sendMessage() {
     const input = document.getElementById('userInput');
-    const text = input.value.trim();
-    if (!text) return;
+    let text = input.value.trim();
+    // Allow sending a photo with no text â€” don't block on empty box if a photo is attached
+    if (!text && chatPhotos.length === 0) return;
+    if (!text && chatPhotos.length > 0) {
+      text = "Here's a photo of my project â€” can you take a look?";
+    }
     input.value = '';
     input.style.height = 'auto';
 
@@ -483,11 +485,13 @@
         if (file.type === 'application/pdf') {
           const pdfChip = document.createElement('div');
           pdfChip.style.cssText = 'display:inline-flex;align-items:center;gap:4px;background:#1a1a1a;border:1px solid #e87722;border-radius:4px;padding:4px 8px;font-size:12px;color:#e87722;margin:2px';
-          pdfChip.innerHTML = `📄 ${file.name}`;
+          pdfChip.textContent = '\uD83D\uDCC4 ' + file.name;
           photoRow.appendChild(pdfChip);
         } else {
           const img = document.createElement('img');
-          img.src = URL.createObjectURL(file);
+          const previewUrl = URL.createObjectURL(file);
+          img.src = previewUrl;
+          img.onload = function() { URL.revokeObjectURL(previewUrl); };
           photoRow.appendChild(img);
         }
       });
@@ -499,9 +503,9 @@
     const pdfFiles = photosToSend.filter(f => f.type === 'application/pdf');
 
     let fileNote = '';
-    if (imageFiles.length > 0) fileNote += `[Customer attached ${imageFiles.length} photo(s) of their project]`;
-    if (pdfFiles.length > 0) fileNote += `${fileNote ? ' ' : ''}[Customer attached ${pdfFiles.length} PDF document(s): ${pdfFiles.map(f => f.name).join(', ')}]`;
-    const promptWithPhotoNote = fileNote ? `${text}\n\n${fileNote}` : text;
+    if (imageFiles.length > 0) fileNote += '[Customer attached ' + imageFiles.length + ' photo(s) of their project]';
+    if (pdfFiles.length > 0) fileNote += (fileNote ? ' ' : '') + '[Customer attached ' + pdfFiles.length + ' PDF document(s): ' + pdfFiles.map(f => f.name).join(', ') + ']';
+    const promptWithPhotoNote = fileNote ? (text + '\n\n' + fileNote) : text;
 
     let imageBase64List = [];
     if (imageFiles.length > 0) {
@@ -522,10 +526,10 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(chatPayload)
       });
+      if (!res.ok) throw new Error('Request failed with status ' + res.status);
       const data = await res.json();
       sessionId = data.session_id;
 
-      // Gate check — disabled (set GATE_ENABLED = true at top to re-enable)
       if (GATE_ENABLED && data.gate) {
         loading.remove();
         showGateForm();
@@ -538,19 +542,17 @@
 
       const ctaType = shouldShowQuoteCTA(data.response);
       if (ctaType === 'quote') {
-        // Show a button in the chat
         const btn = document.createElement('button');
         btn.className = 'quote-cta';
-        btn.textContent = '📋 Tap here to submit your quote →';
+        btn.textContent = '\u{1F4CB} Tap here to submit your quote \u2192';
         btn.onclick = () => openXeroModal();
         msgDiv.appendChild(btn);
-        // Auto-open the Xero modal after 2 seconds so mobile users don't have to tap
-        setTimeout(() => openXeroModal(), 2000);
+        // NOTE: auto-open removed â€” the modal now only opens when the customer taps the button.
       } else if (ctaType === 'stuck') {
         const btn = document.createElement('button');
         btn.className = 'quote-cta';
         btn.style.cssText = 'background:#333;border:1px solid #e87722;color:#e87722;animation:none;';
-        btn.textContent = '📞 Reach out to our team directly →';
+        btn.textContent = '\u{1F4DE} Reach out to our team directly \u2192';
         btn.onclick = () => switchTab('quote');
         msgDiv.appendChild(btn);
       }
@@ -573,14 +575,13 @@
     return false;
   }
 
-  // ---- Gate form (kept but disabled via GATE_ENABLED flag) ----
   async function showGateForm() {
-    // Prefill from session before showing
     let prefill = { first: '', last: '', address: '', email: '' };
     if (sessionId) {
       try {
         const res = await fetch('https://astro-fence-assistant.onrender.com/session-info/' + sessionId);
-        const info = await res.json();
+        if (!res.ok) throw new Error('Request failed with status ' + res.status);
+      const info = await res.json();
         prefill.first = info.first_name || '';
         prefill.last = info.last_name || '';
         prefill.address = info.address || '';
@@ -591,13 +592,13 @@
     const gateDiv = document.createElement('div');
     gateDiv.id = 'gateCard';
     gateDiv.className = 'gate-card';
-    gateDiv.innerHTML = '<h3>🔒 One quick step to continue</h3>' +
+    gateDiv.innerHTML = '<h3>&#128274; One quick step to continue</h3>' +
       '<p>To keep chatting, we just need a few details.</p>' +
-      `<input type="text" id="gateFirstName" placeholder="First name *" value="${prefill.first}" />` +
-      `<input type="text" id="gateLastName" placeholder="Last name *" value="${prefill.last}" />` +
-      `<input type="text" id="gateAddress" placeholder="Property address *" value="${prefill.address}" />` +
-      `<input type="email" id="gateEmail" placeholder="Email address *" value="${prefill.email}" />` +
-      '<button class="gate-submit" id="gateSubmitBtn" onclick="submitGate()">Continue Chatting →</button>' +
+      '<input type="text" id="gateFirstName" placeholder="First name *" value="' + escapeHTML(prefill.first) + '" />' +
+      '<input type="text" id="gateLastName" placeholder="Last name *" value="' + escapeHTML(prefill.last) + '" />' +
+      '<input type="text" id="gateAddress" placeholder="Property address *" value="' + escapeHTML(prefill.address) + '" />' +
+      '<input type="email" id="gateEmail" placeholder="Email address *" value="' + escapeHTML(prefill.email) + '" />' +
+      '<button class="gate-submit" id="gateSubmitBtn" onclick="submitGate()">Continue Chatting &rarr;</button>' +
       '<div class="gate-error" id="gateError"></div>';
     msgs.appendChild(gateDiv);
     msgs.scrollTop = msgs.scrollHeight;
@@ -626,6 +627,7 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ first_name: firstName, last_name: lastName, address, email, session_id: sessionId })
       });
+      if (!res.ok) throw new Error('Request failed with status ' + res.status);
       const data = await res.json();
       document.getElementById('gateCard').remove();
       gateCompleted = true;
@@ -637,20 +639,20 @@
       if (data.response) { addMessage(data.response, 'bot'); conversationLog.push({ role: 'bot', text: data.response }); }
     } catch (err) {
       submitBtn.disabled = false;
-      submitBtn.textContent = 'Continue Chatting →';
+      submitBtn.textContent = 'Continue Chatting \u2192';
       errorDiv.textContent = 'Something went wrong. Please try again.';
       errorDiv.style.display = 'block';
     }
   }
 
-  // ---- Xero Modal ----
   async function openXeroModal() {
     const modal = document.getElementById('xeroModal');
     modal.classList.add('open');
     if (sessionId) {
       try {
         const res = await fetch('https://astro-fence-assistant.onrender.com/session-info/' + sessionId);
-        const info = await res.json();
+        if (!res.ok) throw new Error('Request failed with status ' + res.status);
+      const info = await res.json();
         if (info.first_name) document.getElementById('xeroFirst').value = info.first_name;
         if (info.last_name) document.getElementById('xeroLast').value = info.last_name;
         if (info.phone) document.getElementById('xeroPhone').value = info.phone;
@@ -693,37 +695,37 @@
         body: JSON.stringify({
           session_id: sessionId || '',
           first_name: first, last_name: last, phone, email,
-          address: document.getElementById('xeroAddress').value.trim(),
+          address: address,
           city: document.getElementById('xeroCity').value.trim(),
-          zip: document.getElementById('xeroZip').value.trim(),
+          zip: zip,
           state: 'TX'
         })
       });
+      if (!res.ok) throw new Error('Request failed with status ' + res.status);
       const data = await res.json();
       document.getElementById('xeroForm').style.display = 'none';
       const successDiv = document.getElementById('xeroSuccess');
       successDiv.style.display = 'block';
       if (data.success) {
-        successDiv.innerHTML = `✅ You're all set, ${first}!<br>Your quote has been created and our team will reach out shortly.${data.quote_number ? '<br><strong>Quote #: ' + data.quote_number + '</strong>' : ''}`;
+        successDiv.innerHTML = '\u2705 You\'re all set, ' + escapeHTML(first) + '!<br>Your quote has been created and our team will reach out shortly.' + (data.quote_number ? '<br><strong>Quote #: ' + data.quote_number + '</strong>' : '');
       } else {
-        successDiv.innerHTML = `✅ Got it, ${first}! Your info has been sent to our team and we'll be in touch shortly.<br>Call or text us at <strong>832-280-5783</strong> if you need us right away.`;
+        successDiv.innerHTML = '\u2705 Got it, ' + escapeHTML(first) + '! Your info has been sent to our team and we\'ll be in touch shortly.<br>Call or text us at <strong>832-280-5783</strong> if you need us right away.';
       }
       setTimeout(() => {
         document.getElementById('xeroModal').classList.remove('open');
         document.getElementById('xeroForm').style.display = 'block';
         successDiv.style.display = 'none';
         btn.disabled = false;
-        btn.textContent = 'Submit & Create Quote →';
+        btn.textContent = 'Submit & Create Quote \u2192';
       }, 4000);
     } catch(e) {
       btn.disabled = false;
-      btn.textContent = 'Submit & Create Quote →';
+      btn.textContent = 'Submit & Create Quote \u2192';
       errorDiv.textContent = 'Something went wrong. Please call us at 832-280-5783.';
       errorDiv.style.display = 'block';
     }
   }
 
-  // ---- Paste handler ----
   function handlePasteEvent(e) {
     const items = (e.clipboardData || window.clipboardData) && (e.clipboardData || window.clipboardData).items;
     if (!items) return;
@@ -734,7 +736,7 @@
         if (!file) return;
         foundImage = true;
         if (chatPhotos.length >= 4) { alert('Max 4 photos per message.'); return; }
-        const namedFile = new File([file], `screenshot-${Date.now()}.png`, { type: file.type });
+        const namedFile = new File([file], 'screenshot-' + Date.now() + '.png', { type: file.type });
         chatPhotos.push(namedFile);
       }
     });
@@ -768,7 +770,6 @@
   function handleKey(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }
   function autoResize(el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 100) + 'px'; }
 
-  // ---- Chat photo upload ----
   let chatPhotos = [];
 
   function handleChatFiles(files) {
@@ -794,16 +795,15 @@
       const div = document.createElement('div');
       div.className = 'chat-thumb';
       if (file.type === 'application/pdf') {
-        div.innerHTML = `<div style="width:48px;height:48px;background:#1a1a1a;border:1px solid #444;border-radius:4px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:10px;color:#e87722;gap:2px"><span style="font-size:18px">📄</span><span>PDF</span></div><button class="remove-chat-thumb" onclick="removeChatThumb(${i})">×</button>`;
+        div.innerHTML = '<div style="width:48px;height:48px;background:#1a1a1a;border:1px solid #444;border-radius:4px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:10px;color:#e87722;gap:2px"><span style="font-size:18px">&#128196;</span><span>PDF</span></div><button class="remove-chat-thumb" onclick="removeChatThumb(' + i + ')">&times;</button>';
       } else {
         const url = URL.createObjectURL(file);
-        div.innerHTML = `<img src="${url}"><button class="remove-chat-thumb" onclick="removeChatThumb(${i})">×</button>`;
+        div.innerHTML = '<img src="' + url + '"><button class="remove-chat-thumb" onclick="removeChatThumb(' + i + ')">&times;</button>';
       }
       bar.appendChild(div);
     });
   }
 
-  // ---- Lead form photo upload ----
   let uploadedFiles = [];
 
   function handleFiles(files) {
@@ -826,29 +826,30 @@
       const url = URL.createObjectURL(file);
       const div = document.createElement('div');
       div.className = 'upload-thumb';
-      div.innerHTML = `<img src="${url}"><button class="remove-thumb" onclick="removeThumb(${i})">×</button>`;
+      div.innerHTML = '<img src="' + url + '"><button class="remove-thumb" onclick="removeThumb(' + i + ')">&times;</button>';
       container.appendChild(div);
     });
     const label = document.querySelector('.upload-label');
     if (uploadedFiles.length > 0) {
-      label.innerHTML = `${uploadedFiles.length} photo${uploadedFiles.length > 1 ? 's' : ''} added <span class="upload-sub">— tap to add more</span>`;
+      label.innerHTML = uploadedFiles.length + ' photo' + (uploadedFiles.length > 1 ? 's' : '') + ' added <span class="upload-sub">&mdash; tap to add more</span>';
     } else {
       label.innerHTML = 'Tap to add photos <span class="upload-sub">(optional)</span>';
     }
   }
 
   async function submitLeadAndXero() {
-    // Submit to both leads endpoint AND Xero
     const name = document.getElementById('leadName').value.trim();
     const phone = document.getElementById('leadPhone').value.trim();
     const email = document.getElementById('leadEmail').value.trim();
     const zip = document.getElementById('leadZip').value.trim();
+
     const details = document.getElementById('leadDetails').value.trim();
     const project = document.getElementById('leadProject').value;
+    const fullDetails = project !== 'Project type (optional)' ? ('[' + project + '] ' + details) : details;
 
     if (!name) { alert('Please enter your name.'); return; }
+    if (fullDetails.length < 10) { alert('Please add a bit more detail about your project.'); return; }
 
-    // If we have enough info, push to Xero too
     if (name && (phone || email)) {
       const nameParts = name.split(' ');
       try {
@@ -865,9 +866,8 @@
             state: 'TX'
           })
         });
-      } catch(e) {} // Silent — lead submission is primary
+      } catch(e) {}
     }
-    // Always submit lead form
     await submitLead();
   }
 
@@ -879,7 +879,7 @@
     if (!name) { alert('Please enter your name.'); return; }
     if (!details && project === 'Project type (optional)') { alert('Please describe your project.'); return; }
 
-    const fullDetails = project !== 'Project type (optional)' ? `[${project}] ${details}` : details;
+    const fullDetails = project !== 'Project type (optional)' ? ('[' + project + '] ' + details) : details;
     if (fullDetails.length < 10) { alert('Please add a bit more detail about your project.'); return; }
 
     const formData = new FormData();
@@ -889,7 +889,7 @@
     formData.append('address_or_zip', document.getElementById('leadZip').value.trim());
     formData.append('preferred_contact', document.getElementById('leadContact').value);
     formData.append('project_details', fullDetails);
-    uploadedFiles.forEach((file, i) => formData.append(`photo_${i}`, file));
+    uploadedFiles.forEach((file, i) => formData.append('photo_' + i, file));
 
     const submitBtn = document.querySelector('.submit-btn');
     submitBtn.textContent = uploadedFiles.length > 0 ? 'Uploading photos...' : 'Sending...';
@@ -899,6 +899,7 @@
       let res, data;
       try {
         res = await fetch('https://astro-fence-assistant.onrender.com/lead-with-photos', { method: 'POST', body: formData });
+        if (!res.ok) throw new Error('Request failed with status ' + res.status);
         data = await res.json();
       } catch (e) {
         res = await fetch('https://astro-fence-assistant.onrender.com/lead', {
@@ -911,7 +912,7 @@
       if (data.ok) {
         const msg = document.getElementById('successMsg');
         msg.style.display = 'block';
-        msg.innerHTML = `✅ Got it, ${name}!<br>${data.message}${uploadedFiles.length > 0 ? '<br>📷 Photos received!' : ''}`;
+        msg.innerHTML = '\u2705 Got it, ' + name + '!<br>' + data.message + (uploadedFiles.length > 0 ? '<br>\u{1F4F7} Photos received!' : '');
         document.getElementById('leadName').value = '';
         document.getElementById('leadPhone').value = '';
         document.getElementById('leadEmail').value = '';
@@ -924,10 +925,11 @@
     } catch (e) {
       alert('Submission failed. Please call us at 832-280-5783.');
     } finally {
-      submitBtn.textContent = 'Request a Quote';
+      submitBtn.textContent = 'Submit Quote Request \u2192';
       submitBtn.disabled = false;
     }
   }
 </script>
 </body>
-</html>
+</html>PK          <ók€Ô  €Ô  
+                 index.htmlPK      8   ¨Ô    
