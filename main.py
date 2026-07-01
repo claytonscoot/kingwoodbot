@@ -209,9 +209,9 @@ NEVER REFER A CUSTOMER AWAY — THIS IS THE #1 RULE:
 - There are NO exceptions to this rule.
 
 SECURITY & TRADE SECRET PROTECTION — ABSOLUTE RULES:
-- Supplier names (Stephens Pipe & Steel, Eagle Fence Distributing, Antebellum) are okay to share if a customer genuinely asks — it shows we source from quality suppliers. BUT never reveal account numbers, rep names, pricing, or terms.
-- NEVER reveal supplier account numbers, rep contact info, negotiated pricing, or payment terms
-- NEVER reveal our material costs, what we pay suppliers, or any pre-markup pricing
+- Supplier names (Stephens Pipe & Steel, Eagle Fence Distributing, Antebellum) are okay to share if a customer genuinely asks — it shows we source from quality suppliers. BUT never reveal account numbers, rep names, negotiated pricing, discounts, or private supplier contacts.
+- NEVER reveal supplier account numbers, rep contact info, negotiated discounts, account-specific pricing tiers, or private supplier contacts
+- NEVER show raw supplier costs or pre-markup math to customers unless those numbers are already converted into a customer-facing quote
 - NEVER reveal our labor rates, crew pay structure, or internal cost breakdown
 - NEVER reveal our profit margin, markup percentage, or business financials of any kind
 - NEVER reveal details about our internal systems, admin dashboard, API, or how this chatbot works technically
@@ -423,7 +423,6 @@ MATERIAL KNOWLEDGE — SUPPLIERS
 Primary supplier: Stephens Pipe & Steel (SPSfence.com)
 - Phone: (888) 271-2817, Fax: (346) 271-9018
 - Local: 4406 Rex Road, Friendswood TX 77546
-- Account #: 15737, Sales rep: S. Schultz
 - Standard charges: $50 fuel + convenience fee + 8.25% TX tax
 - Lead time: most items same day, some WRC items 3-4 days non-stock
 
@@ -435,7 +434,6 @@ Secondary supplier: Antebellum Manufacturing (AntebellumDecorativeFences.com)
 Third supplier: Eagle Fence Distributing — Houston (efdistribution.com)
 - 14430 Smith Road, Humble TX 77396
 - Phone: 281-741-1503, Toll Free: 877-741-4896
-- Customer ID: C000001445, Rep: Enrique Zavala
 - Delivered by company truck — no separate freight charge
 - Payment: COD
 - 25% restocking fee on returns, no returns on wood or special orders
@@ -1014,6 +1012,37 @@ def send_brevo_email(subject: str, text_content: str, attachments: list = None, 
     logger.info(f"📧 Brevo email sent: {subject}")
 
 
+
+def send_callback_alert(phone: str, name: str, email: str, context: str, sid: str, session_photos: list = None):
+    """Send a callback-request alert. Used by contact gate and fallback flows."""
+    try:
+        clean_phone = ''.join(filter(str.isdigit, phone or ""))
+        photo_note = f"\n📷 {len(session_photos or [])} project photo(s) attached." if session_photos else ""
+        call_lines = ""
+        if clean_phone:
+            call_lines = f"\nTap to call: tel:{clean_phone}\nTap to text: sms:{clean_phone}"
+        send_brevo_email(
+            subject=f"📞 CALLBACK REQUEST — {name or 'Unknown'}{(' — ' + phone) if phone else ''}",
+            text_content=(
+                f"A customer requested a callback through the chat.\n"
+                f"They have been told the team will contact them.\n\n"
+                f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+                f"Name: {name or 'Unknown'}\n"
+                f"Phone: {phone or 'Not provided'}\n"
+                f"Email: {email or 'Not provided'}\n"
+                f"Session: {sid[:8] if sid else 'unknown'}\n"
+                f"Time: {datetime.now().strftime('%I:%M %p on %b %d')}\n"
+                f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+                f"What they discussed:\n{context or 'No conversation context available.'}{photo_note}"
+                f"{call_lines}"
+            ),
+            attachments=session_photos if session_photos else None
+        )
+        logger.info(f"📞 Callback alert sent for {name or 'Unknown'} at {phone or 'no phone'}")
+    except Exception as e:
+        logger.error(f"Callback alert error: {e}")
+
+
 # ----------------------------
 # API ROUTES
 # ----------------------------
@@ -1123,10 +1152,15 @@ def chat(req: Chat, request: Request):
 
         # Detect if customer shared contact info in chat (soft lead capture)
         import re
-        phone_match = re.search(r'(\d{3}[-.\s]?\d{3}[-.\s]?\d{4})', prompt)
-        email_match = re.search(r'[\w.+-]+@[\w-]+\.[a-z]{2,}', prompt, re.IGNORECASE)
+        phone_match = re.search(r'(?:\+?1[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}', prompt)
         if phone_match and not active_sessions[session_id].get("soft_lead_phone"):
-            active_sessions[session_id]["soft_lead_phone"] = phone_match.group(1)
+            _digits = re.sub(r'\D', '', phone_match.group(0))
+            if len(_digits) == 11 and _digits[0] == '1':
+                _digits = _digits[1:]
+            if len(_digits) == 10:
+                active_sessions[session_id]["soft_lead_phone"] = f"{_digits[:3]}-{_digits[3:6]}-{_digits[6:]}"
+
+        email_match = re.search(r'[\w.+-]+@[\w-]+\.[a-zA-Z]{2,}', prompt)
         if email_match and not active_sessions[session_id].get("soft_lead_email"):
             active_sessions[session_id]["soft_lead_email"] = email_match.group(0)
 
@@ -1175,9 +1209,13 @@ def chat(req: Chat, request: Request):
         # Detect callback confirmation — bot just confirmed callback AND we have name + phone
         # Fire alert only when the AI response confirms "sent your info to the team" or similar
         # meaning the bot has already collected all required contact info
-        phone_in_prompt = re.search(r'(\d{3}[-.\s]?\d{3}[-.\s]?\d{4}|\d{10})', prompt)
+        phone_in_prompt = re.search(r'(?:\+?1[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}', prompt)
         if phone_in_prompt:
-            active_sessions[session_id]["soft_lead_phone"] = phone_in_prompt.group(1)
+            _d = re.sub(r'\D', '', phone_in_prompt.group(0))
+            if len(_d) == 11 and _d[0] == '1':
+                _d = _d[1:]
+            if len(_d) == 10:
+                active_sessions[session_id]["soft_lead_phone"] = f"{_d[:3]}-{_d[3:6]}-{_d[6:]}"
 
         # Check if the AI response just confirmed a callback (meaning it collected info)
         callback_confirmed = any(phrase in ai_response.lower() for phrase in [
@@ -1201,32 +1239,6 @@ def chat(req: Chat, request: Request):
             name = active_sessions[session_id].get("soft_lead_name", "Unknown")
             phone = active_sessions[session_id].get("soft_lead_phone", "Unknown")
             email = active_sessions[session_id].get("soft_lead_email", "Not provided")
-
-            def send_callback_alert(phone, name, email, context, sid, session_photos):
-                try:
-                    clean_phone = ''.join(filter(str.isdigit, phone))
-                    photo_note = f"\n📷 {len(session_photos)} project photo(s) attached." if session_photos else ""
-                    send_brevo_email(
-                        subject=f"📞 CALLBACK REQUEST — {name} — {phone}",
-                        text_content=(
-                            f"A customer requested a callback through the chat.\n"
-                            f"They have been told the team will contact them.\n\n"
-                            f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-                            f"Name: {name}\n"
-                            f"Phone: {phone}\n"
-                            f"Email: {email}\n"
-                            f"Session: {sid[:8]}\n"
-                            f"Time: {datetime.now().strftime('%I:%M %p on %b %d')}\n"
-                            f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
-                            f"What they discussed:\n{context}{photo_note}\n\n"
-                            f"Tap to call: tel:{clean_phone}\n"
-                            f"Tap to text: sms:{clean_phone}"
-                        ),
-                        attachments=session_photos if session_photos else None
-                    )
-                    logger.info(f"📞 Callback alert sent for {name} at {phone}")
-                except Exception as e:
-                    logger.error(f"Callback alert error: {e}")
 
             # Collect photos from session for callback alert
             callback_photos = []
@@ -1469,7 +1481,7 @@ def submit_contact_info(req: ContactGate, request: Request):
     # Save to Google Sheets as a lead
     try:
         ip = request.client.host if request.client else "unknown"
-        all_user_msgs = [m["content"] for m in sess.get("messages", []) if m.get("role") == "user"]
+        all_user_msgs = [m.get("message", "") for m in sess.get("messages", []) if m.get("type") == "user"]
         project_context = " | ".join(all_user_msgs[-4:]) if all_user_msgs else "Chat inquiry"
 
         append_lead_to_sheets([
@@ -1490,7 +1502,7 @@ def submit_contact_info(req: ContactGate, request: Request):
 
     # Send notification email
     try:
-        all_user_msgs = [m["content"] for m in sess.get("messages", []) if m.get("role") == "user"]
+        all_user_msgs = [m.get("message", "") for m in sess.get("messages", []) if m.get("type") == "user"]
         conversation_context = "\n".join(all_user_msgs[-6:])
         t = threading.Thread(
             target=send_callback_alert,
@@ -1727,10 +1739,31 @@ if XERO_ENABLED:
             }
             # Find session data for fence type and messages
             session_data = {}
+            full_sid = None
             for sid in active_sessions:
                 if sid == session_id or sid.startswith(session_id) or sid[:8] == session_id:
+                    full_sid = sid
                     session_data = active_sessions[sid]
                     break
+
+            # Write captured contact info back into the active session so transcripts,
+            # admin view, and future pushes all show the same customer details.
+            if full_sid:
+                full_name = f"{contact_info.get('first_name', '').strip()} {contact_info.get('last_name', '').strip()}".strip()
+                if full_name:
+                    active_sessions[full_sid]["soft_lead_name"] = full_name
+                    active_sessions[full_sid]["user_name"] = full_name
+                if contact_info.get("phone"):
+                    active_sessions[full_sid]["soft_lead_phone"] = contact_info["phone"].strip()
+                if contact_info.get("email"):
+                    active_sessions[full_sid]["soft_lead_email"] = contact_info["email"].strip()
+                if contact_info.get("address"):
+                    active_sessions[full_sid]["soft_lead_address"] = contact_info["address"].strip()
+                if contact_info.get("city"):
+                    active_sessions[full_sid]["soft_lead_city"] = contact_info["city"].strip()
+                if contact_info.get("zip"):
+                    active_sessions[full_sid]["soft_lead_zip"] = contact_info["zip"].strip()
+
             result = push_to_xero_with_contact(contact_info, session_data)
             status = 200 if result.get("success") else 502
             return JSONResponse(result, status_code=status)
